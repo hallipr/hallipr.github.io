@@ -1,0 +1,3 @@
+[submodule "crumplecorn"]
+	path = crumplecorn
+	url = https://github.com/hallipr/crumplecorn-calc
