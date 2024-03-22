@@ -1,0 +1,9 @@
+{
+  "name": "hallipr.github.io",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "workspaces": [ "new-app" ]
+}

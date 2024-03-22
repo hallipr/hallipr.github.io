@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './App.css';
 import React, { useState } from 'react';
 
@@ -30,7 +29,8 @@ function App() {
   };
 
   // select the species from values where the variant array doesn't contain "Mission", "Boss" or "Minion"
-  const species = values.species.filter((item) => !item.variants || !item.variants.includes("Mission") && !item.variants.includes("Boss") && !item.variants.includes("Minion"));
+  const excludes = ["Mission", "Boss", "Minion"];
+  const species = values.species.filter((item) => !item.variants || !item.variants.some(v => excludes.includes(v)));
    
   return (
     <div>

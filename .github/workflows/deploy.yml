@@ -20,12 +20,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - name: install dependencies
-        run: npm ci
-      - name: build app
-        run: npm run build
-        env:
-          PUBLIC_URL: /game
+      - name: run build.ps1
+        shell: pwsh
+        run: ./build.ps1
       - name: upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
