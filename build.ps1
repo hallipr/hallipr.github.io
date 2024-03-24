@@ -16,7 +16,7 @@ try {
     $outFolder = New-Item -ItemType Directory -Path $outFolder
 
     Write-Host "Copy react site to build/new-app folder"
-    Copy-Item -Path "./new-app/out" -Destination "$outFolder" -Recurse -Force | Out-Null
+    Copy-Item -Path "./new-app/out/*" -Destination "$outFolder" -Recurse -Force | Out-Null
 }
 finally {
     Pop-Location
