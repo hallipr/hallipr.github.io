@@ -1,0 +1,1014 @@
+{
+    "food": {
+        "Raw Fish Meat": {
+            "stack": 40,
+            "spoil": 1200,
+            "weight": 0.1
+        },
+        "Cooked Fish Meat": {
+            "stack": 50,
+            "spoil": 1800,
+            "weight": 0.1
+        },
+        "Raw Meat": {
+            "stack": 40,
+            "spoil": 600,
+            "weight": 0.1
+        },
+        "Cooked Meat": {
+            "stack": 50,
+            "spoil": 1200,
+            "weight": 0.1
+        },
+        "Spoiled Meat": {
+            "stack": 100,
+            "spoil": 3600,
+            "weight": 0.1
+        },
+        "Mejoberry": {
+            "stack": 100,
+            "spoil": 600,
+            "weight": 0.1
+        },
+        "Berry": {
+            "stack": 100,
+            "spoil": 600,
+            "weight": 0.1
+        },
+        "Vegetables": {
+            "stack": 100,
+            "spoil": 300,
+            "weight": 0.1
+        },
+        "Rare Flower": {
+            "stack": 100,
+            "spoil": 259200,
+            "weight": 0.15
+        },
+        "Kibble": {
+            "stack": 100,
+            "spoil": 259200,
+            "weight": 0.1
+        },
+        "Wyvern Milk": {
+            "stack": 1,
+            "spoil": 1800,
+            "weight": 0.1
+        },
+        "Mutagen": {
+            "stack": 1,
+            "spoil": 1800,
+            "weight": 0.1
+        },
+        "Primal Crystal": {
+            "stack": 1,
+            "spoil": 10800,
+            "weight": 1
+        },
+        "Ambergris": {
+            "stack": 1,
+            "spoil": 1200,
+            "weight": 5
+        },
+        "Nameless Venom": {
+            "stack": 1,
+            "spoil": 1800,
+            "weight": 0.1
+        },
+        "Blood Pack": {
+            "stack": 100,
+            "spoil": 1800,
+            "weight": 0.05
+        },
+        "Chitin": {
+            "stack": 100,
+            "spoil": null,
+            "weight": 0.01
+        },
+        "Sulfur": {
+            "stack": 100,
+            "spoil": null,
+            "weight": 0.05
+        }
+    },
+    "diet": {
+        "herbivore": {
+            "Berry": 20,
+            "Mejoberry": 30,
+            "Vegetables": 40,
+            "Kibble": 60
+        },
+        "carnivore": {
+            "Raw Fish Meat": 25,
+            "Cooked Fish Meat": 12.5,
+            "Raw Meat": 50,
+            "Cooked Meat": 25,
+            "Kibble": 60
+        },
+        "omnivore": {
+            "Raw Fish Meat": 25,
+            "Cooked Fish Meat": 12.5,
+            "Raw Meat": 50,
+            "Berry": 20,
+            "Cooked Meat": 25,
+            "Mejoberry": 30,
+            "Vegetables": 40,
+            "Kibble": 60
+        },
+        "piscivore": {
+            "Raw Fish Meat": 25,
+            "Cooked Fish Meat": 12.5
+        },
+        "carrion": {
+            "Raw Fish Meat": 5,
+            "Spoiled Meat": 50,
+            "Raw Meat": 10
+        },
+        "archaeopteryx": {
+            "chitin": 50
+        },
+        "daeodon": { // check food order
+            "Raw Fish Meat": 25,
+            "Cooked Fish Meat": 12.5,
+            "Raw Meat": 50,
+            "Cooked Meat": 25,
+            "Kibble": 60
+        },
+        "microraptor": {
+            "Raw Fish Meat": 25,
+            "Cooked Fish Meat": 12.5,
+            "Raw Meat": 50,
+            "Cooked Meat": 25,
+            "Kibble": 60,
+            "Rare Flower": 60
+        }
+    },
+    "trough": {
+        "player": 1,
+        "normal": 4,
+        "tek": 100
+    },
+    "species": {
+        "Allosaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.94452,
+            "babyfoodend": 0.047226,
+            "adultfood": 0.001852,
+            "agespeed": 0.000006
+        },
+        "Amargasaurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.000003
+        },
+        "Andrewsarchus": {
+            "diet": "omnivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.0000048
+        },
+        "Anglerfish": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.94452,
+            "babyfoodend": 0.047226,
+            "adultfood": 0.001852,
+            "agespeed": 0.0000075
+        },
+        "Ankylosaurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.0000057
+        },
+        "Araneo": {
+            "diet": "carrion",
+            "babyfoodstart": 0.88536,
+            "babyfoodend": 0.044268,
+            "adultfood": 0.001736,
+            "agespeed": 0.0000111
+        },
+        "Archaeopteryx": {
+            "diet": "archaeopteryx",
+            "babyfoodstart": 0.66402,
+            "babyfoodend": 0.033201,
+            "adultfood": 0.001302,
+            "agespeed": 0.000018
+        },
+        "Argentavis": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.94452,
+            "babyfoodend": 0.047226,
+            "adultfood": 0.001852,
+            "agespeed": 0.0000051
+        },
+        "Arthropluera": {
+            "diet": "carrion",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000054
+        },
+        "Astrodelphis": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000051
+        },
+        "Baryonyx": {
+            "diet": "piscivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.000006
+        },
+        "Basilosaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.49379,
+            "babyfoodend": 0.0746895,
+            "adultfood": 0.002929,
+            "agespeed": 0.0000024
+        },
+        "Beelzebufo": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.98379,
+            "babyfoodend": 0.0491895,
+            "adultfood": 0.001929,
+            "agespeed": 0.0000075
+        },
+        "Bloodstalker": {
+            "diet": "bloodstalker",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000051
+        },
+        "Brontosaurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 3.93516,
+            "babyfoodend": 0.196758,
+            "adultfood": 0.007716,
+            "agespeed": 0.000003
+        },
+        "Bulbdog": {
+            "diet": "omnivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.0000057
+        },
+        "Carbonemys": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.000012
+        },
+        "Carcharodontosaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.6198,
+            "babyfoodend": 0.08099,
+            "adultfood": 0.002314,
+            "agespeed": 0.0000011385
+        },
+        "Carnotaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.94452,
+            "babyfoodend": 0.047226,
+            "adultfood": 0.001852,
+            "agespeed": 0.000006
+        },
+        "Castoroides": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.18014,
+            "babyfoodend": 0.059007,
+            "adultfood": 0.002314,
+            "agespeed": 0.0000045
+        },
+        "Chalicotherium": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.000003375
+        },
+        "Compsognathus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.0000132
+        },
+        "Crystal Wyvern": {
+            "diet": "crystalwyvern",
+            "babyfoodstart": 0.0213675,
+            "babyfoodend": 0.0035613,
+            "adultfood": 0.000185,
+            "agespeed": 0.000003
+        },
+        "Daeodon": {
+            "diet": "daeodon",
+            "babyfoodstart": 0.4,
+            "babyfoodend": 0.05,
+            "adultfood": 0.01,
+            "agespeed": 0.0000057
+        },
+        "Deinonychus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000075
+        },
+        "Desmodus": {
+            "diet": "bloodstalker",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000039
+        },
+        "Dilophosaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.0000132
+        },
+        "Dimetrodon": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.88536,
+            "babyfoodend": 0.044268,
+            "adultfood": 0.001736,
+            "agespeed": 0.000006
+        },
+        "Dimorphodon": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.66402,
+            "babyfoodend": 0.033201,
+            "adultfood": 0.001302,
+            "agespeed": 0.0000111
+        },
+        "Dinopithecus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.000003
+        },
+        "Diplocaulus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000075
+        },
+        "Diplodocus": {
+            "diet": "herbivore",
+            "babyfoodstart": 3.93516,
+            "babyfoodend": 0.196758,
+            "adultfood": 0.007716,
+            "agespeed": 0.000003
+        },
+        "Direbear": {
+            "diet": "omnivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.000006
+        },
+        "Direwolf": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000057
+        },
+        "Dodo": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.000018
+        },
+        "Doedicurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.0000048
+        },
+        "Dunkleosteus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.94452,
+            "babyfoodend": 0.047226,
+            "adultfood": 0.001852,
+            "agespeed": 0.000003375
+        },
+        "Electrophorus": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.49379,
+            "babyfoodend": 0.0746895,
+            "adultfood": 0.002929,
+            "agespeed": 0.000006
+        },
+        "Equus": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.98379,
+            "babyfoodend": 0.0491895,
+            "adultfood": 0.001929,
+            "agespeed": 0.000006
+        },
+        "Featherlight": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.0000057
+        },
+        "Ferox": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.000003
+        },
+        "Fjordhawk": {
+            "diet": "omnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.000006
+        },
+        "Gacha": {
+            "diet": "omnivore",
+            "babyfoodstart": 5.1,
+            "babyfoodend": 0.255,
+            "adultfood": 0.01,
+            "agespeed": 0.0000024
+        },
+        "Gallimimus": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.98379,
+            "babyfoodend": 0.0491895,
+            "adultfood": 0.001929,
+            "agespeed": 0.0000105
+        },
+        "Gasbag": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.05366,
+            "babyfoodend": 0.052683,
+            "adultfood": 0.002066,
+            "agespeed": 0.000006
+        },
+        "Giganotosaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 2.0826,
+            "babyfoodend": 0.10413,
+            "adultfood": 0.002314,
+            "agespeed": 0.0000011385
+        },
+        "Gigantopithecus": {
+            "diet": "herbivore",
+            "babyfoodstart": 2.11956,
+            "babyfoodend": 0.105978,
+            "adultfood": 0.004156,
+            "agespeed": 0.0000036
+        },
+        "Gigantoraptor": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.18014,
+            "babyfoodend": 0.059007,
+            "adultfood": 0.002314,
+            "agespeed": 0.000006
+        },
+        "Glowtail": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.0000057
+        },
+        "Hesperornis": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.70839,
+            "babyfoodend": 0.0354195,
+            "adultfood": 0.001389,
+            "agespeed": 0.0000099
+        },
+        "Hyaenodon": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.000006
+        },
+        "Ichthyornis": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000075
+        },
+        "Ichthyosaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.98379,
+            "babyfoodend": 0.0491895,
+            "adultfood": 0.001929,
+            "agespeed": 0.0000048
+        },
+        "Iguanodon": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.98379,
+            "babyfoodend": 0.0491895,
+            "adultfood": 0.001929,
+            "agespeed": 0.000006
+        },
+        "Jerboa": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.0000132
+        },
+        "Kairuku": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.70839,
+            "babyfoodend": 0.0354195,
+            "adultfood": 0.001389,
+            "agespeed": 0.0000099
+        },
+        "Kaprosuchus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000075
+        },
+        "Kentrosaurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 2.72391,
+            "babyfoodend": 0.1361955,
+            "adultfood": 0.005341,
+            "agespeed": 0.0000054
+        },
+        "Lymantria": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.94452,
+            "babyfoodend": 0.047226,
+            "adultfood": 0.001852,
+            "agespeed": 0.000009
+        },
+        "Lystrosaurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.000018
+        },
+        "Maewing": {
+            "diet": "carnivore",
+            "babyfoodstart": 5.1,
+            "babyfoodend": 0.255,
+            "adultfood": 0.01,
+            "agespeed": 0.000006
+        },
+        "Magmasaur": {
+            "diet": "magmasaur",
+            "babyfoodstart": 0.19635,
+            "babyfoodend": 0.0098175,
+            "adultfood": 0.000385,
+            "agespeed": 0.0000015
+        },
+        "Mammoth": {
+            "diet": "herbivore",
+            "babyfoodstart": 2.10783,
+            "babyfoodend": 0.1053915,
+            "adultfood": 0.004133,
+            "agespeed": 0.000003375
+        },
+        "Managarmr": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.94452,
+            "babyfoodend": 0.047226,
+            "adultfood": 0.001852,
+            "agespeed": 0.000003
+        },
+        "Manta": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.98379,
+            "babyfoodend": 0.0491895,
+            "adultfood": 0.001929,
+            "agespeed": 0.0000075
+        },
+        "Mantis": {
+            "diet": "carrion_",
+            "babyfoodstart": 1.18014,
+            "babyfoodend": 0.059007,
+            "adultfood": 0.002314,
+            "agespeed": 0.0000051
+        },
+        "Megachelon": {
+            "diet": "omnivore",
+            "babyfoodstart": 5.1,
+            "babyfoodend": 0.255,
+            "adultfood": 0.01,
+            "agespeed": 0.000003
+        },
+        "Megalania": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.88536,
+            "babyfoodend": 0.044268,
+            "adultfood": 0.001736,
+            "agespeed": 0.0000075
+        },
+        "Megaloceros": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000039
+        },
+        "Megalodon": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.94452,
+            "babyfoodend": 0.047226,
+            "adultfood": 0.001852,
+            "agespeed": 0.000003
+        },
+        "Megalosaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.94452,
+            "babyfoodend": 0.047226,
+            "adultfood": 0.001852,
+            "agespeed": 0.000003
+        },
+        "Megatherium": {
+            "diet": "omnivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.000003
+        },
+        "Mesopithecus": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.000009
+        },
+        "Microraptor": {
+            "diet": "microraptor",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.0000051
+        },
+        "Morellatops": {
+            "diet": "herbivore",
+            "babyfoodstart": 2.72391,
+            "babyfoodend": 0.1361955,
+            "adultfood": 0.005341,
+            "agespeed": 0.000009
+        },
+        "Mosasaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 2.55,
+            "babyfoodend": 0.1275,
+            "adultfood": 0.005,
+            "agespeed": 0.0000015
+        },
+        "Moschops": {
+            "diet": "omnivore",
+            "babyfoodstart": 0.88536,
+            "babyfoodend": 0.044268,
+            "adultfood": 0.001736,
+            "agespeed": 0.0000057
+        },
+        "Onyc": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.47543,
+            "babyfoodend": 0.0737715,
+            "adultfood": 0.002893,
+            "agespeed": 0.0000099
+        },
+        "Otter": {
+            "diet": "piscivore",
+            "babyfoodstart": 1.18014,
+            "babyfoodend": 0.059007,
+            "adultfood": 0.002314,
+            "agespeed": 0.0000132
+        },
+        "Oviraptor": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.66402,
+            "babyfoodend": 0.033201,
+            "adultfood": 0.001302,
+            "agespeed": 0.0000132
+        },
+        "Ovis": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.0000057
+        },
+        "Pachycephalosaurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000105
+        },
+        "Pachyrhinosaurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.000006
+        },
+        "Paraceratherium": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.785,
+            "babyfoodend": 0.08925,
+            "adultfood": 0.0035,
+            "agespeed": 0.000003
+        },
+        "Parasaurolophus": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.98379,
+            "babyfoodend": 0.0491895,
+            "adultfood": 0.001929,
+            "agespeed": 0.0000105
+        },
+        "Pegomastax": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.000009
+        },
+        "Pelagornis": {
+            "diet": "piscivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000075
+        },
+        "Phiomia": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.0000057
+        },
+        "Plesiosaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.96758,
+            "babyfoodend": 0.098379,
+            "adultfood": 0.003858,
+            "agespeed": 0.0000024
+        },
+        "Procoptodon": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.98379,
+            "babyfoodend": 0.0491895,
+            "adultfood": 0.001929,
+            "agespeed": 0.000006
+        },
+        "Pteranodon": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000075
+        },
+        "Pulmonoscorpius": {
+            "diet": "carrion_",
+            "babyfoodstart": 0.98379,
+            "babyfoodend": 0.0491895,
+            "adultfood": 0.001929,
+            "agespeed": 0.0000075
+        },
+        "Purlovia": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000057
+        },
+        "Quetzalcoatlus": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.785,
+            "babyfoodend": 0.08925,
+            "adultfood": 0.0035,
+            "agespeed": 0.0000021
+        },
+        "Raptor": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000075
+        },
+        "Ravager": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000057
+        },
+        "Reaper": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.18014,
+            "babyfoodend": 0.059007,
+            "adultfood": 0.002314,
+            "agespeed": 0.0000036
+        },
+        "Rex": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.18014,
+            "babyfoodend": 0.059007,
+            "adultfood": 0.002314,
+            "agespeed": 0.000003
+        },
+        "Rock Drake": {
+            "diet": "rockdrake",
+            "babyfoodstart": 0.09435,
+            "babyfoodend": 0.0047175,
+            "adultfood": 0.000185,
+            "agespeed": 0.000003
+        },
+        "Roll Rat": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.0000048
+        },
+        "Sabertooth": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000057
+        },
+        "Sarcosuchus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.80478,
+            "babyfoodend": 0.040239,
+            "adultfood": 0.001578,
+            "agespeed": 0.000006
+        },
+        "Shinehorn": {
+            "diet": "herbivore",
+            "babyfoodstart": 0.44268,
+            "babyfoodend": 0.022134,
+            "adultfood": 0.000868,
+            "agespeed": 0.0000057
+        },
+        "Shadowmane": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.59007,
+            "babyfoodend": 0.0295035,
+            "adultfood": 0.001157,
+            "agespeed": 0.0000057
+        },
+        "Sinomacrops": {
+            "diet": "sinomacrops",
+            "babyfoodstart": 0.66402,
+            "babyfoodend": 0.033201,
+            "adultfood": 0.001302,
+            "agespeed": 0.000018
+        },
+        "Snow Owl": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.944,
+            "babyfoodend": 0.0472,
+            "adultfood": 0.01,
+            "agespeed": 0.0000051
+        },
+        "Spinosaurus": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.05366,
+            "babyfoodend": 0.052683,
+            "adultfood": 0.002066,
+            "agespeed": 0.0000039
+        },
+        "Stegosaurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 2.72391,
+            "babyfoodend": 0.1361955,
+            "adultfood": 0.005341,
+            "agespeed": 0.0000054
+        },
+        "Tapejara": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000051
+        },
+        "Terror Bird": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.80478,
+            "babyfoodend": 0.040239,
+            "adultfood": 0.001578,
+            "agespeed": 0.000006
+        },
+        "Therizinosaurus": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.18014,
+            "babyfoodend": 0.059007,
+            "adultfood": 0.002314,
+            "agespeed": 0.0000024
+        },
+        "Thorny Dragon": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000057
+        },
+        "Thylacoleo": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000057
+        },
+        "Triceratops": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.000006
+        },
+        "Troodon": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000132
+        },
+        "Tropeognathus": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.0000051
+        },
+        "Tusoteuthis": {
+            "diet": "carnivore",
+            "babyfoodstart": 2.55,
+            "babyfoodend": 0.1275,
+            "adultfood": 0.005,
+            "agespeed": 0.0000015
+        },
+        "Velonasaur": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.78693,
+            "babyfoodend": 0.0393465,
+            "adultfood": 0.001543,
+            "agespeed": 0.000006
+        },
+        "Vulture": {
+            "diet": "carrion",
+            "babyfoodstart": 0.66402,
+            "babyfoodend": 0.033201,
+            "adultfood": 0.001302,
+            "agespeed": 0.0000111
+        },
+        "Voidwyrm": {
+            "diet": "carnivore",
+            "babyfoodstart": 0.007215,
+            "babyfoodend": 0.002405,
+            "adultfood": 0.000185,
+            "agespeed": 0.000003
+        },
+        "Woolly Rhino": {
+            "diet": "herbivore",
+            "babyfoodstart": 1.60956,
+            "babyfoodend": 0.080478,
+            "adultfood": 0.003156,
+            "agespeed": 0.0000048
+        },
+        "Wyvern": {
+            "diet": "wyvern",
+            "babyfoodstart": 0.07215,
+            "babyfoodend": 0.002405,
+            "adultfood": 0.000185,
+            "agespeed": 0.000003
+        },
+        "Yutyrannus": {
+            "diet": "carnivore",
+            "babyfoodstart": 1.18014,
+            "babyfoodend": 0.059007,
+            "adultfood": 0.002314,
+            "agespeed": 0.0000015
+        }
+    }
+}

@@ -1,3 +1,7 @@
+param (
+    [switch]$Incremental
+)
+
 function LogCommand($command) {
     Write-Host "> $($command | Out-String)"
     & $command
@@ -5,7 +9,11 @@ function LogCommand($command) {
 
 Push-Location -Path $PSScriptRoot
 try {
-    LogCommand { npm ci }
+    if($Incremental) {
+        LogCommand { npm install }
+    } else {
+        LogCommand { npm ci }
+    }
     LogCommand { npm run build -ws --if-present }
 
     $outFolder = "./out"

@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"command": "./build.ps1 -Incremental",
+			"group": "build",
+			"label": "build.ps1",
+			"detail": "next build"
+		}
+	]
+}
