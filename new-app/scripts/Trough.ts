@@ -1,5 +1,5 @@
 // Provides trough class for food calculations
-import Species from "./Species";
+import Species from "./Types/Species";
 
 export default class Trough {
     Entries: troughEntry[];
@@ -26,8 +26,8 @@ export class troughEntry {
         this.CheckTime = checkedTime;
     }
 
-    public getCurrentAge(): number {
+    get CurrentAge(): number {
         let elapsedSeconds = (new Date().getTime() - this.CheckTime.getTime()) / 1000;
-        return this.CheckedAge + elapsedSeconds / this.Species.AgeSpeed;
+        return this.CheckedAge + elapsedSeconds / this.Species.ageSpeed;
     }
 }
