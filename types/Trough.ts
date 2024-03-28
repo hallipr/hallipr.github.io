@@ -1,5 +1,5 @@
 // Provides trough class for food calculations
-import Species from "./Types/Species";
+import Species from "./Species";
 
 export default class Trough {
     Entries: troughEntry[];

@@ -1,6 +1,6 @@
-import Species from "./Types/Species";
-import Diet from "./Types/Diet";
-import Food from "./Types/Food";
+import Species from "./Species";
+import Diet from "./Diet";
+import Food from "./Food";
 
 const minute = 60;
 const hour = 60 * minute;
@@ -205,7 +205,7 @@ let species:Species[] = [
     name: "Allosaurus",
     diet: "carnivore",
     babyFoodRateStart: 0.94452,
-    babyFoodRateEnd: 0.047226,
+    babyFoodRateEnd: 0.001852,
     adultFoodRate: 0.001852,
     ageSpeed: 0.000006
   }),
@@ -213,7 +213,7 @@ let species:Species[] = [
     name: "Amargasaurus",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.000003
   }),
@@ -221,7 +221,7 @@ let species:Species[] = [
     name: "Andrewsarchus",
     diet: "omnivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.0000048
   }),
@@ -229,7 +229,7 @@ let species:Species[] = [
     name: "Anglerfish",
     diet: "carnivore",
     babyFoodRateStart: 0.94452,
-    babyFoodRateEnd: 0.047226,
+    babyFoodRateEnd: 0.001852,
     adultFoodRate: 0.001852,
     ageSpeed: 0.0000075
   }),
@@ -237,7 +237,7 @@ let species:Species[] = [
     name: "Ankylosaurus",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.0000057
   }),
@@ -245,7 +245,7 @@ let species:Species[] = [
     name: "Araneo",
     diet: "carrion",
     babyFoodRateStart: 0.88536,
-    babyFoodRateEnd: 0.044268,
+    babyFoodRateEnd: 0.001736,
     adultFoodRate: 0.001736,
     ageSpeed: 0.0000111
   }),
@@ -253,7 +253,7 @@ let species:Species[] = [
     name: "Archaeopteryx",
     diet: "archaeopteryx",
     babyFoodRateStart: 0.66402,
-    babyFoodRateEnd: 0.033201,
+    babyFoodRateEnd: 0.001302,
     adultFoodRate: 0.001302,
     ageSpeed: 0.000018
   }),
@@ -261,7 +261,7 @@ let species:Species[] = [
     name: "Argentavis",
     diet: "carnivore",
     babyFoodRateStart: 0.94452,
-    babyFoodRateEnd: 0.047226,
+    babyFoodRateEnd: 0.001852,
     adultFoodRate: 0.001852,
     ageSpeed: 0.0000051
   }),
@@ -269,7 +269,7 @@ let species:Species[] = [
     name: "Arthropluera",
     diet: "carrion",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000054
   }),
@@ -277,7 +277,7 @@ let species:Species[] = [
     name: "Astrodelphis",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000051
   }),
@@ -285,7 +285,7 @@ let species:Species[] = [
     name: "Baryonyx",
     diet: "piscivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.000006
   }),
@@ -293,7 +293,7 @@ let species:Species[] = [
     name: "Basilosaurus",
     diet: "carnivore",
     babyFoodRateStart: 1.49379,
-    babyFoodRateEnd: 0.0746895,
+    babyFoodRateEnd: 0.002929,
     adultFoodRate: 0.002929,
     ageSpeed: 0.0000024
   }),
@@ -301,7 +301,7 @@ let species:Species[] = [
     name: "Beelzebufo",
     diet: "carnivore",
     babyFoodRateStart: 0.98379,
-    babyFoodRateEnd: 0.0491895,
+    babyFoodRateEnd: 0.001929,
     adultFoodRate: 0.001929,
     ageSpeed: 0.0000075
   }),
@@ -309,7 +309,7 @@ let species:Species[] = [
     name: "Bloodstalker",
     diet: "bloodstalker",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000051
   }),
@@ -317,7 +317,7 @@ let species:Species[] = [
     name: "Brontosaurus",
     diet: "herbivore",
     babyFoodRateStart: 3.93516,
-    babyFoodRateEnd: 0.196758,
+    babyFoodRateEnd: 0.007716,
     adultFoodRate: 0.007716,
     ageSpeed: 0.000003
   }),
@@ -325,7 +325,7 @@ let species:Species[] = [
     name: "Bulbdog",
     diet: "omnivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.0000057
   }),
@@ -333,7 +333,7 @@ let species:Species[] = [
     name: "Carbonemys",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.000012
   }),
@@ -341,15 +341,15 @@ let species:Species[] = [
     name: "Carcharodontosaurus",
     diet: "carnivore",
     babyFoodRateStart: 1.6198,
-    babyFoodRateEnd: 0.08099,
-    adultFoodRate: 0.002314,
-    ageSpeed: 0.0000011385
+    babyFoodRateEnd: 0.002314,
+    adultFoodRate: 0.006942,
+    ageSpeed: 0.00000114
   }),
   new Species({
     name: "Carnotaurus",
     diet: "carnivore",
     babyFoodRateStart: 0.94452,
-    babyFoodRateEnd: 0.047226,
+    babyFoodRateEnd: 0.001852,
     adultFoodRate: 0.001852,
     ageSpeed: 0.000006
   }),
@@ -357,7 +357,7 @@ let species:Species[] = [
     name: "Castoroides",
     diet: "herbivore",
     babyFoodRateStart: 1.18014,
-    babyFoodRateEnd: 0.059007,
+    babyFoodRateEnd: 0.002314,
     adultFoodRate: 0.002314,
     ageSpeed: 0.0000045
   }),
@@ -365,15 +365,15 @@ let species:Species[] = [
     name: "Chalicotherium",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
-    ageSpeed: 0.000003375
+    ageSpeed: 0.00000338
   }),
   new Species({
     name: "Compsognathus",
     diet: "carnivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.0000132
   }),
@@ -381,15 +381,15 @@ let species:Species[] = [
     name: "Crystal Wyvern",
     diet: "crystalwyvern",
     babyFoodRateStart: 0.0213675,
-    babyFoodRateEnd: 0.0035613,
+    babyFoodRateEnd: 0.000185,
     adultFoodRate: 0.000185,
     ageSpeed: 0.000003
   }),
   new Species({
     name: "Daeodon",
-    diet: "daeodon",
+    diet: "carnivore",
     babyFoodRateStart: 0.4,
-    babyFoodRateEnd: 0.05,
+    babyFoodRateEnd: 0.01,
     adultFoodRate: 0.01,
     ageSpeed: 0.0000057
   }),
@@ -397,7 +397,7 @@ let species:Species[] = [
     name: "Deinonychus",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000075
   }),
@@ -405,7 +405,7 @@ let species:Species[] = [
     name: "Desmodus",
     diet: "bloodstalker",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000039
   }),
@@ -413,7 +413,7 @@ let species:Species[] = [
     name: "Dilophosaurus",
     diet: "carnivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.0000132
   }),
@@ -421,7 +421,7 @@ let species:Species[] = [
     name: "Dimetrodon",
     diet: "carnivore",
     babyFoodRateStart: 0.88536,
-    babyFoodRateEnd: 0.044268,
+    babyFoodRateEnd: 0.001736,
     adultFoodRate: 0.001736,
     ageSpeed: 0.000006
   }),
@@ -429,7 +429,7 @@ let species:Species[] = [
     name: "Dimorphodon",
     diet: "carnivore",
     babyFoodRateStart: 0.66402,
-    babyFoodRateEnd: 0.033201,
+    babyFoodRateEnd: 0.001302,
     adultFoodRate: 0.001302,
     ageSpeed: 0.0000111
   }),
@@ -437,7 +437,7 @@ let species:Species[] = [
     name: "Dinopithecus",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.000003
   }),
@@ -445,7 +445,7 @@ let species:Species[] = [
     name: "Diplocaulus",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000075
   }),
@@ -453,7 +453,7 @@ let species:Species[] = [
     name: "Diplodocus",
     diet: "herbivore",
     babyFoodRateStart: 3.93516,
-    babyFoodRateEnd: 0.196758,
+    babyFoodRateEnd: 0.007716,
     adultFoodRate: 0.007716,
     ageSpeed: 0.000003
   }),
@@ -461,7 +461,7 @@ let species:Species[] = [
     name: "Direbear",
     diet: "omnivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.000006
   }),
@@ -469,7 +469,7 @@ let species:Species[] = [
     name: "Direwolf",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000057
   }),
@@ -477,7 +477,7 @@ let species:Species[] = [
     name: "Dodo",
     diet: "herbivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.000018
   }),
@@ -485,7 +485,7 @@ let species:Species[] = [
     name: "Doedicurus",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.0000048
   }),
@@ -493,15 +493,15 @@ let species:Species[] = [
     name: "Dunkleosteus",
     diet: "carnivore",
     babyFoodRateStart: 0.94452,
-    babyFoodRateEnd: 0.047226,
+    babyFoodRateEnd: 0.001852,
     adultFoodRate: 0.001852,
-    ageSpeed: 0.000003375
+    ageSpeed: 0.00000338
   }),
   new Species({
     name: "Electrophorus",
     diet: "carnivore",
     babyFoodRateStart: 1.49379,
-    babyFoodRateEnd: 0.0746895,
+    babyFoodRateEnd: 0.002929,
     adultFoodRate: 0.002929,
     ageSpeed: 0.000006
   }),
@@ -509,7 +509,7 @@ let species:Species[] = [
     name: "Equus",
     diet: "herbivore",
     babyFoodRateStart: 0.98379,
-    babyFoodRateEnd: 0.0491895,
+    babyFoodRateEnd: 0.001929,
     adultFoodRate: 0.001929,
     ageSpeed: 0.000006
   }),
@@ -517,7 +517,7 @@ let species:Species[] = [
     name: "Featherlight",
     diet: "carnivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.0000057
   }),
@@ -525,7 +525,7 @@ let species:Species[] = [
     name: "Ferox",
     diet: "carnivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.000003
   }),
@@ -533,7 +533,7 @@ let species:Species[] = [
     name: "Fjordhawk",
     diet: "omnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.000006
   }),
@@ -541,7 +541,7 @@ let species:Species[] = [
     name: "Gacha",
     diet: "omnivore",
     babyFoodRateStart: 5.1,
-    babyFoodRateEnd: 0.255,
+    babyFoodRateEnd: 0.01,
     adultFoodRate: 0.01,
     ageSpeed: 0.0000024
   }),
@@ -549,7 +549,7 @@ let species:Species[] = [
     name: "Gallimimus",
     diet: "herbivore",
     babyFoodRateStart: 0.98379,
-    babyFoodRateEnd: 0.0491895,
+    babyFoodRateEnd: 0.001929,
     adultFoodRate: 0.001929,
     ageSpeed: 0.0000105
   }),
@@ -557,7 +557,7 @@ let species:Species[] = [
     name: "Gasbag",
     diet: "herbivore",
     babyFoodRateStart: 1.05366,
-    babyFoodRateEnd: 0.052683,
+    babyFoodRateEnd: 0.002066,
     adultFoodRate: 0.002066,
     ageSpeed: 0.000006
   }),
@@ -565,31 +565,23 @@ let species:Species[] = [
     name: "Giganotosaurus",
     diet: "carnivore",
     babyFoodRateStart: 2.0826,
-    babyFoodRateEnd: 0.10413,
-    adultFoodRate: 0.002314,
-    ageSpeed: 0.0000011385
+    babyFoodRateEnd: 0.002314,
+    adultFoodRate: 0.006942,
+    ageSpeed: 0.00000114
   }),
   new Species({
     name: "Gigantopithecus",
     diet: "herbivore",
     babyFoodRateStart: 2.11956,
-    babyFoodRateEnd: 0.105978,
+    babyFoodRateEnd: 0.004156,
     adultFoodRate: 0.004156,
     ageSpeed: 0.0000036
-  }),
-  new Species({
-    name: "Gigantoraptor",
-    diet: "carnivore",
-    babyFoodRateStart: 1.18014,
-    babyFoodRateEnd: 0.059007,
-    adultFoodRate: 0.002314,
-    ageSpeed: 0.000006
   }),
   new Species({
     name: "Glowtail",
     diet: "carnivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.0000057
   }),
@@ -597,7 +589,7 @@ let species:Species[] = [
     name: "Hesperornis",
     diet: "carnivore",
     babyFoodRateStart: 0.70839,
-    babyFoodRateEnd: 0.0354195,
+    babyFoodRateEnd: 0.001389,
     adultFoodRate: 0.001389,
     ageSpeed: 0.0000099
   }),
@@ -605,7 +597,7 @@ let species:Species[] = [
     name: "Hyaenodon",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.000006
   }),
@@ -613,7 +605,7 @@ let species:Species[] = [
     name: "Ichthyornis",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000075
   }),
@@ -621,7 +613,7 @@ let species:Species[] = [
     name: "Ichthyosaurus",
     diet: "carnivore",
     babyFoodRateStart: 0.98379,
-    babyFoodRateEnd: 0.0491895,
+    babyFoodRateEnd: 0.001929,
     adultFoodRate: 0.001929,
     ageSpeed: 0.0000048
   }),
@@ -629,7 +621,7 @@ let species:Species[] = [
     name: "Iguanodon",
     diet: "herbivore",
     babyFoodRateStart: 0.98379,
-    babyFoodRateEnd: 0.0491895,
+    babyFoodRateEnd: 0.001929,
     adultFoodRate: 0.001929,
     ageSpeed: 0.000006
   }),
@@ -637,7 +629,7 @@ let species:Species[] = [
     name: "Jerboa",
     diet: "herbivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.0000132
   }),
@@ -645,7 +637,7 @@ let species:Species[] = [
     name: "Kairuku",
     diet: "carnivore",
     babyFoodRateStart: 0.70839,
-    babyFoodRateEnd: 0.0354195,
+    babyFoodRateEnd: 0.001389,
     adultFoodRate: 0.001389,
     ageSpeed: 0.0000099
   }),
@@ -653,7 +645,7 @@ let species:Species[] = [
     name: "Kaprosuchus",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000075
   }),
@@ -661,7 +653,7 @@ let species:Species[] = [
     name: "Kentrosaurus",
     diet: "herbivore",
     babyFoodRateStart: 2.72391,
-    babyFoodRateEnd: 0.1361955,
+    babyFoodRateEnd: 0.005341,
     adultFoodRate: 0.005341,
     ageSpeed: 0.0000054
   }),
@@ -669,7 +661,7 @@ let species:Species[] = [
     name: "Lymantria",
     diet: "herbivore",
     babyFoodRateStart: 0.94452,
-    babyFoodRateEnd: 0.047226,
+    babyFoodRateEnd: 0.001852,
     adultFoodRate: 0.001852,
     ageSpeed: 0.000009
   }),
@@ -677,7 +669,7 @@ let species:Species[] = [
     name: "Lystrosaurus",
     diet: "herbivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.000018
   }),
@@ -685,7 +677,7 @@ let species:Species[] = [
     name: "Maewing",
     diet: "carnivore",
     babyFoodRateStart: 5.1,
-    babyFoodRateEnd: 0.255,
+    babyFoodRateEnd: 0.01,
     adultFoodRate: 0.01,
     ageSpeed: 0.000006
   }),
@@ -693,7 +685,7 @@ let species:Species[] = [
     name: "Magmasaur",
     diet: "magmasaur",
     babyFoodRateStart: 0.19635,
-    babyFoodRateEnd: 0.0098175,
+    babyFoodRateEnd: 0.000385,
     adultFoodRate: 0.000385,
     ageSpeed: 0.0000015
   }),
@@ -701,15 +693,15 @@ let species:Species[] = [
     name: "Mammoth",
     diet: "herbivore",
     babyFoodRateStart: 2.10783,
-    babyFoodRateEnd: 0.1053915,
+    babyFoodRateEnd: 0.004133,
     adultFoodRate: 0.004133,
-    ageSpeed: 0.000003375
+    ageSpeed: 0.00000338
   }),
   new Species({
     name: "Managarmr",
     diet: "carnivore",
     babyFoodRateStart: 0.94452,
-    babyFoodRateEnd: 0.047226,
+    babyFoodRateEnd: 0.001852,
     adultFoodRate: 0.001852,
     ageSpeed: 0.000003
   }),
@@ -717,7 +709,7 @@ let species:Species[] = [
     name: "Manta",
     diet: "carnivore",
     babyFoodRateStart: 0.98379,
-    babyFoodRateEnd: 0.0491895,
+    babyFoodRateEnd: 0.001929,
     adultFoodRate: 0.001929,
     ageSpeed: 0.0000075
   }),
@@ -725,7 +717,7 @@ let species:Species[] = [
     name: "Mantis",
     diet: "carrion_",
     babyFoodRateStart: 1.18014,
-    babyFoodRateEnd: 0.059007,
+    babyFoodRateEnd: 0.002314,
     adultFoodRate: 0.002314,
     ageSpeed: 0.0000051
   }),
@@ -733,7 +725,7 @@ let species:Species[] = [
     name: "Megachelon",
     diet: "omnivore",
     babyFoodRateStart: 5.1,
-    babyFoodRateEnd: 0.255,
+    babyFoodRateEnd: 0.01,
     adultFoodRate: 0.01,
     ageSpeed: 0.000003
   }),
@@ -741,7 +733,7 @@ let species:Species[] = [
     name: "Megalania",
     diet: "carnivore",
     babyFoodRateStart: 0.88536,
-    babyFoodRateEnd: 0.044268,
+    babyFoodRateEnd: 0.001736,
     adultFoodRate: 0.001736,
     ageSpeed: 0.0000075
   }),
@@ -749,7 +741,7 @@ let species:Species[] = [
     name: "Megaloceros",
     diet: "herbivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000039
   }),
@@ -757,7 +749,7 @@ let species:Species[] = [
     name: "Megalodon",
     diet: "carnivore",
     babyFoodRateStart: 0.94452,
-    babyFoodRateEnd: 0.047226,
+    babyFoodRateEnd: 0.001852,
     adultFoodRate: 0.001852,
     ageSpeed: 0.000003
   }),
@@ -765,7 +757,7 @@ let species:Species[] = [
     name: "Megalosaurus",
     diet: "carnivore",
     babyFoodRateStart: 0.94452,
-    babyFoodRateEnd: 0.047226,
+    babyFoodRateEnd: 0.001852,
     adultFoodRate: 0.001852,
     ageSpeed: 0.000003
   }),
@@ -773,7 +765,7 @@ let species:Species[] = [
     name: "Megatherium",
     diet: "omnivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.000003
   }),
@@ -781,7 +773,7 @@ let species:Species[] = [
     name: "Mesopithecus",
     diet: "herbivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.000009
   }),
@@ -789,7 +781,7 @@ let species:Species[] = [
     name: "Microraptor",
     diet: "microraptor",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.0000051
   }),
@@ -797,7 +789,7 @@ let species:Species[] = [
     name: "Morellatops",
     diet: "herbivore",
     babyFoodRateStart: 2.72391,
-    babyFoodRateEnd: 0.1361955,
+    babyFoodRateEnd: 0.005341,
     adultFoodRate: 0.005341,
     ageSpeed: 0.000009
   }),
@@ -805,7 +797,7 @@ let species:Species[] = [
     name: "Mosasaurus",
     diet: "carnivore",
     babyFoodRateStart: 2.55,
-    babyFoodRateEnd: 0.1275,
+    babyFoodRateEnd: 0.005,
     adultFoodRate: 0.005,
     ageSpeed: 0.0000015
   }),
@@ -813,7 +805,7 @@ let species:Species[] = [
     name: "Moschops",
     diet: "omnivore",
     babyFoodRateStart: 0.88536,
-    babyFoodRateEnd: 0.044268,
+    babyFoodRateEnd: 0.001736,
     adultFoodRate: 0.001736,
     ageSpeed: 0.0000057
   }),
@@ -821,7 +813,7 @@ let species:Species[] = [
     name: "Onyc",
     diet: "carnivore",
     babyFoodRateStart: 1.47543,
-    babyFoodRateEnd: 0.0737715,
+    babyFoodRateEnd: 0.002893,
     adultFoodRate: 0.002893,
     ageSpeed: 0.0000099
   }),
@@ -829,7 +821,7 @@ let species:Species[] = [
     name: "Otter",
     diet: "piscivore",
     babyFoodRateStart: 1.18014,
-    babyFoodRateEnd: 0.059007,
+    babyFoodRateEnd: 0.002314,
     adultFoodRate: 0.002314,
     ageSpeed: 0.0000132
   }),
@@ -837,7 +829,7 @@ let species:Species[] = [
     name: "Oviraptor",
     diet: "carnivore",
     babyFoodRateStart: 0.66402,
-    babyFoodRateEnd: 0.033201,
+    babyFoodRateEnd: 0.001302,
     adultFoodRate: 0.001302,
     ageSpeed: 0.0000132
   }),
@@ -845,7 +837,7 @@ let species:Species[] = [
     name: "Ovis",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.0000057
   }),
@@ -853,7 +845,7 @@ let species:Species[] = [
     name: "Pachycephalosaurus",
     diet: "herbivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000105
   }),
@@ -861,7 +853,7 @@ let species:Species[] = [
     name: "Pachyrhinosaurus",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.000006
   }),
@@ -869,7 +861,7 @@ let species:Species[] = [
     name: "Paraceratherium",
     diet: "herbivore",
     babyFoodRateStart: 1.785,
-    babyFoodRateEnd: 0.08925,
+    babyFoodRateEnd: 0.0035,
     adultFoodRate: 0.0035,
     ageSpeed: 0.000003
   }),
@@ -877,7 +869,7 @@ let species:Species[] = [
     name: "Parasaurolophus",
     diet: "herbivore",
     babyFoodRateStart: 0.98379,
-    babyFoodRateEnd: 0.0491895,
+    babyFoodRateEnd: 0.001929,
     adultFoodRate: 0.001929,
     ageSpeed: 0.0000105
   }),
@@ -885,7 +877,7 @@ let species:Species[] = [
     name: "Pegomastax",
     diet: "herbivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.000009
   }),
@@ -893,7 +885,7 @@ let species:Species[] = [
     name: "Pelagornis",
     diet: "piscivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000075
   }),
@@ -901,7 +893,7 @@ let species:Species[] = [
     name: "Phiomia",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.0000057
   }),
@@ -909,7 +901,7 @@ let species:Species[] = [
     name: "Plesiosaurus",
     diet: "carnivore",
     babyFoodRateStart: 1.96758,
-    babyFoodRateEnd: 0.098379,
+    babyFoodRateEnd: 0.003858,
     adultFoodRate: 0.003858,
     ageSpeed: 0.0000024
   }),
@@ -917,7 +909,7 @@ let species:Species[] = [
     name: "Procoptodon",
     diet: "herbivore",
     babyFoodRateStart: 0.98379,
-    babyFoodRateEnd: 0.0491895,
+    babyFoodRateEnd: 0.001929,
     adultFoodRate: 0.001929,
     ageSpeed: 0.000006
   }),
@@ -925,7 +917,7 @@ let species:Species[] = [
     name: "Pteranodon",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000075
   }),
@@ -933,7 +925,7 @@ let species:Species[] = [
     name: "Pulmonoscorpius",
     diet: "carrion_",
     babyFoodRateStart: 0.98379,
-    babyFoodRateEnd: 0.0491895,
+    babyFoodRateEnd: 0.001929,
     adultFoodRate: 0.001929,
     ageSpeed: 0.0000075
   }),
@@ -941,7 +933,7 @@ let species:Species[] = [
     name: "Purlovia",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000057
   }),
@@ -949,7 +941,7 @@ let species:Species[] = [
     name: "Quetzalcoatlus",
     diet: "carnivore",
     babyFoodRateStart: 1.785,
-    babyFoodRateEnd: 0.08925,
+    babyFoodRateEnd: 0.0035,
     adultFoodRate: 0.0035,
     ageSpeed: 0.0000021
   }),
@@ -957,7 +949,7 @@ let species:Species[] = [
     name: "Raptor",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000075
   }),
@@ -965,7 +957,7 @@ let species:Species[] = [
     name: "Ravager",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000057
   }),
@@ -973,7 +965,7 @@ let species:Species[] = [
     name: "Reaper",
     diet: "carnivore",
     babyFoodRateStart: 1.18014,
-    babyFoodRateEnd: 0.059007,
+    babyFoodRateEnd: 0.002314,
     adultFoodRate: 0.002314,
     ageSpeed: 0.0000036
   }),
@@ -981,7 +973,7 @@ let species:Species[] = [
     name: "Rex",
     diet: "carnivore",
     babyFoodRateStart: 1.18014,
-    babyFoodRateEnd: 0.059007,
+    babyFoodRateEnd: 0.002314,
     adultFoodRate: 0.002314,
     ageSpeed: 0.000003
   }),
@@ -989,7 +981,7 @@ let species:Species[] = [
     name: "Rock Drake",
     diet: "rockdrake",
     babyFoodRateStart: 0.09435,
-    babyFoodRateEnd: 0.0047175,
+    babyFoodRateEnd: 0.000185,
     adultFoodRate: 0.000185,
     ageSpeed: 0.000003
   }),
@@ -997,7 +989,7 @@ let species:Species[] = [
     name: "Roll Rat",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.0000048
   }),
@@ -1005,7 +997,7 @@ let species:Species[] = [
     name: "Sabertooth",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000057
   }),
@@ -1013,7 +1005,7 @@ let species:Species[] = [
     name: "Sarcosuchus",
     diet: "carnivore",
     babyFoodRateStart: 0.80478,
-    babyFoodRateEnd: 0.040239,
+    babyFoodRateEnd: 0.001578,
     adultFoodRate: 0.001578,
     ageSpeed: 0.000006
   }),
@@ -1021,7 +1013,7 @@ let species:Species[] = [
     name: "Shinehorn",
     diet: "herbivore",
     babyFoodRateStart: 0.44268,
-    babyFoodRateEnd: 0.022134,
+    babyFoodRateEnd: 0.000868,
     adultFoodRate: 0.000868,
     ageSpeed: 0.0000057
   }),
@@ -1029,7 +1021,7 @@ let species:Species[] = [
     name: "Shadowmane",
     diet: "carnivore",
     babyFoodRateStart: 0.59007,
-    babyFoodRateEnd: 0.0295035,
+    babyFoodRateEnd: 0.001157,
     adultFoodRate: 0.001157,
     ageSpeed: 0.0000057
   }),
@@ -1037,7 +1029,7 @@ let species:Species[] = [
     name: "Sinomacrops",
     diet: "sinomacrops",
     babyFoodRateStart: 0.66402,
-    babyFoodRateEnd: 0.033201,
+    babyFoodRateEnd: 0.001302,
     adultFoodRate: 0.001302,
     ageSpeed: 0.000018
   }),
@@ -1045,7 +1037,7 @@ let species:Species[] = [
     name: "Snow Owl",
     diet: "carnivore",
     babyFoodRateStart: 0.944,
-    babyFoodRateEnd: 0.0472,
+    babyFoodRateEnd: 0.01,
     adultFoodRate: 0.01,
     ageSpeed: 0.0000051
   }),
@@ -1053,7 +1045,7 @@ let species:Species[] = [
     name: "Spinosaurus",
     diet: "carnivore",
     babyFoodRateStart: 1.05366,
-    babyFoodRateEnd: 0.052683,
+    babyFoodRateEnd: 0.002066,
     adultFoodRate: 0.002066,
     ageSpeed: 0.0000039
   }),
@@ -1061,7 +1053,7 @@ let species:Species[] = [
     name: "Stegosaurus",
     diet: "herbivore",
     babyFoodRateStart: 2.72391,
-    babyFoodRateEnd: 0.1361955,
+    babyFoodRateEnd: 0.005341,
     adultFoodRate: 0.005341,
     ageSpeed: 0.0000054
   }),
@@ -1069,7 +1061,7 @@ let species:Species[] = [
     name: "Tapejara",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000051
   }),
@@ -1077,7 +1069,7 @@ let species:Species[] = [
     name: "Terror Bird",
     diet: "carnivore",
     babyFoodRateStart: 0.80478,
-    babyFoodRateEnd: 0.040239,
+    babyFoodRateEnd: 0.001578,
     adultFoodRate: 0.001578,
     ageSpeed: 0.000006
   }),
@@ -1085,7 +1077,7 @@ let species:Species[] = [
     name: "Therizinosaurus",
     diet: "herbivore",
     babyFoodRateStart: 1.18014,
-    babyFoodRateEnd: 0.059007,
+    babyFoodRateEnd: 0.002314,
     adultFoodRate: 0.002314,
     ageSpeed: 0.0000024
   }),
@@ -1093,7 +1085,7 @@ let species:Species[] = [
     name: "Thorny Dragon",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000057
   }),
@@ -1101,7 +1093,7 @@ let species:Species[] = [
     name: "Thylacoleo",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000057
   }),
@@ -1109,7 +1101,7 @@ let species:Species[] = [
     name: "Triceratops",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.000006
   }),
@@ -1117,7 +1109,7 @@ let species:Species[] = [
     name: "Troodon",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000132
   }),
@@ -1125,7 +1117,7 @@ let species:Species[] = [
     name: "Tropeognathus",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.0000051
   }),
@@ -1133,7 +1125,7 @@ let species:Species[] = [
     name: "Tusoteuthis",
     diet: "carnivore",
     babyFoodRateStart: 2.55,
-    babyFoodRateEnd: 0.1275,
+    babyFoodRateEnd: 0.005,
     adultFoodRate: 0.005,
     ageSpeed: 0.0000015
   }),
@@ -1141,7 +1133,7 @@ let species:Species[] = [
     name: "Velonasaur",
     diet: "carnivore",
     babyFoodRateStart: 0.78693,
-    babyFoodRateEnd: 0.0393465,
+    babyFoodRateEnd: 0.001543,
     adultFoodRate: 0.001543,
     ageSpeed: 0.000006
   }),
@@ -1149,7 +1141,7 @@ let species:Species[] = [
     name: "Vulture",
     diet: "carrion",
     babyFoodRateStart: 0.66402,
-    babyFoodRateEnd: 0.033201,
+    babyFoodRateEnd: 0.001302,
     adultFoodRate: 0.001302,
     ageSpeed: 0.0000111
   }),
@@ -1157,7 +1149,7 @@ let species:Species[] = [
     name: "Voidwyrm",
     diet: "carnivore",
     babyFoodRateStart: 0.007215,
-    babyFoodRateEnd: 0.002405,
+    babyFoodRateEnd: 0.000185,
     adultFoodRate: 0.000185,
     ageSpeed: 0.000003
   }),
@@ -1165,7 +1157,7 @@ let species:Species[] = [
     name: "Woolly Rhino",
     diet: "herbivore",
     babyFoodRateStart: 1.60956,
-    babyFoodRateEnd: 0.080478,
+    babyFoodRateEnd: 0.003156,
     adultFoodRate: 0.003156,
     ageSpeed: 0.0000048
   }),
@@ -1173,7 +1165,7 @@ let species:Species[] = [
     name: "Wyvern",
     diet: "wyvern",
     babyFoodRateStart: 0.07215,
-    babyFoodRateEnd: 0.002405,
+    babyFoodRateEnd: 0.000185,
     adultFoodRate: 0.000185,
     ageSpeed: 0.000003
   }),
@@ -1181,7 +1173,7 @@ let species:Species[] = [
     name: "Yutyrannus",
     diet: "carnivore",
     babyFoodRateStart: 1.18014,
-    babyFoodRateEnd: 0.059007,
+    babyFoodRateEnd: 0.002314,
     adultFoodRate: 0.002314,
     ageSpeed: 0.0000015
   })
