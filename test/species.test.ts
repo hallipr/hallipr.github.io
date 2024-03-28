@@ -1,4 +1,4 @@
-import Species from '../new-app/scripts/Types/Species';
+import Species from '../types/Species';
 
 describe('testing GetBabyFoodRate', () => {
   test('should be equal to babyFoodRateStart at 0%', () => {

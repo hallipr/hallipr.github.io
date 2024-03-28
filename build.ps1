@@ -1,5 +1,5 @@
 param (
-    [switch]$Incremental
+    [switch]$CI
 )
 
 function LogCommand($command) {
@@ -9,22 +9,15 @@ function LogCommand($command) {
 
 Push-Location -Path $PSScriptRoot
 try {
-    if($Incremental) {
-        LogCommand { npm install }
-    } else {
+    if($CI) {
         LogCommand { npm ci }
+    } else {
+        LogCommand { npm install }
     }
-    LogCommand { npm run build -ws --if-present }
+    
+    LogCommand { npm run build }
 
-    $outFolder = "./out"
-    if (Test-Path $outFolder) {
-        Remove-Item -Recurse -Force $outFolder
-    }
-
-    $outFolder = New-Item -ItemType Directory -Path $outFolder
-
-    Write-Host "Copy react site to build/new-app folder"
-    Copy-Item -Path "./new-app/out/*" -Destination "$outFolder" -Recurse -Force | Out-Null
+    LogCommand { npm run generate }
 }
 finally {
     Pop-Location

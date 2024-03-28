@@ -24,11 +24,11 @@ jobs:
           node-version: 18.x
       - name: run build.ps1
         shell: pwsh
-        run: ./build.ps1
+        run: ./build.ps1 -CI
       - name: upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: ./out
+          path: ./dist
       - name: deploy to github pages
         id: deployment
         uses: actions/deploy-pages@v1
