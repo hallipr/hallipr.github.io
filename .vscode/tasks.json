@@ -10,11 +10,22 @@
     },
     {
       "label": "start server",
-      "type": "npm",
-      "script": "dev",
-      "problemMatcher": [],
-      "detail": "vite",
-      "isBackground": true
+      "type": "shell",
+      "command": "npx --no vite dev --port 5173",
+      "problemMatcher": {
+        "base": "$tsc-watch",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "Local: +http://localhost:(\\d+)/"
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
     }
   ]
 }

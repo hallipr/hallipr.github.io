@@ -16,8 +16,6 @@ try {
     }
     
     LogCommand { npm run build }
-
-    LogCommand { npm run generate }
 }
 finally {
     Pop-Location

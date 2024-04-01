@@ -5,30 +5,12 @@
     "version": "0.2.0",
     "configurations": [
       {
-        "name": "vite",
-        "request": "launch",
-        "runtimeExecutable": "npx",
-        "runtimeArgs": [
-          "--no",
-          "vite",
-          "--port 5173"
-        ],
-        "type": "node",
-      },
-      {
         "name": "browser",
         "type": "msedge",
-        "request": "attach",
+        "request": "launch",
         "url": "http://localhost:5173",
         "webRoot": "${workspaceFolder}",
-        "preLaunchTask": "start server",
-      }
-    ],
-    "compounds": [
-      {
-        "name": "Vite -> Browser",
-        "configurations": ["vite", "browser"],
-        "stopAll": true
+        "preLaunchTask": "start server",        
       }
     ]
 }
