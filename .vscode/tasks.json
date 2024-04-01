@@ -1,12 +1,20 @@
 {
 	"version": "2.0.0",
 	"tasks": [
-		{
-			"type": "shell",
-			"command": "./build.ps1 -Incremental",
-			"group": "build",
-			"label": "build.ps1",
-			"detail": "next build"
-		}
-	]
+    {
+      "type": "shell",
+      "command": "./build.ps1",
+      "group": "build",
+      "label": "build.ps1",
+      "detail": "next build"
+    },
+    {
+      "label": "start server",
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": [],
+      "detail": "vite",
+      "isBackground": true
+    }
+  ]
 }

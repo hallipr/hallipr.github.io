@@ -4,12 +4,31 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Launch Chrome against localhost",
-            "url": "http://localhost:3000",
-            "webRoot": "${workspaceFolder}/breeding"
-        }
+      {
+        "name": "vite",
+        "request": "launch",
+        "runtimeExecutable": "npx",
+        "runtimeArgs": [
+          "--no",
+          "vite",
+          "--port 5173"
+        ],
+        "type": "node",
+      },
+      {
+        "name": "browser",
+        "type": "msedge",
+        "request": "attach",
+        "url": "http://localhost:5173",
+        "webRoot": "${workspaceFolder}",
+        "preLaunchTask": "start server",
+      }
+    ],
+    "compounds": [
+      {
+        "name": "Vite -> Browser",
+        "configurations": ["vite", "browser"],
+        "stopAll": true
+      }
     ]
 }

@@ -1,0 +1,13 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "Nuxt"
+  ],
+  "ignorePaths": [
+    // list of paths to ignore
+  ],
+  "ignoreWords": [
+    // list of words to ignore
+  ]
+}
