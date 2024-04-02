@@ -1,6 +1,4 @@
-import Species from "./Species";
-import Diet from "./Diet";
-import Food from "./Food";
+import { Species, Diet, Food } from "./types";
 
 const minute = 60;
 const hour = 60 * minute;
