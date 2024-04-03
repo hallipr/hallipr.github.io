@@ -30,12 +30,26 @@ export class TroughEntry {
 
   getCurrentAge = (multipliers: Multipliers): number => {
     let elapsed = DateTime.now().diff(this.checkTime).as('seconds');
-    return Math.min(this.checkedAge + elapsed * this.species.ageSpeed * multipliers.maturation, 1.0)
+    return Math.min(this.checkedAge + elapsed * multipliers.maturation, this.species.adultAge)
   }
 
-  getTimeToJuvenile = (multipliers: Multipliers): number => {
-    let elapsed = DateTime.now().diff(this.checkTime).as('seconds');
-    return Math.min(this.checkedAge + elapsed * this.species.ageSpeed * multipliers.maturation, 1.0)
+  getTimeToAge = (fromAge: number, toAge: number, multipliers: Multipliers): number => {
+    return Math.max(toAge - fromAge, 0) / multipliers.maturation;
+  }
+
+  getTimeToJuvenile = (fromAge: number, multipliers: Multipliers): number => {
+    let juvenileAge = this.species.adultAge / 10;
+    return this.getTimeToAge(fromAge, juvenileAge, multipliers);
+  }
+
+  getTimeToAdult = (fromAge: number, multipliers: Multipliers): number => {
+    return this.getTimeToAge(fromAge, this.species.adultAge, multipliers);
+  }
+
+  getCurrentTimeToA = (multipliers: Multipliers): number => {
+    let currentAge = this.getCurrentAge(multipliers);
+    let juvenileAge = this.species.adultAge / 10;
+    return Math.max(juvenileAge - currentAge, 0);
   }
 }
 
