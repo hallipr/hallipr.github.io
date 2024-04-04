@@ -22,6 +22,8 @@ export class TroughEntry {
   public species!: Species
   public count!: number
   public checkedAge!: number
+  public maxHealth!: number
+  public maxFood!: number
   public checkTime!: DateTime
 
   constructor(partial: Partial<TroughEntry>) {
@@ -29,25 +31,34 @@ export class TroughEntry {
   }
 
   getCurrentAge = (multipliers: Multipliers): number => {
-    let elapsed = DateTime.now().diff(this.checkTime).as('seconds');
+    return this.getAgeAtTime(DateTime.now(), multipliers);
+  }
+
+  getAgeAtTime = (time: DateTime, multipliers: Multipliers): number => {
+    let elapsed = time.diff(this.checkTime).as('seconds');
     return Math.min(this.checkedAge + elapsed * multipliers.maturation, this.species.adultAge)
   }
 
-  getTimeToAge = (fromAge: number, toAge: number, multipliers: Multipliers): number => {
+  getTimeBetweenAges = (fromAge: number, toAge: number, multipliers: Multipliers): number => {
     return Math.max(toAge - fromAge, 0) / multipliers.maturation;
   }
 
   getTimeToJuvenile = (fromAge: number, multipliers: Multipliers): number => {
     let juvenileAge = this.species.adultAge / 10;
-    return this.getTimeToAge(fromAge, juvenileAge, multipliers);
+    return this.getTimeBetweenAges(fromAge, juvenileAge, multipliers);
   }
 
   getTimeToAdult = (fromAge: number, multipliers: Multipliers): number => {
-    return this.getTimeToAge(fromAge, this.species.adultAge, multipliers);
+    return this.getTimeBetweenAges(fromAge, this.species.adultAge, multipliers);
   }
 
-  getCurrentTimeToA = (multipliers: Multipliers): number => {
-    let currentAge = this.getCurrentAge(multipliers);
+  getTimeToEatFood  = (fromAge: number, foodPoints: number, multipliers: Multipliers): number => {
+    
+  }
+
+  getNextEvent = (startTime: DateTime, multipliers: Multipliers, starveStartTime?: number): { time: number, event: string } => {
+    let ageAtStart = this.getAgeAtTime(startTime, multipliers);
+    let starveTime = starveStartTime ? 
     let juvenileAge = this.species.adultAge / 10;
     return Math.max(juvenileAge - currentAge, 0);
   }
@@ -70,22 +81,25 @@ export class Species {
     Object.assign(this, partial);
   }
 
-  GetAge(startAge: number, duration: number, multipliers: Multipliers)
+  getAge(startAge: number, duration: number, multipliers: Multipliers): number
   {
     return Math.min(startAge + duration * multipliers.maturation, this.adultAge);
   }
 
-  GetBabyFoodRate(age: number) {
-    if (age >= 1.0) return this.adultFoodRate;
+  getFoodRate(age: number, multipliers: Multipliers): number {
+    if (age >= 1.0) return this.adultFoodRate * multipliers.consumption;
 
-    return this.babyFoodRateStart + (this.babyFoodRateEnd - this.babyFoodRateStart) * age
+    return (this.babyFoodRateStart + (this.babyFoodRateEnd - this.babyFoodRateStart) * age) * multipliers.consumption;
   };
 
-  GetFoodPointsConsumed(startAge: number, duration: number, multipliers: Multipliers) {
-    let endAge = this.GetAge(startAge, duration, multipliers);
+  getFoodRateDecay(): number {
+    return (this.babyFoodRateEnd - this.babyFoodRateStart) / this.adultAge;
+  }
 
-    let startRate = this.GetBabyFoodRate(startAge);
-    let endRate = this.GetBabyFoodRate(endAge);
+  getFoodPointsConsumed(startAge: number, duration: number, multipliers: Multipliers) {
+    let endAge = this.getAge(startAge, duration, multipliers);
+    let startRate = this.getFoodRate(startAge, multipliers);
+    let endRate = this.getFoodRate(endAge, multipliers);
 
     return (startRate + endRate) * duration / 2;
   };
