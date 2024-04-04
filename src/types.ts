@@ -52,12 +52,21 @@ export class TroughEntry {
     return this.getTimeBetweenAges(fromAge, this.species.adultAge, multipliers);
   }
 
-  getTimeToEatFood  = (fromAge: number, foodPoints: number, multipliers: Multipliers): number => {
-    
-  }
-
-  getNextEvent = (startTime: DateTime, multipliers: Multipliers, starveStartTime?: number): { time: number, event: string } => {
+  getNextEvent = (startTime: DateTime, multipliers: Multipliers, starveStartTime?: number): { time: number, event: string } | null => {
     let ageAtStart = this.getAgeAtTime(startTime, multipliers);
+
+    if (ageAtStart == this.species.adultAge && !starveStartTime) return null; // Already adult and not starving
+    let timeAtAdult = this.getTimeToAdult(ageAtStart, multipliers);
+
+    let agePortion = ageAtStart / this.species.adultAge;
+    let healthAtStart = (0.1 + 0.9 * agePortion) * this.maxHealth;
+    let healthDrainRate = this.species.starveHealthDrainRate + ((1 - agePortion) * (this.species.babyStarveHealthDrainMultiplier - 1));
+    let timeToStarveToDeath = 
+    
+
+
+    }
+    
     let starveTime = starveStartTime ? 
     let juvenileAge = this.species.adultAge / 10;
     return Math.max(juvenileAge - currentAge, 0);
