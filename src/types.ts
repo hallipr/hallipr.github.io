@@ -51,26 +51,6 @@ export class TroughEntry {
   getTimeToAdult = (fromAge: number, multipliers: Multipliers): number => {
     return this.getTimeBetweenAges(fromAge, this.species.adultAge, multipliers);
   }
-
-  getNextEvent = (startTime: DateTime, multipliers: Multipliers, starveStartTime?: number): { time: number, event: string } | null => {
-    let ageAtStart = this.getAgeAtTime(startTime, multipliers);
-
-    if (ageAtStart == this.species.adultAge && !starveStartTime) return null; // Already adult and not starving
-    let timeAtAdult = this.getTimeToAdult(ageAtStart, multipliers);
-
-    let agePortion = ageAtStart / this.species.adultAge;
-    let healthAtStart = (0.1 + 0.9 * agePortion) * this.maxHealth;
-    let healthDrainRate = this.species.starveHealthDrainRate + ((1 - agePortion) * (this.species.babyStarveHealthDrainMultiplier - 1));
-    let timeToStarveToDeath = 
-    
-
-
-    }
-    
-    let starveTime = starveStartTime ? 
-    let juvenileAge = this.species.adultAge / 10;
-    return Math.max(juvenileAge - currentAge, 0);
-  }
 }
 
 export interface Multipliers {
@@ -84,10 +64,14 @@ export class Species {
   babyFoodRateStart!: number;
   babyFoodRateEnd!: number;
   adultFoodRate!: number;
-  adultAge!: number;
+  ageSpeed!: number;
 
   constructor(partial: Partial<Species>) {
     Object.assign(this, partial);
+  }
+
+  get adultAge(): number {
+    return 1 / this.ageSpeed;
   }
 
   getAge(startAge: number, duration: number, multipliers: Multipliers): number
