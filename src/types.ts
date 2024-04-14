@@ -30,6 +30,20 @@ export class TroughEntry {
     Object.assign(this, partial)
   }
 
+  getNextEvent = (multipliers: Multipliers): { time: DateTime, event: string } => {
+    let currentAge = this.getCurrentAge(multipliers);
+    let timeToAdult = this.getTimeToAdult(currentAge, multipliers);
+    let timeToJuvenile = this.getTimeToJuvenile(currentAge, multipliers);
+
+    if (currentAge < 0.10) {
+      return { time: this.checkTime.plus({ seconds: timeToJuvenile }), event: "Juvenile" };
+    } else if (currentAge < this.species.adultAge) {
+      return { time: this.checkTime.plus({ seconds: timeToAdult }), event: "Adult" };
+    } else {
+      return { time: DateTime.now(), event: "Death" };
+    }
+  }
+
   getCurrentAge = (multipliers: Multipliers): number => {
     return this.getAgeAtTime(DateTime.now(), multipliers);
   }
