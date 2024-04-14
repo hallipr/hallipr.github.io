@@ -1,5 +1,5 @@
 // Provides trough class for food calculations
-import { DateTime } from "luxon"
+import { DateTime, Duration } from "luxon"
 
 export class Trough {
   creatures: TroughEntry[]
@@ -61,17 +61,25 @@ export interface Multipliers {
 export class Species {
   name!: string;
   diet!: string;
+  baseFoodRate!: number;
+  babyFoodRate!: number;
+  extraBabyFoodRate!: number;
+  extraAdultFoodRate!: number;
+  ageSpeed!: number;
+  ageSpeedMult!: number;
+
+  adultAge!: number;
   babyFoodRateStart!: number;
   babyFoodRateEnd!: number;
   adultFoodRate!: number;
-  ageSpeed!: number;
 
   constructor(partial: Partial<Species>) {
     Object.assign(this, partial);
-  }
 
-  get adultAge(): number {
-    return 1 / this.ageSpeed;
+    this.adultAge = 1 / this.ageSpeed;
+    this.babyFoodRateStart = this.baseFoodRate * this.babyFoodRate * this.extraBabyFoodRate;
+    this.babyFoodRateEnd = this.baseFoodRate;
+    this.adultFoodRate = this.baseFoodRate * this.extraAdultFoodRate;
   }
 
   getAge(startAge: number, duration: number, multipliers: Multipliers): number
@@ -98,14 +106,22 @@ export class Species {
   };
 }
 
-export interface Food {
-  name: string;
-  stackSize: number;
-  spoilTime: number | null;
-  weight: number;
+export class Food {
+  name!: string
+  stackSize!: number;
+  spoilTime!: Duration | null;
+  weight!: number;
+
+  constructor(partial: Partial<Food>) {
+    Object.assign(this, partial)
+  }
 }
 
-export interface Diet {
-  name: string;
-  food: { [key: string]: number }
+export class Diet {
+  name!: string;
+  food!: { [key: string]: number }
+
+  constructor(partial: Partial<Diet>) {
+    Object.assign(this, partial)
+  }
 }
