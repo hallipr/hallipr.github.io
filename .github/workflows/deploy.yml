@@ -22,9 +22,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - name: run build.ps1
-        shell: pwsh
-        run: ./build.ps1 -CI
+      - name: npm ci
+        shell: bash
+        run: npm ci
+      - name: npm run build
+        shell: bash
+        run: npm run build
       - name: upload artifact
         uses: actions/upload-pages-artifact@v1
         with:

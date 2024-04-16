@@ -12,7 +12,7 @@
     <div>
       <span>{{ trough.name }}</span> - <button @click="addCreature(trough)">Add Entry</button>
     </div>
-    <div v-for="entry in trough.creatures" :key="entry.id">
+    <div v-for="entry in trough.entries" :key="entry.id">
       <span>
         {{ entry.count }}
         <select v-model="entry.species">
@@ -50,11 +50,11 @@ function addTrough() {
 
 function addCreature(trough: Trough) {
   const species = data.species[Math.floor(Math.random() * data.species.length)]
-  const id = trough.creatures.length
+  const id = trough.entries.length
 
   const fourHoursAgo = DateTime.now().minus({ hours: 4 })
 
-  trough.creatures.push(new TroughEntry({ 
+  trough.entries.push(new TroughEntry({ 
     id, 
     species, 
     count: Math.floor(Math.random() * 100),
