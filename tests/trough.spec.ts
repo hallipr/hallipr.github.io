@@ -7,7 +7,6 @@ import data from '../src/arkData'
 describe('Trough', () => {
     let trough: Trough = null!
     let entry: TroughEntry = null!
-    let species: Species= null!
     let multipliers: Multipliers = null!
   
     beforeEach(() => {
@@ -16,9 +15,9 @@ describe('Trough', () => {
         consumption: 1,
       };
 
-      species = data.species["Dodo"]
-  
-      entry = new TroughEntry(1, species, multipliers)
+      trough = new Trough(1, "trough");
+
+      entry = new TroughEntry(1, data.species["Dodo"], multipliers)
       Object.assign(entry, {
         count: 1,
         checkedAge: 0,
@@ -26,16 +25,21 @@ describe('Trough', () => {
         maxFood: 100,
         checkTime: DateTime.fromSeconds(0),
       })
-
-      trough = new Trough(1, "trough");
+      
       trough.entries.push(entry);
     })
 
     afterEach(() => {
       jest.useRealTimers();
     });
-
+    
     it('should create an instance', () => {
       expect(trough).toBeTruthy()
-    })    
+    })
+
+    describe('calculate', () => {
+      it('should calculate food consumption', () => {
+        let actual = trough.calculate()
+      });
+    })
 })
