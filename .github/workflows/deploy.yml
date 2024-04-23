@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -35,3 +35,8 @@ jobs:
       - name: deploy to github pages
         id: deployment
         uses: actions/deploy-pages@v1
+      - name: upload electron artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: electron
+          path: ./dist_electron

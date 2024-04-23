@@ -20,7 +20,7 @@
           <option v-for="species in data.species" :value="species">{{ species.name }}</option>
         </select>
         - A: {{ round(entry.checkedAge, 2) }}@{{ entry.checkTime.toRelative() }}
-        => {{ round(entry.getCurrentAge(multipliers), 2) }}
+        => {{ round(entry.getAgeAtTime(DateTime.now()), 2) }}
       </span>
     </div>
   </div>
@@ -39,7 +39,7 @@ const troughs = ref<Trough[]>([])
 const multipliers = ref<Multipliers>({ maturation: 1, consumption: 1 })
 
 function addTrough() {
-  troughs.value.push(new Trough({ id: troughs.value.length, name: `Trough ${troughs.value.length + 1}` }))
+  troughs.value.push(new Trough(troughs.value.length, `Trough ${troughs.value.length + 1}`))
 }
 
 // function addFood(trough: Trough){
@@ -49,17 +49,15 @@ function addTrough() {
 // }
 
 function addCreature(trough: Trough) {
-  const species = data.species[Math.floor(Math.random() * data.species.length)]
+  const species = data.species[Math.floor(Math.random() * Object.keys(data.species).length)]
   const id = trough.entries.length
 
-  const fourHoursAgo = DateTime.now().minus({ hours: 4 })
+  //const fourHoursAgo = DateTime.now().minus({ hours: 4 })
 
-  trough.entries.push(new TroughEntry({ 
+  trough.entries.push(new TroughEntry(
     id, 
     species, 
-    count: Math.floor(Math.random() * 100),
-    checkedAge: Math.random(),
-    checkTime: fourHoursAgo.plus({ hours: Math.random() }) }))
+    { consumption: 1, maturation: 1 }))
 }
 
 addTrough()
