@@ -9,7 +9,9 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-electron
 dist-ssr
+release
 *.local
 
 # Editor directories and files
@@ -22,3 +24,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# electron
+# electron/*
+# !electron/main.js
+# !electron/package.json
+# !electron/yarn.lock
+# !electron/icon512.png
