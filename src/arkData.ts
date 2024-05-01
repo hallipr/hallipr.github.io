@@ -1,4 +1,4 @@
-import { Species, SpeciesData, Diet, DietData, Food, FoodData } from "./types";
+import { Species, SpeciesData, Diet, DietData, Food, FoodData, TroughType } from "./types";
 
 let food = (<FoodData[]>[
   {
@@ -109,7 +109,10 @@ let food = (<FoodData[]>[
     spoilSeconds: null,
     weight: 0.05
   }
-]).reduce((acc, current) => { acc[current.name] = Food.from(current); return acc; }, <{[key:string]:Food}>{});
+]).reduce((acc, current) => { 
+    acc[current.name] = Food.from(current); 
+    return acc;
+}, <{[key:string]:Food}>{});
 
 let diets = (<DietData[]>[
   {
@@ -188,7 +191,7 @@ let diets = (<DietData[]>[
   }
 ]).reduce((acc, current) => { acc[current.name] = Diet.from(current, food); return acc; }, <{[key:string]:Diet}>{})
 
-let troughTypes: Record<string, number> = {
+let troughTypes: Record<TroughType, number> = {
   player: 1,
   normal: 4,
   tek: 100

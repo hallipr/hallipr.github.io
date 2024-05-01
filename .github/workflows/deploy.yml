@@ -5,14 +5,50 @@ on:
     branches: [ main ]
 
 jobs:
-  deploy:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - name: npm ci
+        shell: bash
+        run: npm ci
+      - name: nue build
+        shell: bash
+        run: npx nue build --release
+      - name: upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./dist
+  build-windows:
     runs-on: windows-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    permissions:
-      pages: write
-      id-token: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - name: npm ci
+        shell: pwsh
+        run: npm ci
+      - name: nue build
+        shell: pwsh
+        run: npx nue build --release
+      - name: upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./dist
+  deploy-web:
+    runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -28,8 +64,6 @@ jobs:
       - name: npm run build
         shell: bash
         run: npm run build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
@@ -37,8 +71,3 @@ jobs:
       - name: deploy to github pages
         id: deployment
         uses: actions/deploy-pages@v1
-      - name: upload electron artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: electron
-          path: ./release

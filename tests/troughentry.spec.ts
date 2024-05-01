@@ -115,20 +115,18 @@ describe('TroughEntry', () => {
   describe('getNextFood', () => {
     // getNextFood returns the food type consumed, beginning rate and rate decay
     it('should select the highest preference food', () => {
-      let troughFood = [{ name: "Raw Meat", count: 100 }, { name: "Berry", count: 100 }, { name: "Mejoberry", count: 100 }];
       let fromTime = DateTime.fromSeconds(0);
 
-      let actual = entry.getNextFood(fromTime, troughFood);
+      let actual = entry.getNextFood(fromTime, ["Raw Meat", "Berry", "Mejoberry"]);
 
       expect(actual).toEqual({ food: data.food["Berry"], rate: 0.1, decay: -0.00005 })
     })
 
     it('should use species specific diets', () => {
-      let troughFood = [{ name: "Raw Meat", count: 100 }, { name: "Cooked Meat", count: 100 }, { name: "Berry", count: 100 }, { name: "Mejoberry", count: 100 }];
       let fromTime = DateTime.fromSeconds(0);
       species.diet = data.diets.Daeodon;
 
-      let actual = entry.getNextFood(fromTime, troughFood);
+      let actual = entry.getNextFood(fromTime, ["Raw Meat", "Cooked Meat", "Berry", "Mejoberry"]);
 
       expect(actual).toEqual({ food: data.food["Raw Meat"], rate: 0.04, decay: -0.00002 })
     })

@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { DateTime } from 'luxon'
-
+import * as Neutralino from "@neutralinojs/lib"
 import { Trough, TroughEntry, Multipliers } from './types'
 import data from './arkData.ts'
 import { round } from './utils'
@@ -39,6 +39,7 @@ const troughs = ref<Trough[]>([])
 const multipliers = ref<Multipliers>({ maturation: 1, consumption: 1 })
 
 function addTrough() {
+  Neutralino.filesystem.writeFile('troughs.json', JSON.stringify(troughs.value))
   troughs.value.push(new Trough(troughs.value.length, `Trough ${troughs.value.length + 1}`))
 }
 
@@ -49,16 +50,21 @@ function addTrough() {
 // }
 
 function addCreature(trough: Trough) {
-  const species = data.species[Math.floor(Math.random() * Object.keys(data.species).length)]
+  let values = Object.values(data.species)
+  const species = values[Math.floor(Math.random() * values.length)]
   const id = trough.entries.length
 
-  //const fourHoursAgo = DateTime.now().minus({ hours: 4 })
+  const fourHoursAgo = DateTime.now().minus({ hours: 4 })
 
   trough.entries.push(new TroughEntry(
     id, 
-    species, 
-    { consumption: 1, maturation: 1 }))
+    species,
+    multipliers.value,
+    Math.floor(Math.random() * 100),
+    Math.random(),
+    0,
+    fourHoursAgo.plus({ hours: Math.random() })))
 }
 
 addTrough()
-</script>./types/Types.ts./arkData.ts./Types.ts./Utils.ts
+</script>
