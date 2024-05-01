@@ -23,8 +23,9 @@ jobs:
         shell: bash
         run: npm exec --no @neutralinojs/neu -- build --release
       - name: upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-artifact@v1
         with:
+          name: linux
           path: ./dist
   build-windows:
     runs-on: windows-latest
@@ -44,8 +45,9 @@ jobs:
         shell: pwsh
         run: npm exec --no @neutralinojs/neu -- build --release
       - name: upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-artifact@v1
         with:
+          name: windows
           path: ./dist
   deploy-web:
     runs-on: ubuntu-latest
