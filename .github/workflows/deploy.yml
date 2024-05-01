@@ -21,7 +21,7 @@ jobs:
         run: npm ci
       - name: nue build
         shell: bash
-        run: npx nue build --release
+        run: npm exec --no @neutralinojs/neu -- build --release
       - name: upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
@@ -42,7 +42,7 @@ jobs:
         run: npm ci
       - name: nue build
         shell: pwsh
-        run: npx nue build --release
+        run: npm exec --no @neutralinojs/neu -- build --release
       - name: upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
