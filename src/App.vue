@@ -8,8 +8,10 @@
   <hr />
 
   <h2>Troughs</h2>
+  <button @click="addTrough">Add Trough</button>
   <div v-for="trough in troughs" :key="trough.id">
     <h3>{{ trough.name }}</h3>
+    <button @click="addCreature(trough)">Add Entry</button>
     <div v-for="entry in trough.entries" :key="entry.id">
       <span>
         {{ entry.count }}
@@ -21,9 +23,8 @@
         => {{ round(entry.getAgeAtTime(DateTime.now()), 2) }}
       </span>
     </div>
-    <button @click="addCreature(trough)">Add Entry</button>
+    <hr />
   </div>
-  <button @click="addTrough">Add Trough</button>
 </template>
 
 <script setup lang="ts">
