@@ -1,5 +1,5 @@
 <template>
-  <h2>Multipliers</h2>
+  <h2 class="text-xl">Multipliers</h2>
   <div>
     <label>Maturation:</label> <input type="number" v-model="multipliers.maturation" /><br />
     <label>Consumption:</label> <input type="number" v-model="multipliers.consumption" />
@@ -7,11 +7,11 @@
 
   <hr />
 
-  <h2>Troughs</h2>
-  <button @click="addTrough">Add Trough</button>
+  <h2 class="text-xl">Troughs</h2>
+  <button @click="addTrough" class="rounded-xl p-2 shadow-lg">Add Trough</button>
   <div v-for="trough in troughs" :key="trough.id">
     <h3>{{ trough.name }}</h3>
-    <button @click="addCreature(trough)">Add Entry</button>
+    <button @click="addCreature(trough)" class="rounded-xl p-2 shadow-lg">Add Entry</button>
     <div v-for="entry in trough.entries" :key="entry.id">
       <span>
         {{ entry.count }}
