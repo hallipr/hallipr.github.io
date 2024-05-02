@@ -1,17 +1,15 @@
 <template>
-  <h1>Multipliers</h1>
+  <h2>Multipliers</h2>
   <div>
-    <label>Maturation: <input type="number" v-model="multipliers.maturation" /></label>
-    <label>Consumption: <input type="number" v-model="multipliers.consumption" /></label>
+    <label>Maturation:</label> <input type="number" v-model="multipliers.maturation" /><br />
+    <label>Consumption:</label> <input type="number" v-model="multipliers.consumption" />
   </div>
 
   <hr />
 
-  <button @click="addTrough">Add Trough</button>
+  <h2>Troughs</h2>
   <div v-for="trough in troughs" :key="trough.id">
-    <div>
-      <span>{{ trough.name }}</span> - <button @click="addCreature(trough)">Add Entry</button>
-    </div>
+    <h3>{{ trough.name }}</h3>
     <div v-for="entry in trough.entries" :key="entry.id">
       <span>
         {{ entry.count }}
@@ -23,13 +21,14 @@
         => {{ round(entry.getAgeAtTime(DateTime.now()), 2) }}
       </span>
     </div>
+    <button @click="addCreature(trough)">Add Entry</button>
   </div>
+  <button @click="addTrough">Add Trough</button>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import { DateTime } from 'luxon'
-import * as Neutralino from "@neutralinojs/lib"
 import { Trough, TroughEntry, Multipliers } from './types'
 import data from './arkData.ts'
 import { round } from './utils'
@@ -39,7 +38,6 @@ const troughs = ref<Trough[]>([])
 const multipliers = ref<Multipliers>({ maturation: 1, consumption: 1 })
 
 function addTrough() {
-  Neutralino.filesystem.writeFile('troughs.json', JSON.stringify(troughs.value))
   troughs.value.push(new Trough(troughs.value.length, `Trough ${troughs.value.length + 1}`))
 }
 
@@ -57,7 +55,7 @@ function addCreature(trough: Trough) {
   const fourHoursAgo = DateTime.now().minus({ hours: 4 })
 
   trough.entries.push(new TroughEntry(
-    id, 
+    id,
     species,
     multipliers.value,
     Math.floor(Math.random() * 100),
