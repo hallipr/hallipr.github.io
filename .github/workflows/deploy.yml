@@ -5,51 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: 'true'
-      - name: setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-      - name: npm ci
-        shell: bash
-        run: npm ci
-      - name: nue build
-        shell: bash
-        run: npm exec --no @neutralinojs/neu -- build --release
-      - name: upload artifact
-        uses: actions/upload-artifact@v1
-        with:
-          name: linux
-          path: ./dist
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: 'true'
-      - name: setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-      - name: npm ci
-        shell: pwsh
-        run: npm ci
-      - name: nue build
-        shell: pwsh
-        run: npm exec --no @neutralinojs/neu -- build --release
-      - name: upload artifact
-        uses: actions/upload-artifact@v1
-        with:
-          name: windows
-          path: ./dist
-  deploy-web:
+  publish-web:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -106,7 +62,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: 'yarn' # Set this to npm, yarn or pnpm.
+          cache: 'npm' # Set this to npm, yarn or pnpm.
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
