@@ -27,11 +27,11 @@ jobs:
         run: npm ci
       - name: npm run build
         shell: bash
-        run: npm run build
+        run: npm -ws run build
       - name: upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: ./dist
+          path: ./packages/app/dist
       - name: deploy to github pages
         id: deployment
         uses: actions/deploy-pages@v1
@@ -72,7 +72,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: './packages/app/src-tauri -> target'
 
       - name: install frontend dependencies
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.

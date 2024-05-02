@@ -1,0 +1,33 @@
+{
+  "name": "vite-vue-typescript-starter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^1",
+    "luxon": "^3.4.2",
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1",
+    "@types/jest": "^29.5.12",
+    "@types/luxon": "^3.4.2",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "autoprefixer": "^10.4.19",
+    "jest": "^29.7.0",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.4.4",
+    "vite": "^5.2.6",
+    "vue-tsc": "^2.0.7"
+  }
+}
