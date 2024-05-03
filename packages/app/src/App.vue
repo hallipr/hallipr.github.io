@@ -1,4 +1,8 @@
 <template>
+  <Greet />
+  
+  <hr />
+  
   <h2 class="text-xl">Multipliers</h2>
   <div>
     <label>Maturation:</label> <input type="number" v-model="multipliers.maturation" /><br />
@@ -33,6 +37,7 @@ import { DateTime } from 'luxon'
 import { Trough, TroughEntry, Multipliers } from './types'
 import data from './arkData.ts'
 import { round } from './utils'
+import Greet from "./components/Greet.vue";
 
 
 const troughs = ref<Trough[]>([])
