@@ -19,8 +19,26 @@
         "isDefault": true
       },
       "problemMatcher": [],
-      "label": "npm: test",
-      "detail": "jest"
+      "label": "npm: test"
+    },
+    {
+      "label": "start server",
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": {
+        "base": "$tsc-watch",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "Local: +http://localhost:(\\d+)/"
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
     }
   ]
 }

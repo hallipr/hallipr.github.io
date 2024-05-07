@@ -183,11 +183,29 @@ export class TroughEntry {
     this.checkTime = checkTime
   }
 
+  public get checkedAgePercent(): number {
+    return this.checkedAge * 100 / this.species.adultAge
+  }
+  
+  public get currentAgePercent(): number {
+    return this.getAgeAtTime(DateTime.now()) * 100 / this.species.adultAge
+  }
+  
+  public get timeToAdult(): Duration {
+    const currentAge = this.getAgeAtTime(DateTime.now())
+    return Duration.fromMillis(this.getTimeToAdult(currentAge) * 1000)
+  }
+  
+  public get timeToJuvenile(): Duration {
+    const currentAge = this.getAgeAtTime(DateTime.now())
+    return Duration.fromMillis(this.getTimeToJuvenile(currentAge) * 1000)
+  }
+  
   getNextEvent(fromTime: DateTime): { time: DateTime; event: string } | null {
     const fromAge = this.getAgeAtTime(fromTime)
     const timeToAdult = this.getTimeToAdult(fromAge)
     const timeToJuvenile = this.getTimeToJuvenile(fromAge)
-    const juvenileAge = this.species.adultAge / 10
+    const juvenileAge = this.species.adultAge * 0.10
 
     if (fromAge < juvenileAge) {
       return { time: fromTime.plus({ seconds: timeToJuvenile }), event: 'Juvenile' }
@@ -216,7 +234,7 @@ export class TroughEntry {
   }
 
   getTimeToJuvenile(fromAge: number): number {
-    const juvenileAge = this.species.adultAge / 10
+    const juvenileAge = this.species.adultAge * 0.10
     return this.getTimeBetweenAges(fromAge, juvenileAge)
   }
 
@@ -278,7 +296,7 @@ export class Species {
       name: data.name,
       diet: diets[data.diet],
       defaultWeight: data.defaultWeight,
-      adultAge: 1 / data.ageSpeed,
+      adultAge: 1 / (data.ageSpeed * data.ageSpeedMultiplier),
       babyFoodRateStart: data.baseFoodRate * data.babyFoodRate * data.extraBabyFoodRate,
       babyFoodRateEnd: data.baseFoodRate,
       adultFoodRate: data.baseFoodRate * (data.extraAdultFoodRate ?? 1),

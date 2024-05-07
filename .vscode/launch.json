@@ -22,6 +22,9 @@
         "request": "launch",
         "url": "http://localhost:5173",
         "webRoot": "${workspaceFolder}",
+        "sourceMapPathOverrides": {
+          "webpack:///./*": "${webRoot}/*"
+        },
         "preLaunchTask": "start server",        
       }
     ]

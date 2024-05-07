@@ -1,7 +1,83 @@
+<template>
+  <h2>Multipliers</h2>
+  <div>
+    <label>Maturation:</label> <input type="number" v-model="multipliers.maturation" /><br />
+    <label>Consumption:</label> <input type="number" v-model="multipliers.consumption" />
+  </div>
+
+  <hr />
+
+  <h2>Troughs</h2>
+
+  <Button @click="addTrough">Add Trough</Button>
+  <hr />
+  <div v-for="trough in troughs" :key="trough.id">
+    <h3>{{ trough.name }}</h3>
+    <Button @click="addCreature(trough)">Add Entry</Button>
+    <DataTable :value="trough.entries" tableStyle="min-width: 50rem" dataKey="id" editMode="cell"
+      @cell-edit-complete="onCellEditComplete">
+      <ColumnGroup type="header">
+        <Row>
+          <Column header="" :colspan="2" />
+          <Column header="Age" :colspan="2" />
+          <Column header="Time to" :colspan="2" />
+          <Column header="Food to" :colspan="2" />
+        </Row>
+        <Row>
+          <Column sortable field="count" header="Count"></Column>
+          <Column sortable field="species" header="Species"></Column>
+          <Column sortable field="checkedAge" header="Checked"></Column>
+          <Column sortable field="currentAge" header="Current"></Column>
+          <Column sortable field="timeToJuvenile" header="Juvenile"></Column>
+          <Column sortable field="timeToAdult" header="Adult"></Column>
+          <Column sortable field="foodToJuveline" header="Juvenile"></Column>
+          <Column sortable field="foodToAdult" header="Adult"></Column>
+        </Row>
+      </ColumnGroup>
+      <Column field="count"></Column>
+      <Column field="species">
+        <template #body="slotProps">
+          {{ slotProps.data.species.name }}
+        </template>
+        <template #editor="slotProps">
+          <Dropdown v-model="slotProps.data.species" :options="Object.values(data.species)" optionLabel="name"
+            placeholder="Select a species" class="w-full md:w-14rem" />
+        </template>
+      </Column>
+      <Column field="checkedAge">
+        <template #body="slotProps">
+          <div v-tooltip.top="slotProps.data.checkTime.toRelative()">
+            {{ round(slotProps.data.checkedAgePercent, 2) }}%
+          </div>
+        </template>
+      </Column>
+      <Column field="currentAgePercent">
+        <template #body="slotProps">
+          {{ round(slotProps.data.currentAgePercent, 2) }}%
+        </template>
+      </Column>
+      <Column field="timeToJuvenile">
+        <template #body="slotProps">
+          {{ slotProps.data.timeToJuvenile.toFormat('hh:mm:ss') }}
+        </template>
+      </Column>
+      <Column field="timeToAdult">
+        <template #body="slotProps">
+          {{ slotProps.data.timeToAdult.toFormat('hh:mm:ss') }}
+        </template>
+      </Column>
+      <Column field="foodToJuveline"></Column>
+      <Column field="foodToAdult"></Column>
+    </DataTable>
+    <hr />
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Ref } from 'vue'
-import { DateTime } from 'luxon'
+import { round } from './utils'
+import { DateTime, Duration } from 'luxon'
 import { Trough, TroughEntry } from './types'
 import type { Multipliers } from './types'
 import type { DataTableCellEditCompleteEvent } from 'primevue/datatable'
@@ -33,7 +109,7 @@ function addCreature(trough: Trough) {
       species,
       multipliers.value,
       Math.floor(Math.random() * 100),
-      Math.random(),
+      Math.random() * species.adultAge,
       0,
       fourHoursAgo.plus({ hours: Math.random() })
     )
@@ -52,72 +128,3 @@ function onCellEditComplete(event: DataTableCellEditCompleteEvent) {
 
 addTrough()
 </script>
-
-<template>
-  <Greet />
-
-  <hr />
-
-  <h2>Multipliers</h2>
-  <div>
-    <label>Maturation:</label> <input type="number" v-model="multipliers.maturation" /><br />
-    <label>Consumption:</label> <input type="number" v-model="multipliers.consumption" />
-  </div>
-
-  <hr />
-
-  <h2>Troughs</h2>
-  <Button @click="addTrough">Add Trough</Button>
-  <div v-for="trough in troughs" :key="trough.id">
-    <h3>{{ trough.name }}</h3>
-    <Button @click="addCreature(trough)">Add Entry</Button>
-    <DataTable
-      :value="trough.entries"
-      tableStyle="min-width: 50rem"
-      dataKey="id"
-      editMode="cell"
-      @cell-edit-complete="onCellEditComplete"
-    >
-      <ColumnGroup type="header">
-        <Row>
-          <Column header="" :colspan="2" />
-          <Column header="Age" :colspan="2" />
-          <Column header="Time to" :colspan="2" />
-          <Column header="Food to" :colspan="2" />
-        </Row>
-        <Row>
-          <Column sortable field="count" header="Count"></Column>
-          <Column sortable field="species" header="Species"></Column>
-          <Column sortable field="checkedAge" header="Checked"></Column>
-          <Column sortable field="currentAge" header="Current"></Column>
-          <Column sortable field="timeToJuvenile" header="Juvenile"></Column>
-          <Column sortable field="timeToAdult" header="Adult"></Column>
-          <Column sortable field="foodToJuveline" header="Juvenile"></Column>
-          <Column sortable field="foodToAdult" header="Adult"></Column>
-        </Row>
-      </ColumnGroup>
-      <Column field="count"></Column>
-      <Column field="species">
-        <template #body="slotProps">
-          {{ slotProps.data.species.name }}
-        </template>
-        <template #editor="slotProps">
-          <Dropdown
-            v-model="slotProps.data.species"
-            :options="Object.values(data.species)"
-            optionLabel="name"
-            placeholder="Select a species"
-            class="w-full md:w-14rem"
-          />
-        </template>
-      </Column>
-      <Column field="checkedAge"></Column>
-      <Column field="currentAge"></Column>
-      <Column field="timeToJuvenile"></Column>
-      <Column field="timeToAdult"></Column>
-      <Column field="foodToJuveline"></Column>
-      <Column field="foodToAdult"></Column>
-    </DataTable>
-    <hr />
-  </div>
-</template>
