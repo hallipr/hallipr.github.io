@@ -2,41 +2,14 @@
 	"version": "2.0.0",
 	"tasks": [
     {
-      "type": "shell",
-      "command": "./build.ps1",
-      "group": "build",
-      "label": "build.ps1",
-      "detail": "next build"
-    },
-    {
-      "label": "start server",
-      "type": "shell",
-      "command": "npx --no vite dev --port 5173",
-      "problemMatcher": {
-        "base": "$tsc-watch",
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "VITE",
-          "endsPattern": "Local: +http://localhost:(\\d+)/"
-        }
-      },
-      "isBackground": true,
-      "presentation": {
-        "reveal": "always",
-        "focus": false,
-        "panel": "new"
-      }
-    },
-    {
       "type": "npm",
-      "script": "build",
+      "script": "build --workspaces --if-present",
       "group": {
         "kind": "build",
         "isDefault": true
       },
       "problemMatcher": [],
-      "label": "npm: build",
-      "detail": "vue-tsc && vite build"
+      "label": "npm: build" 
     },
     {
       "type": "npm",

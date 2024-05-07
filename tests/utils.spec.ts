@@ -14,8 +14,8 @@ describe('utils', () => {
             ${0} | ${0}        | ${5}
             ${0} | ${0}        | ${0}
         `('should calculate for time=$time, initialRate=$initialRate, acceleration=$acceleration', ({time, initialRate, acceleration}) => {
-            let total = (initialRate * 2 + acceleration * time) / 2 * time; 
-            let actual = timeToZero(total, initialRate, -acceleration);
+            const total = (initialRate * 2 + acceleration * time) / 2 * time; 
+            const actual = timeToZero(total, initialRate, -acceleration);
             
             expect(0+actual).toEqual(time);
         });
@@ -29,8 +29,8 @@ describe('utils', () => {
             ${2} | ${10.44}
             ${3} | ${10.444}
         `('should round down', ({n, expected}) => {
-            let actial = round(10.4444, n);
-            expect(actial).toBe(expected);
+            const actual = round(10.4444, n);
+            expect(actual).toBe(expected);
         });
 
         it.each`
@@ -40,8 +40,8 @@ describe('utils', () => {
             ${2} | ${10.56}
             ${3} | ${10.556}
         `('should round up', ({n, expected}) => {
-            let actial = round(10.5555, n);
-            expect(actial).toBe(expected);
+            const actual = round(10.5555, n);
+            expect(actual).toBe(expected);
         });
     })
 })
