@@ -5,6 +5,17 @@
     "version": "0.2.0",
     "configurations": [
       {
+        "name": "browser",
+        "type": "msedge",
+        "request": "launch",
+        "url": "http://localhost:5173",
+        "webRoot": "${workspaceFolder}",
+        "sourceMapPathOverrides": {
+          "webpack:///./*": "${webRoot}/*"
+        },
+        "preLaunchTask": "start server",        
+      },
+      {
         "name": "Debug Jest Tests",
         "type": "node",
         "request": "launch",
@@ -15,17 +26,6 @@
         ],
         "console": "integratedTerminal",
         "internalConsoleOptions": "neverOpen"
-      },
-      {
-        "name": "browser",
-        "type": "msedge",
-        "request": "launch",
-        "url": "http://localhost:5173",
-        "webRoot": "${workspaceFolder}",
-        "sourceMapPathOverrides": {
-          "webpack:///./*": "${webRoot}/*"
-        },
-        "preLaunchTask": "start server",        
       }
     ]
 }

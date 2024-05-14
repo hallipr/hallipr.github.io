@@ -3,15 +3,17 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 
-import PrimeVue from 'primevue/config'
-import Tooltip from 'primevue/tooltip'
-
 import './assets/main.css'
-import 'primevue/resources/themes/saga-blue/theme.css'
-import 'primevue/resources/primevue.min.css'
-import 'primeicons/primeicons.css'
 
 const app = createApp(App)
-app.use(PrimeVue)
-app.directive('tooltip', Tooltip)
 app.mount('#app')
+
+const root = document.documentElement;
+ 
+document.addEventListener('mousemove', evt => {
+    const x = evt.clientX;
+    const y = evt.clientY;
+ 
+    root.style.setProperty('--mouse-x', x.toString());
+    root.style.setProperty('--mouse-y', y.toString());
+});

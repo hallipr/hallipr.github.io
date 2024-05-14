@@ -7,12 +7,35 @@ export class Trough {
   name: string
   type: TroughType = 'normal'
   entries: TroughEntry[] = []
-  foodStacks: { food: Food; count: number }[] = []
+  foodStacks: Map<Food, number>
   keyframes: TroughFrame[] = []
 
   constructor(id: number, name: string) {
     this.id = id
     this.name = name
+    this.foodStacks = new Map<Food, number>()
+  }
+  
+  public addFood(trough: Trough, food: Food){
+    trough.foodStacks.push({ food: food, count: 0 })
+  }
+
+  public addCreature(trough: Trough) {
+    let values = Object.values(data.species)
+    const species = values[Math.floor(Math.random() * values.length)]
+    const id = trough.entries.length
+
+    trough.entries.push(
+      new TroughEntry(
+        id,
+        species,
+        multipliers.value,
+        DateTime.now().minus({ hours: Math.random() * 4 }),
+        Math.random() * species.adultAge,
+        Math.floor(Math.random() * 100),
+        species.defaultWeight
+      )
+    )
   }
 
   calculateKeyframes(startTime: DateTime) {
@@ -42,7 +65,7 @@ export class Trough {
         id: entry.id,
         species: entry.species,
         calculatedAge: calculatedAge,
-        timeToAdult: entry.getTimeToAdult(calculatedAge),
+        timeToAdult: entry.getSecondsBetweenAges(calculatedAge, entry.species.adultAge),
         food: nextFood?.food ?? null,
         rate: nextFood?.rate ?? 0,
         rateDecay: nextFood?.decay ?? 0,
@@ -124,7 +147,7 @@ export class Trough {
           id: entry.id,
           species: entry.species,
           calculatedAge: calculatedAge,
-          timeToAdult: entry.getTimeToAdult(calculatedAge),
+          timeToAdult: entry.getSecondsBetweenAges(calculatedAge, entry.species.adultAge),
           food: nextFood?.food ?? null,
           rate: nextFood?.rate ?? 0,
           rateDecay: nextFood?.decay ?? 0,
@@ -169,10 +192,10 @@ export class TroughEntry {
     id: number,
     species: Species,
     multipliers: Multipliers,
-    count: number = 0,
-    checkedAge: number = 0,
-    maxWeight: number = species.defaultWeight,
-    checkTime: DateTime = DateTime.now()
+    checkTime: DateTime,
+    checkedAge: number,
+    count: number,
+    maxWeight: number
   ) {
     this.id = id
     this.species = species
@@ -183,34 +206,46 @@ export class TroughEntry {
     this.checkTime = checkTime
   }
 
-  public get checkedAgePercent(): number {
+  public getCheckedAgePercent(): number {
     return this.checkedAge * 100 / this.species.adultAge
   }
   
-  public get currentAgePercent(): number {
-    return this.getAgeAtTime(DateTime.now()) * 100 / this.species.adultAge
+  public getAgePercentAtTime(fromTime: DateTime): number {
+    return this.getAgeAtTime(fromTime) * 100 / this.species.adultAge
   }
   
-  public get timeToAdult(): Duration {
-    const currentAge = this.getAgeAtTime(DateTime.now())
-    return Duration.fromMillis(this.getTimeToAdult(currentAge) * 1000)
+  public getTimeToAdult(fromTime:DateTime): Duration {
+    const adultAge = this.species.adultAge
+    const currentAge = this.getAgeAtTime(fromTime)
+    return Duration.fromMillis(this.getSecondsBetweenAges(currentAge, adultAge) * 1000)
   }
   
-  public get timeToJuvenile(): Duration {
-    const currentAge = this.getAgeAtTime(DateTime.now())
-    return Duration.fromMillis(this.getTimeToJuvenile(currentAge) * 1000)
+  public getTimeToJuvenile(fromTime:DateTime): Duration {
+    const adultAge = this.species.adultAge
+    const juvenileAge = adultAge * 0.10
+    const currentAge = this.getAgeAtTime(fromTime)
+    return Duration.fromMillis(this.getSecondsBetweenAges(currentAge, juvenileAge) * 1000)
+  }
+  
+  public getFoodToAdult(fromTime: DateTime): number {
+    return this.getTimeToAdult(fromTime).minutes
+  }
+  
+  public getFoodToJuvenile(fromTime: DateTime): number {
+    return this.getTimeToJuvenile(fromTime).seconds
   }
   
   getNextEvent(fromTime: DateTime): { time: DateTime; event: string } | null {
     const fromAge = this.getAgeAtTime(fromTime)
-    const timeToAdult = this.getTimeToAdult(fromAge)
-    const timeToJuvenile = this.getTimeToJuvenile(fromAge)
-    const juvenileAge = this.species.adultAge * 0.10
+    const adultAge = this.species.adultAge
+    const juvenileAge = adultAge * 0.10
+    const secondsToAdult = this.getSecondsBetweenAges(fromAge, adultAge)
+    const secondsToJuvenile = this.getSecondsBetweenAges(fromAge, juvenileAge)
 
     if (fromAge < juvenileAge) {
-      return { time: fromTime.plus({ seconds: timeToJuvenile }), event: 'Juvenile' }
+      return { time: fromTime.plus({ seconds: secondsToJuvenile }), event: 'Juvenile' }
     } else if (fromAge < this.species.adultAge) {
-      return { time: fromTime.plus({ seconds: timeToAdult }), event: 'Adult' }
+      return { time: fromTime.plus({ seconds: secondsToAdult }), event: 'Adult' }
     } else {
       return null
     }
@@ -233,16 +268,7 @@ export class TroughEntry {
     return Math.min(this.checkedAge + elapsed * this.multipliers.maturation, this.species.adultAge)
   }
 
-  getTimeToJuvenile(fromAge: number): number {
-    const juvenileAge = this.species.adultAge * 0.10
-    return this.getTimeBetweenAges(fromAge, juvenileAge)
-  }
-
-  getTimeToAdult(fromAge: number): number {
-    return this.getTimeBetweenAges(fromAge, this.species.adultAge)
-  }
-
-  getTimeBetweenAges(fromAge: number, toAge: number): number {
+  getSecondsBetweenAges(fromAge: number, toAge: number): number {
     return Math.max(toAge - fromAge, 0) / this.multipliers.maturation
   }
 }
