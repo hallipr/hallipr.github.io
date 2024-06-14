@@ -5,35 +5,71 @@ import data from '../src/arkData'
 
 // unit test for the TroughEntry class
 describe('Trough', () => {
-    let trough: Trough = null!
-    let multipliers: Multipliers = null!
-  
-    beforeEach(() => {
-      multipliers = {
-        maturation: 1,
-        consumption: 1,
-      };
+  let trough: Trough = null!
+  let multipliers: Multipliers = null!
 
-      trough = new Trough(1, "trough");      
-    })
+  beforeEach(() => {
+    multipliers = {
+      maturation: 1,
+      consumption: 1,
+    };
 
-    afterEach(() => {
-      jest.useRealTimers();
+    trough = new Trough(1, "trough", multipliers);
+  })
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('should create an instance', () => {
+    expect(trough).not.toBeNull()
+  })
+
+  describe('calculateKeyframes', () => {
+    it('should produce initial, adult and food empty frames', () => {
+      trough.foodStacks.push({ food: data.food["Vegetables"], stacks: 10000 })
+
+      trough.entries.push(new TroughEntry(
+        {
+          id: 1,
+          species: data.species["Dodo"],
+          multipliers,
+          checkTime: DateTime.fromSeconds(0),
+          checkedAge: 0,
+          count: 1,
+          maxWeight: 100
+        }
+      ))
+
+      trough.calculateKeyframes(DateTime.fromSeconds(0))
+      console.log(JSON.stringify(trough.keyframes))
+
+      // expect 3 keyframes: initial, adult, food empty
+      expect(trough.keyframes.length).toBe(2)
     });
-    
-    it('should create an instance', () => {
-      expect(trough).not.toBeNull()
-    })
+  })
 
-    describe('calculateKeyframes', () => {
-      it('should produce initial, adult and food empty frames', () => {
-        trough.foodStacks.push({ food: data.food["Vegetables"], count: 1000})
-        
-        trough.entries.push(new TroughEntry(1, data.species["Dodo"], multipliers, 1, 0, 100, DateTime.fromSeconds(0)))
+  describe('calculateKeyframes', () => {
+    it('should produce initial, adult and food empty frames', () => {
+      trough.foodStacks.push({ food: data.food["Vegetables"], stacks: 10000 })
 
-        trough.calculateKeyframes(DateTime.fromSeconds(0));
-        
-        expect(trough.keyframes.length).toBe(3)
-      });
-    })
+      trough.entries.push(new TroughEntry(
+        {
+          id: 1,
+          species: data.species["Dodo"],
+          multipliers,
+          checkTime: DateTime.fromSeconds(0),
+          checkedAge: 0,
+          count: 1,
+          maxWeight: 100
+        }
+      ))
+
+      trough.calculateKeyframes(DateTime.fromSeconds(0))
+      console.log(JSON.stringify(trough.keyframes))
+
+      // expect 3 keyframes: initial, adult, food empty
+      expect(trough.keyframes.length).toBe(2)
+    });
+  })
 })

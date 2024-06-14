@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
-import { DateTime } from 'luxon'
+import { DateTime, Duration } from 'luxon'
 import { TroughEntry, Species, Multipliers } from '../src/types'
 import data from '../src/arkData'
 
@@ -25,15 +25,7 @@ describe('TroughEntry', () => {
       defaultWeight: 100,
     })
 
-    entry = new TroughEntry(1, species, multipliers)
-    
-    Object.assign(entry, {
-      count: 1,
-      checkedAge: 0,
-      maxHealth: 100,
-      maxFood: 100,
-      checkTime: DateTime.fromSeconds(0),
-    })
+    entry = new TroughEntry({id: 1, species, multipliers, checkTime: DateTime.fromSeconds(0), checkedAge: 0, count: 1, maxWeight: 100})
   })
 
   afterEach(() => {
@@ -80,26 +72,38 @@ describe('TroughEntry', () => {
   describe('getTimeToJuvenile', () => {
     it('should get time at 1x', () => {
       // adult age == 1000, juvenile age == 100
-      expect(entry.getTimeToJuvenile(40)).toBe(60)
+      let calcTime = DateTime.fromSeconds(40)
+      let actual = entry.getTimeToJuvenile(calcTime)
+      let expected = Duration.fromObject({ seconds: 60 })
+      expect(actual.as('seconds')).toBe(expected.as('seconds'))
     })
 
     it('should get time at 4x', () => {
       multipliers.maturation = 4
-      // adult age == 1000, juvenile age == 100
-      expect(entry.getTimeToJuvenile(40)).toBe(15)
+      // adult age == 250, juvenile age == 25
+      let calcTime = DateTime.fromSeconds(10)
+      let actual = entry.getTimeToJuvenile(calcTime)
+      let expected = Duration.fromObject({ seconds: 15 })
+      expect(actual.as('seconds')).toBe(expected.as('seconds'))
     })
   })
 
   describe('getTimeToAdult', () => {
     it('should get time at 1x', () => {
       // adult age == 1000
-      expect(entry.getTimeToAdult(0)).toBe(1000)
+      let calcTime = DateTime.fromSeconds(100)
+      let actual = entry.getTimeToAdult(calcTime)
+      let expected = Duration.fromObject({ seconds: 900 })
+      expect(actual.as('seconds')).toBe(expected.as('seconds'))
     })
 
     it('should get time at 4x', () => {
       multipliers.maturation = 4
-      // adult age == 1000
-      expect(entry.getTimeToAdult(0)).toBe(250)
+      // adult age == 250
+      let calcTime = DateTime.fromSeconds(22)
+      let actual = entry.getTimeToAdult(calcTime)
+      let expected = Duration.fromObject({ seconds: 228 })
+      expect(actual.as('seconds')).toBe(expected.as('seconds'))
     })
   })
 

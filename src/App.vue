@@ -12,7 +12,7 @@
   <hr />
   <div v-for="trough in troughs" :key="trough.id">
     <h3>{{ trough.name }}</h3>
-    <h4>Food <button @click="trough.addFood()">Add</button></h4>
+    <h4>Food <button @click="trough.addFood(data.food['Raw Meat'])">Add</button></h4>
     <table>
       <thead>
         <tr>
@@ -28,13 +28,13 @@
               <option v-for="food in Object.values(data.food)" :key="food.name" :value="food">{{ food.name }}</option>
             </select>
         </td>
-        <td><input v-model="entry.count" type="number" min="0" /></td>
+        <td><input v-model="entry.stacks" type="number" min="0" /></td>
         <td>{{ entry.food.spoilTime?.toFormat('hh:mm:ss') }}</td>
         <td>{{ entry.food.stackSize }}</td>
       </tr>
     </table>
     <hr />
-    <h4>Entries <button @click="trough.addCreature()">Add</button></h4>
+    <h4>Entries <button @click="trough.addCreature(Object.values(data.species))">Add</button></h4>
     <table>
       <thead>
         <tr>
@@ -117,7 +117,7 @@ const now = ref(DateTime.now())
 const multipliers = ref<Multipliers>({ maturation: 1, consumption: 1 })
 
 function addTrough() {
-  troughs.push(new Trough(troughs.length, `Trough ${troughs.length + 1}`))
+  troughs.push(new Trough(troughs.length, `Trough ${troughs.length + 1}`, multipliers.value))
 }
 
 addTrough()

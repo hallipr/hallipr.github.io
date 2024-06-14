@@ -5,42 +5,45 @@ import * as utils from './utils'
 export class Trough {
   id: number
   name: string
+  multipliers: Multipliers
   type: TroughType = 'normal'
   entries: TroughEntry[] = []
-  foodStacks: Map<Food, number>
+  foodStacks: { food: Food, stacks: number }[] = []
   keyframes: TroughFrame[] = []
 
-  constructor(id: number, name: string) {
+  constructor(id: number, name: string, multipliers: Multipliers) {
     this.id = id
     this.name = name
-    this.foodStacks = new Map<Food, number>()
-  }
-  
-  public addFood(trough: Trough, food: Food){
-    trough.foodStacks.push({ food: food, count: 0 })
+    this.multipliers = multipliers
+    this.foodStacks = []
   }
 
-  public addCreature(trough: Trough) {
-    let values = Object.values(data.species)
-    const species = values[Math.floor(Math.random() * values.length)]
-    const id = trough.entries.length
+  public addFood(food: Food) {
+    this.foodStacks.push({ food, stacks: 0 });
+  }
 
-    trough.entries.push(
+  public addCreature(speciesList: Species[]) {
+    const species = speciesList[Math.floor(Math.random() * speciesList.length)]
+    const id = this.entries.length
+
+    this.entries.push(
       new TroughEntry(
-        id,
-        species,
-        multipliers.value,
-        DateTime.now().minus({ hours: Math.random() * 4 }),
-        Math.random() * species.adultAge,
-        Math.floor(Math.random() * 100),
-        species.defaultWeight
+        {
+          id,
+          species,
+          multipliers: this.multipliers,
+          checkTime: DateTime.now().minus({ hours: Math.random() * 4 }),
+          checkedAge: Math.random() * species.adultAge,
+          count: Math.floor(Math.random() * 100),
+          maxWeight: species.defaultWeight
+        }
       )
     )
   }
 
   calculateKeyframes(startTime: DateTime) {
     let foodPieces = this.foodStacks.reduce(
-      (acc, { food, count }) => {
+      (acc, { food, stacks: count }) => {
         const pieces = food.stackSize * count
 
         if (pieces > 0) {
@@ -188,15 +191,9 @@ export class TroughEntry {
   public checkTime: DateTime
   public multipliers: Multipliers
 
-  constructor(
-    id: number,
-    species: Species,
-    multipliers: Multipliers,
-    checkTime: DateTime,
-    checkedAge: number,
-    count: number,
-    maxWeight: number
-  ) {
+  constructor({ id, species, multipliers, checkTime, checkedAge, count, maxWeight }: {
+    id: number, species: Species, multipliers: Multipliers, checkTime: DateTime, checkedAge: number, count: number, maxWeight: number
+  }) {
     this.id = id
     this.species = species
     this.multipliers = multipliers
@@ -209,32 +206,32 @@ export class TroughEntry {
   public getCheckedAgePercent(): number {
     return this.checkedAge * 100 / this.species.adultAge
   }
-  
+
   public getAgePercentAtTime(fromTime: DateTime): number {
     return this.getAgeAtTime(fromTime) * 100 / this.species.adultAge
   }
-  
-  public getTimeToAdult(fromTime:DateTime): Duration {
+
+  public getTimeToAdult(fromTime: DateTime): Duration {
     const adultAge = this.species.adultAge
     const currentAge = this.getAgeAtTime(fromTime)
     return Duration.fromMillis(this.getSecondsBetweenAges(currentAge, adultAge) * 1000)
   }
-  
-  public getTimeToJuvenile(fromTime:DateTime): Duration {
+
+  public getTimeToJuvenile(fromTime: DateTime): Duration {
     const adultAge = this.species.adultAge
     const juvenileAge = adultAge * 0.10
     const currentAge = this.getAgeAtTime(fromTime)
     return Duration.fromMillis(this.getSecondsBetweenAges(currentAge, juvenileAge) * 1000)
   }
-  
+
   public getFoodToAdult(fromTime: DateTime): number {
     return this.getTimeToAdult(fromTime).minutes
   }
-  
+
   public getFoodToJuvenile(fromTime: DateTime): number {
     return this.getTimeToJuvenile(fromTime).seconds
   }
-  
+
   getNextEvent(fromTime: DateTime): { time: DateTime; event: string } | null {
     const fromAge = this.getAgeAtTime(fromTime)
     const adultAge = this.species.adultAge
@@ -299,22 +296,16 @@ export class Species {
   babyFoodRateEnd: number
   adultFoodRate: number
 
-  constructor(data: {
-    name: string
-    diet: Diet
-    defaultWeight: number
-    adultAge: number
-    babyFoodRateStart: number
-    babyFoodRateEnd: number
-    adultFoodRate: number
+  constructor({ name, diet, defaultWeight, adultAge, babyFoodRateStart, babyFoodRateEnd, adultFoodRate }: {
+    name: string, diet: Diet, defaultWeight: number, adultAge: number, babyFoodRateStart: number, babyFoodRateEnd: number, adultFoodRate: number
   }) {
-    this.name = data.name
-    this.diet = data.diet
-    this.defaultWeight = data.defaultWeight
-    this.adultAge = data.adultAge
-    this.babyFoodRateStart = data.babyFoodRateStart
-    this.babyFoodRateEnd = data.babyFoodRateEnd
-    this.adultFoodRate = data.adultFoodRate
+    this.name = name
+    this.diet = diet
+    this.defaultWeight = defaultWeight
+    this.adultAge = adultAge
+    this.babyFoodRateStart = babyFoodRateStart
+    this.babyFoodRateEnd = babyFoodRateEnd
+    this.adultFoodRate = adultFoodRate
   }
 
   static from(data: SpeciesData, diets: { [key: string]: Diet }) {
