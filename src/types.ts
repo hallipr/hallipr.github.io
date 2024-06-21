@@ -41,15 +41,29 @@ export class Trough {
     )
   }
 
+  calculateSpoilRate(food: Food) {
+    if(null == food.spoilTime)
+      return 0
+
+    const spoilSeconds = food.spoilTime.as('seconds')
+
+    switch(this.type) {
+      case 'tek': return 1 / spoilSeconds / 100
+      case 'normal': return 1 / spoilSeconds / 4
+      default: return 1 / spoilSeconds
+    }
+  }
+
   calculateKeyframes(startTime: DateTime) {
     let foodPieces = this.foodStacks.reduce(
       (acc, { food, stacks: count }) => {
         const pieces = food.stackSize * count
+        const spoilateRate = this.calculateSpoilRate(food) * count
 
         if (pieces > 0) {
           acc[food.name] = {
             pieces: pieces,
-            spoilRate: food.spoilTime == null ? 0 : (1 / food.spoilTime.as('seconds')) * count,
+            spoilRate: spoilateRate,
           }
         }
 
@@ -70,7 +84,8 @@ export class Trough {
         calculatedAge: calculatedAge,
         timeToAdult: entry.getSecondsBetweenAges(calculatedAge, entry.species.adultAge),
         food: nextFood?.food ?? null,
-        rate: nextFood?.rate ?? 0,
+        rate: (nextFood?.rate ?? 0),
+        count: entry.count,
         rateDecay: nextFood?.decay ?? 0,
       }
     })
@@ -83,15 +98,21 @@ export class Trough {
 
     this.keyframes.push(frame)
 
-    // while there's still creatures eating, find the next significant event
-    while (Object.values(frame.foodPieces).some(entry => entry.pieces > 0)) {
+    while (
+      // while there's still creatures eating
+      Object.values(frame.entries).some(entry => entry.food != null) ||
+      // or there's food spoiling (some food doesn't spoil e.g. Chitin)
+      Object.values(frame.foodPieces).some(food => food.spoilRate > 0 && food.pieces > 0)
+    ) {
+      // find the next significant event
+
       // if all creatures are adults, the next significant event will be food depletion
       // otherwise, the next significant event may be a creature maturing
 
       const foodCalcs = Object.entries(frame.foodPieces).reduce(
         (acc, [key, frameFood]) => {
           const entriesEatingFood = frame.entries.filter(entry => entry.food?.name === key)
-          const totalRate = entriesEatingFood.reduce((acc, entry) => acc + entry.rate, 0) + frameFood.spoilRate
+          const totalRate = entriesEatingFood.reduce((acc, entry) => acc + entry.rate * entry.count, frameFood.spoilRate)
           const totalDecay = entriesEatingFood.reduce((acc, entry) => acc + entry.rateDecay, 0)
           const timeToDeplete = utils.timeToZero(frameFood.pieces, totalRate, totalDecay)
 
@@ -149,6 +170,7 @@ export class Trough {
         return {
           id: entry.id,
           species: entry.species,
+          count: entry.count,
           calculatedAge: calculatedAge,
           timeToAdult: entry.getSecondsBetweenAges(calculatedAge, entry.species.adultAge),
           food: nextFood?.food ?? null,
@@ -173,6 +195,7 @@ export interface TroughFrame {
   entries: {
     id: number
     species: Species
+    count: number
     calculatedAge: number
     timeToAdult: number
     food: Food | null
@@ -255,7 +278,7 @@ export class TroughEntry {
 
     const fromAge = this.getAgeAtTime(fromTime)
     const foodRate = this.species.getFoodRate(fromAge, this.multipliers)
-    const rateDecay = this.species.getFoodRateDecay(this.multipliers)
+    const rateDecay = fromAge >= 1 ? 0 : this.species.getFoodRateDecay(this.multipliers)
 
     return { food: food.food, rate: foodRate / food.foodPoints, decay: rateDecay / food.foodPoints }
   }
