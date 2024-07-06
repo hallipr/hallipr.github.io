@@ -55,14 +55,14 @@
         </tr>
       </thead>
       <tr v-for="entry in trough.entries" :key="entry.id">
-        <td>{{entry.count}}</td>
+        <td><input v-model="entry.count" type="number" min="0" /></td>
         <td>
             <select v-model="entry.species">
               <option v-for="species in Object.values(data.species)" :key="species.name" :value="species">{{ species.name }}</option>
             </select>
         </td>
         <td>
-          <div class="tooltip">{{ entry.getCheckedAgePercent().toFixed(2) }}%
+          <div class="tooltip"><input :value="entry.getCheckedAgePercent().toFixed(1)" @change="(event: any) => setAge(entry, event.target.value)" type="number" min="0" max="100" step="0.1"  />
             <span class="tooltiptext">{{ entry.checkTime.toRelative() }}</span>
           </div>
         </td>
@@ -105,10 +105,10 @@
 </style>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, type InputHTMLAttributes } from 'vue'
 import { DateTime } from 'luxon'
 import { Trough } from './types'
-import type { Multipliers } from './types'
+import type { Multipliers, TroughEntry } from './types'
 import data from './arkData'
 
 const troughs = reactive([] as Trough[])
@@ -118,6 +118,12 @@ const multipliers = ref<Multipliers>({ maturation: 1, consumption: 1 })
 
 function addTrough() {
   troughs.push(new Trough(troughs.length, `Trough ${troughs.length + 1}`, multipliers.value))
+}
+
+function setAge(entry: TroughEntry, value: string) {
+  let agePct = Number.parseFloat(value) / 100;
+  entry.checkedAge = agePct * entry.species.adultAge;
+  entry.checkTime = DateTime.now();
 }
 
 addTrough()
