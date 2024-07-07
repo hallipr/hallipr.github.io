@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
 import { DateTime, Duration } from 'luxon'
-import { TroughEntry, Species, Multipliers } from '../src/types'
-import data from '../src/arkData'
+import Multipliers from '../src/types/Multipliers'
+import TroughEntry from '../src/types/TroughEntry'
+import Species from '../src/types/Species'
+import data from '../src/ArkData'
 
 // unit test for the TroughEntry class
 describe('TroughEntry', () => {
@@ -42,7 +44,7 @@ describe('TroughEntry', () => {
 
       const actual = entry.getAgeAtTime(DateTime.fromSeconds(20))
 
-      expect(actual).toBe(20)
+      expect(actual).toBe(0.02)
     })
 
     it('should get age at 4x', () => {
@@ -50,60 +52,59 @@ describe('TroughEntry', () => {
 
       const actual = entry.getAgeAtTime(DateTime.fromSeconds(20))
 
-      expect(actual).toBe(80)
+      expect(actual).toBe(0.08)
     })
 
     it('should calculate from age at check time', () => {
-      entry.checkedAge = 105
+      entry.checkedAge = 0.105
       entry.checkTime = DateTime.fromSeconds(13)
-      console.log(multipliers)
       const actual = entry.getAgeAtTime(DateTime.fromSeconds(172))
 
       // should return entry.checkedAge + (172 - 13) * 1
-      expect(actual).toBe(264)
+      expect(actual).toBe(0.264)
     });
 
     it('should max at adult age', () => {
       const actual = entry.getAgeAtTime(DateTime.fromSeconds(1020))
-      expect(actual).toBe(species.adultAge)
+      expect(actual).toBe(1)
     })
   })
 
   describe('getTimeToJuvenile', () => {
     it('should get time at 1x', () => {
       // adult age == 1000, juvenile age == 100
-      let calcTime = DateTime.fromSeconds(40)
-      let actual = entry.getTimeToJuvenile(calcTime)
-      let expected = Duration.fromObject({ seconds: 60 })
-      expect(actual.as('seconds')).toBe(expected.as('seconds'))
+      const calcTime = DateTime.fromSeconds(40)
+      const actual = entry.getTimeToJuvenile(calcTime)
+      const expected = Duration.fromObject({ seconds: 60 })
+      expect(actual.as('seconds')).toBeCloseTo(expected.as('seconds'))
     })
 
     it('should get time at 4x', () => {
       multipliers.maturation = 4
       // adult age == 250, juvenile age == 25
-      let calcTime = DateTime.fromSeconds(10)
-      let actual = entry.getTimeToJuvenile(calcTime)
-      let expected = Duration.fromObject({ seconds: 15 })
-      expect(actual.as('seconds')).toBe(expected.as('seconds'))
+      const calcTime = DateTime.fromSeconds(10)
+      const actual = entry.getTimeToJuvenile(calcTime)
+      const expected = Duration.fromObject({ seconds: 15 })
+      expect(actual.as('seconds')).toBeCloseTo(expected.as('seconds'))
     })
   })
 
   describe('getTimeToAdult', () => {
     it('should get time at 1x', () => {
       // adult age == 1000
-      let calcTime = DateTime.fromSeconds(100)
-      let actual = entry.getTimeToAdult(calcTime)
-      let expected = Duration.fromObject({ seconds: 900 })
-      expect(actual.as('seconds')).toBe(expected.as('seconds'))
+      const calcTime = DateTime.fromSeconds(100)
+      const actual = entry.getTimeToAdult(calcTime)
+      const expected = Duration.fromObject({ seconds: 900 })
+      expect(actual.as('seconds')).toBeCloseTo(expected.as('seconds'))
     })
 
     it('should get time at 4x', () => {
       multipliers.maturation = 4
       // adult age == 250
-      let calcTime = DateTime.fromSeconds(22)
-      let actual = entry.getTimeToAdult(calcTime)
-      let expected = Duration.fromObject({ seconds: 228 })
-      expect(actual.as('seconds')).toBe(expected.as('seconds'))
+      const calcTime = DateTime.fromSeconds(22)
+      const actual = entry.getTimeToAdult(calcTime)
+      const expected = Duration.fromObject({ seconds: 228 })
+      expect(actual.as('seconds')).toBeCloseTo(expected.as('seconds'))
     })
   })
 

@@ -13,7 +13,7 @@
   <div v-for="trough in troughs" :key="trough.id">
     <h3>{{ trough.name }}</h3>
     <h4>Food <button @click="trough.addFood(data.food['Raw Meat'])">Add</button></h4>
-    <table>
+    <table class="borders">
       <thead>
         <tr>
           <th id="t_{{trough.id}}_f1b">Food</th>
@@ -35,7 +35,7 @@
     </table>
     <hr />
     <h4>Entries <button @click="trough.addCreature(Object.values(data.species))">Add</button></h4>
-    <table>
+    <table class="borders">
       <thead>
         <tr>
           <th colspan="2"></th>
@@ -62,15 +62,15 @@
             </select>
         </td>
         <td>
-          <div class="tooltip"><input :value="entry.getCheckedAgePercent().toFixed(1)" @change="(event: any) => setAge(entry, event.target.value)" type="number" min="0" max="100" step="0.1"  />
+          <div class="tooltip"><input :value="entry.checkedAge * 100" @change="(event: any) => setAge(entry, event.target.value)" type="number" min="0" max="100" step="0.1" stop_clock="true"  />
             <span class="tooltiptext">{{ entry.checkTime.toRelative() }}</span>
           </div>
         </td>
-        <td>{{ entry.getAgePercentAtTime(now).toFixed(2) }}%</td>
-        <td>{{ entry.getTimeToJuvenile(now).toFormat('d.hh.mm.ss') }}</td>
-        <td>{{ entry.getTimeToAdult(now).toFormat('d.hh.mm.ss') }}</td>
-        <td></td><!-- {{entry.foodToJuvenile}}</td> -->
-        <td></td><!-- {{entry.foodToAdult}}</td> -->
+        <td>{{ (Math.floor(entry.getAgeAtTime(now) * 10000) / 100).toFixed(2) }}%</td>
+        <td>{{ entry.getTimeToJuvenile(now).toFormat('d.hh:mm:ss') }}</td>
+        <td>{{ entry.getTimeToAdult(now).toFormat('d.hh:mm:ss') }}</td>
+        <td>{{ getFoodToJuvenile(now, entry, trough).toFixed(0) }}</td>
+        <td>{{ getFoodToAdult(now, entry, trough).toFixed(0) }}</td>
       </tr>
     </table>
     <hr />
@@ -102,14 +102,23 @@
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
+
+.borders td, .borders th {
+  border: 1px solid white;
+}
+
+.borders {
+  border-collapse: collapse;
+}
 </style>
 
 <script setup lang="ts">
-import { ref, reactive, type InputHTMLAttributes } from 'vue'
+import { ref, reactive } from 'vue'
 import { DateTime } from 'luxon'
-import { Trough } from './types'
-import type { Multipliers, TroughEntry } from './types'
-import data from './arkData'
+import Trough from './types/Trough'
+import type Multipliers from './types/Multipliers'
+import type TroughEntry from './types/TroughEntry'
+import data from './ArkData'
 
 const troughs = reactive([] as Trough[])
 const now = ref(DateTime.now())
@@ -122,13 +131,36 @@ function addTrough() {
 
 function setAge(entry: TroughEntry, value: string) {
   let agePct = Number.parseFloat(value) / 100;
-  entry.checkedAge = agePct * entry.species.adultAge;
+  entry.checkedAge = agePct;
   entry.checkTime = DateTime.now();
+}
+
+function getFoodToJuvenile(fromTime: DateTime, entry: TroughEntry, trough: Trough)
+{
+  const nextFood = entry.getNextFood(fromTime, trough.foodStacks.map(x => x.food.name))
+  const foodPoints = entry.getFoodToJuvenile(fromTime);
+  return foodPoints / (nextFood?.pointsPerPiece || 0);
+}
+
+function getFoodToAdult(fromTime: DateTime, entry: TroughEntry, trough: Trough)
+{
+  const nextFood = entry.getNextFood(fromTime, trough.foodStacks.map(x => x.food.name))
+  const foodPoints = entry.getFoodToAdult(fromTime);
+  return foodPoints / (nextFood?.pointsPerPiece || 0);
 }
 
 addTrough()
 
 setInterval(() => {
-  now.value = DateTime.now()
+  try {
+    if (document.activeElement?.getAttribute("type") === "number") {
+      // if a number field is focused, don't process a clock tick
+      return;
+    }
+    now.value = DateTime.now()
+  }
+  catch {
+    // nothing to do here
+  }
 }, 1000);
 </script>

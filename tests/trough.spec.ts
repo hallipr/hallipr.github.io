@@ -1,7 +1,11 @@
-import { Trough, TroughEntry, Multipliers, Diet, Species, TroughFrame } from '../src/types'
 import { describe, it, expect, beforeEach } from '@jest/globals'
 import { DateTime } from 'luxon'
-import data from '../src/arkData'
+import Trough from '../src/types/Trough'
+import Multipliers from '../src/types/Multipliers'
+import TroughEntry from '../src/types/TroughEntry'
+import TroughFrame from '../src/types/TroughFrame'
+import Species from '../src/types/Species'
+import data from '../src/ArkData'
 
 // unit test for the TroughEntry class
 describe('Trough', () => {
@@ -43,7 +47,7 @@ describe('Trough', () => {
 
       trough.calculateKeyframes(DateTime.fromSeconds(0))
 
-      console.log(JSON.stringify(trough.keyframes.map(getDebugFrame), null, '  '))
+      // console.log(JSON.stringify(trough.keyframes.map(getDebugFrame), null, '  '))
 
       // expect 3 keyframes: initial, adult, food empty
       expect(trough.keyframes.length).toBe(3)
@@ -71,7 +75,7 @@ describe('Trough', () => {
       console.log(JSON.stringify(trough.keyframes.map(getDebugFrame), null, '  '))
 
       // expect 3 keyframes: initial, vegies empty, fish empty
-      expect(trough.keyframes.length).toBe(4)
+      expect(trough.keyframes.length).toBe(3)
     });
   })
 })
