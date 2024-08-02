@@ -1,8 +1,8 @@
-import Diet from './types/Diet'
-import Food from './types/Food'
-import Species from './types/Species'
-import RawData from './data/RawData'
-import { type TroughType } from './types/TroughType'
+import Diet from '../types/Diet'
+import Food from '../types/Food'
+import Species from '../types/Species'
+import { type TroughType } from '../types/TroughType'
+import RawData from './RawData'
 
 const food = RawData.food.reduce(
   (acc, current) => {
