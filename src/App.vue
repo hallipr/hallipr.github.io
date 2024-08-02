@@ -118,7 +118,7 @@ import { DateTime } from 'luxon'
 import Trough from './types/Trough'
 import type Multipliers from './types/Multipliers'
 import type TroughEntry from './types/TroughEntry'
-import data from './ArkData'
+import data from './ArkData.js'
 
 const troughs = reactive([] as Trough[])
 const now = ref(DateTime.now())
