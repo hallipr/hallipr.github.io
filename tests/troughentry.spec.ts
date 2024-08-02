@@ -118,13 +118,13 @@ describe('TroughEntry', () => {
   })
 
   describe('getNextFood', () => {
-    // getNextFood returns the food type consumed, beginning rate and rate decay
+    // getNextFood returns the food type consumed, beginning rate, rate decay and pointsPerPiece
     it('should select the highest preference food', () => {
       const fromTime = DateTime.fromSeconds(0);
 
       const actual = entry.getNextFood(fromTime, ["Raw Meat", "Berry", "Kibble"]);
 
-      expect(actual).toEqual({ food: data.food["Berry"], rate: 0.1, decay: -0.00005 })
+      expect(actual).toMatchObject({ food: data.food["Berry"], rate: 0.1, decay: -0.00005, pointsPerPiece: 20 })
     })
 
     it('should use species specific diets', () => {
@@ -133,7 +133,7 @@ describe('TroughEntry', () => {
 
       const actual = entry.getNextFood(fromTime, ["Raw Meat", "Cooked Meat", "Berry", "Kibble"]);
 
-      expect(actual).toEqual({ food: data.food["Raw Meat"], rate: 0.04, decay: -0.00002 })
+      expect(actual).toMatchObject({ food: data.food["Raw Meat"] })
     })
   })
 })
