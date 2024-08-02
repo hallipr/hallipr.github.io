@@ -171,11 +171,18 @@ const diets = <DietData[]>[
   {
     name: 'Daeodon',
     food: {
-      'Raw Fish Meat': 25,
-      'Cooked Fish Meat': 12.5,
-      'Raw Meat': 50,
+      'Raw Meat': 10,
       'Cooked Meat': 25,
-      Kibble: 60,
+      'Raw Prime Meat': 50,
+      'Cooked Prime Meat': 50,
+      'Raw Fish Meat': 5,
+      'Cooked Fish Meat': 12.5,
+      'Raw Prime Fish Meat': 25,
+      'Cooked Prime Fish Meat': 25.7,
+      'Raw Mutton': 50,
+      'Cooked Lamb Chop': 50,
+      'Basic Kibble': 96,
+      'Extraordinary Kibble': 85.2,
     },
   },
   {
