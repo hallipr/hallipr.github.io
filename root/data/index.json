@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2026-01-19T04:47:19.4142634-08:00",
+  "maps": [
+    {
+      "name": "Aberration_WP",
+      "modName": "",
+      "dataUrl": "./data/game/Aberration_WP.json"
+    },
+    {
+      "name": "Astraeos_WP",
+      "modName": "",
+      "dataUrl": "./data/game/Astraeos_WP.json"
+    },
+    {
+      "name": "Extinction_WP",
+      "modName": "",
+      "dataUrl": "./data/game/Extinction_WP.json"
+    },
+    {
+      "name": "LostColony_WP",
+      "modName": "",
+      "dataUrl": "./data/game/LostColony_WP.json"
+    },
+    {
+      "name": "Ragnarok_WP",
+      "modName": "",
+      "dataUrl": "./data/game/Ragnarok_WP.json"
+    },
+    {
+      "name": "ScorchedEarth_WP",
+      "modName": "",
+      "dataUrl": "./data/game/ScorchedEarth_WP.json"
+    },
+    {
+      "name": "TheCenter_WP",
+      "modName": "",
+      "dataUrl": "./data/game/TheCenter_WP.json"
+    },
+    {
+      "name": "TheIsland_WP",
+      "modName": "",
+      "dataUrl": "./data/game/TheIsland_WP.json"
+    },
+    {
+      "name": "Valguero_WP",
+      "modName": "",
+      "dataUrl": "./data/game/Valguero_WP.json"
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "Metal",
+      "color": 9146520,
+      "colorHex": "#8B9098"
+    },
+    {
+      "name": "Oil",
+      "color": 102,
+      "colorHex": "#000066"
+    },
+    {
+      "name": "Crystal",
+      "color": 54527,
+      "colorHex": "#00D4FF"
+    },
+    {
+      "name": "Obsidian",
+      "color": 5832883,
+      "colorHex": "#5900B3"
+    },
+    {
+      "name": "Silica Pearls",
+      "color": 16770273,
+      "colorHex": "#FFE4E1"
+    },
+    {
+      "name": "Black Pearls",
+      "color": 8421504,
+      "colorHex": "#808080"
+    },
+    {
+      "name": "Green Gems",
+      "color": 65280,
+      "colorHex": "#00FF00"
+    },
+    {
+      "name": "Blue Gems",
+      "color": 255,
+      "colorHex": "#0000FF"
+    },
+    {
+      "name": "Red Gems",
+      "color": 16711680,
+      "colorHex": "#FF0000"
+    },
+    {
+      "name": "Element Ore",
+      "color": 11665587,
+      "colorHex": "#B200B3"
+    }
+  ]
+}

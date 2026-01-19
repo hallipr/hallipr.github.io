@@ -63,6 +63,45 @@
             font-size: 16px;
             display: none;
         }
+        #errorBox {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6b6b;
+            background: rgba(40, 0, 0, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #ff6b6b;
+            z-index: 2000;
+            font-size: 14px;
+            display: none;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+        #errorBox h3 {
+            margin: 0 0 10px 0;
+            color: #ff6b6b;
+        }
+        #errorBox pre {
+            margin: 5px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #errorBox button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #errorBox button:hover {
+            background: #ff5252;
+        }
         #controls {
             position: absolute;
             bottom: 10px;
@@ -86,7 +125,7 @@
             font-size: 12px;
             min-width: 150px;
         }
-        #categoryPanel {
+        #resourceTypePanel {
             position: absolute;
             top: 10px;
             right: 10px;
@@ -100,27 +139,27 @@
             min-width: 250px;
             max-width: 350px;
         }
-        #categoryPanel h3 {
+        #resourceTypePanel h3 {
             margin: 0 0 10px 0;
             color: #4fc3f7;
             font-size: 16px;
         }
-        #categoryTable {
+        #resourceTypeTable {
             width: 100%;
             border-collapse: collapse;
             font-size: 12px;
         }
-        #categoryTable th {
+        #resourceTypeTable th {
             background: #2a2a2a;
             padding: 6px 8px;
             text-align: left;
             font-size: 11px;
         }
-        #categoryTable td {
+        #resourceTypeTable td {
             padding: 4px 8px;
             border-bottom: 1px solid #333;
         }
-        #categoryTable tr:hover {
+        #resourceTypeTable tr:hover {
             background: rgba(79, 195, 247, 0.1);
         }
         .color-swatch {
@@ -140,9 +179,14 @@
         </select>
     </div>
     <div id="loading">Loading map data...</div>
-    <div id="categoryPanel">
+    <div id="errorBox">
+        <h3>⚠️ Error</h3>
+        <div id="errorContent"></div>
+        <button onclick="document.getElementById('errorBox').style.display='none'">Close</button>
+    </div>
+    <div id="resourceTypePanel">
         <h3>Resources</h3>
-        <table id="categoryTable">
+        <table id="resourceTypeTable">
             <thead>
                 <tr>
                     <th><input type="checkbox" id="toggleAll" checked></th>
@@ -150,7 +194,7 @@
                     <th>Count</th>
                 </tr>
             </thead>
-            <tbody id="categoryTableBody">
+            <tbody id="resourceTypeTableBody">
             </tbody>
         </table>
     </div>
@@ -167,15 +211,28 @@
     </div>
     <div id="coordinates">
         <strong>Cursor Position:</strong><br>
-        X: <span id="coord-x">-</span><br>
-        Y: <span id="coord-y">-</span>
+        Lat: <span id="coord-lat">-</span><br>
+        Long: <span id="coord-long">-</span>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
-        // Available maps
-        const availableMaps = [{"category":"Base Game","dataUrl":"./data/game/Aberration_WP.json","name":"Aberration_WP"},{"category":"Base Game","dataUrl":"./data/game/Astraeos_WP.json","name":"Astraeos_WP"},{"category":"Base Game","dataUrl":"./data/game/Extinction_WP.json","name":"Extinction_WP"},{"category":"Base Game","dataUrl":"./data/game/LostColony_WP.json","name":"LostColony_WP"},{"category":"Base Game","dataUrl":"./data/game/Ragnarok_WP.json","name":"Ragnarok_WP"},{"category":"Base Game","dataUrl":"./data/game/ScorchedEarth_WP.json","name":"ScorchedEarth_WP"},{"category":"Base Game","dataUrl":"./data/game/TheCenter_WP.json","name":"TheCenter_WP"},{"category":"Base Game","dataUrl":"./data/game/TheIsland_WP.json","name":"TheIsland_WP"},{"category":"Base Game","dataUrl":"./data/game/Valguero_WP.json","name":"Valguero_WP"}];
+        // Capture console errors and display them
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            const errorBox = document.getElementById('errorBox');
+            const errorContent = document.getElementById('errorContent');
+            const errorText = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            errorContent.innerHTML += '<pre>' + errorText + '</pre>';
+            errorBox.style.display = 'block';
+        };
+        
+        // Available maps - will be loaded from JSON
+        let availableMaps = [];
         
         // Scene setup
         const scene = new THREE.Scene();
@@ -209,29 +266,54 @@
         let gridHelper = null;
         let compassSprites = [];
         let particles = [];
+        let coordinateSystem = null;
         
         // Populate map selector
         const mapSelect = document.getElementById('mapSelect');
-        const categories = {};
+        let resourceTypes = null;
+        let maps = [];
+
+        async function loadIndex() {
+            const response = await fetch('data/index.json');
+            let index = await response.json();
+            resourceTypes = index.resourceTypes;
+            maps = index.maps;
+        }
         
-        availableMaps.forEach(map => {
-            if (!categories[map.category]) {
-                categories[map.category] = [];
+        async function initializeMapSelector() {
+            try {
+                const categories = {};
+                
+                maps.forEach(map => {
+                    let modName = map.modName || ''; // empty string for base game maps
+                    if (!categories[modName]) {
+                        categories[modName] = [];
+                    }
+                    categories[modName].push(map);
+                });
+                
+                Object.keys(categories).sort().forEach(category => {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = category || 'Base Game';
+                    categories[category].forEach(map => {
+                        const option = document.createElement('option');
+                        option.value = map.dataUrl;
+                        option.textContent = map.name;
+                        optgroup.appendChild(option);
+                    });
+                    mapSelect.appendChild(optgroup);
+                });
+            } catch (error) {
+                console.error('Failed to load map index:', error);
+                alert('Failed to load map index');
             }
-            categories[map.category].push(map);
-        });
+        }
         
-        Object.keys(categories).sort().forEach(category => {
-            const optgroup = document.createElement('optgroup');
-            optgroup.label = category;
-            categories[category].forEach(map => {
-                const option = document.createElement('option');
-                option.value = map.dataUrl;
-                option.textContent = map.name;
-                optgroup.appendChild(option);
-            });
-            mapSelect.appendChild(optgroup);
-        });
+        // Initialize on load
+        (async () => {
+            await loadIndex();
+            initializeMapSelector();
+        })();
         
         // Load map on selection
         mapSelect.addEventListener('change', async (e) => {
@@ -275,25 +357,25 @@
                 // Fetch map data
                 const response = await fetch(dataUrl);
                 const mapData = await response.json();
-                const pointData = mapData.points;
+                coordinateSystem = mapData.coordinates;
+                
+                // Count total points
+                let totalPoints = 0;
+                mapData.resources.forEach(resource => {
+                    totalPoints += resource.points.length;
+                });
                 
                 // Update UI
                 document.getElementById('mapName').textContent = mapData.mapName;
-                document.getElementById('pointCount').textContent = pointData.length;
+                document.getElementById('pointCount').textContent = totalPoints;
                 
-                // Calculate world bounds
-                let minX = Infinity, maxX = -Infinity;
-                let minY = Infinity, maxY = -Infinity;
-                let minZ = Infinity, maxZ = -Infinity;
-                
-                pointData.forEach(point => {
-                    minX = Math.min(minX, point.p[0]);
-                    maxX = Math.max(maxX, point.p[0]);
-                    minY = Math.min(minY, point.p[1]);
-                    maxY = Math.max(maxY, point.p[1]);
-                    minZ = Math.min(minZ, point.p[2]);
-                    maxZ = Math.max(maxZ, point.p[2]);
-                });
+                // Use world bounds from coordinate system
+                const minX = coordinateSystem.minX;
+                const maxX = coordinateSystem.maxX;
+                const minY = coordinateSystem.minY;
+                const maxY = coordinateSystem.maxY;
+                const minZ = coordinateSystem.minZ;
+                const maxZ = coordinateSystem.maxZ;
                 
                 const worldWidth = maxX - minX;
                 const worldHeight = maxY - minY;
@@ -332,28 +414,24 @@
                 compassSprites[3].position.set(compassDistance, 0, compassHeight);
                 scene.add(compassSprites[3]);
                 
-                // Group points by category
-                const particleGroups = new Map();
-                
-                pointData.forEach(point => {
-                    const category = point.c;
-                    
-                    if (!particleGroups.has(category)) {
-                        particleGroups.set(category, {
-                            color: point.l,
-                            points: []
-                        });
-                    }
-                    
-                    particleGroups.get(category).points.push(point.p);
-                });
-                
                 // Create particle systems
-                const categoryColorMap = new Map();
-                
-                particleGroups.forEach((data, category) => {
-                    const positions = new Float32Array(data.points.length * 3);
-                    data.points.forEach((pos, i) => {
+                const resourceTypeLookup = {};
+                resourceTypes.forEach(type => {
+                    resourceTypeLookup[type.name] = type;
+                });
+
+                mapData.resources.forEach((resource, index) => {
+                    const resourceType = resource.resourceType;
+                    const typeConfig = resourceTypeLookup[resourceType];
+                    if (!typeConfig) {
+                        console.error('Resource type not found:', resourceType);
+                        return;
+                    }
+                   
+                    const color = new THREE.Color(typeConfig.color);
+                    
+                    const positions = new Float32Array(resource.points.length * 3);
+                    resource.points.forEach((pos, i) => {
                         positions[i * 3] = pos[0];
                         positions[i * 3 + 1] = pos[1];
                         positions[i * 3 + 2] = pos[2];
@@ -363,54 +441,83 @@
                     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
                     
                     const material = new THREE.PointsMaterial({
-                        color: data.color,
+                        color: color,
                         size: 8,
                         sizeAttenuation: document.getElementById('sizeAttenuation').checked
                     });
                     
                     const particleSystem = new THREE.Points(geometry, material);
                     particleSystem.userData = {
-                        category: category,
-                        count: data.points.length
+                        resourceType: resourceType,
+                        count: resource.points.length
                     };
                     
                     scene.add(particleSystem);
                     particles.push(particleSystem);
-                    categoryColorMap.set(category, data.color);
                 });
                 
-                // Update category table
-                const categoryTableBody = document.getElementById('categoryTableBody');
-                categoryTableBody.innerHTML = '';
-                const sortedCategories = Array.from(particleGroups.keys()).sort();
-                
-                sortedCategories.forEach(category => {
-                    const count = particleGroups.get(category).points.length;
-                    const color = categoryColorMap.get(category);
-                    const hexColor = '#' + color.toString(16).padStart(6, '0');
+                // Update resource type table
+                const resourceTypeTableBody = document.getElementById('resourceTypeTableBody');
+                resourceTypeTableBody.innerHTML = '';
+
+                // keep original resource type order
+                resourceTypes.forEach(typeConfig => {
+                    const name = typeConfig.name;
+                    if (!mapData.resources.find(r => r.resourceType === name)) {
+                        return; // skip resource types not in this map
+                    }
+
+                    const particle = particles.find(p => p.userData.resourceType === name);
+                    const count = particle.userData.count;
+                    const hexColor = typeConfig.colorHex;
                     
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td><input type="checkbox" class="category-toggle" data-category="${category}" checked></td>
+                        <td><input type="checkbox" class="resourceType-toggle" data-resourcetype="${name}" checked></td>
                         <td>
-                            <span class="color-swatch" style="background-color: ${hexColor}"></span>
-                            ${category}
+                            <label style="cursor: pointer; display: inline-flex; align-items: center;">
+                                <input type="color" class="color-picker" data-resourcetype="${name}" value="${hexColor}" 
+                                       style="width: 0; height: 0; padding: 0; border: 0; position: absolute; opacity: 0;">
+                                <span class="color-swatch" style="background-color: ${hexColor}" data-resourcetype="${name}"></span>
+                                <span style="margin-left: 6px;">${name}</span>
+                            </label>
                         </td>
                         <td>${count}</td>
                     `;
-                    categoryTableBody.appendChild(row);
+                    resourceTypeTableBody.appendChild(row);
                 });
                 
                 // Attach event listeners
-                document.querySelectorAll('.category-toggle').forEach(checkbox => {
+                document.querySelectorAll('.resourceType-toggle').forEach(checkbox => {
                     checkbox.addEventListener('change', (e) => {
-                        const category = e.target.dataset.category;
+                        const resourceType = e.target.dataset.resourcetype;
                         const checked = e.target.checked;
                         particles.forEach(particle => {
-                            if (particle.userData.category === category) {
+                            if (particle.userData.resourceType === resourceType) {
                                 particle.visible = checked;
                             }
                         });
+                    });
+                });
+                
+                // Attach color picker event listeners
+                document.querySelectorAll('.color-picker').forEach(picker => {
+                    picker.addEventListener('input', (e) => {
+                        const resourceType = e.target.dataset.resourcetype;
+                        const newColor = e.target.value;
+                        
+                        // Update particle system color
+                        particles.forEach(particle => {
+                            if (particle.userData.resourceType === resourceType) {
+                                particle.material.color.setStyle(newColor);
+                            }
+                        });
+                        
+                        // Update color swatch
+                        const swatch = document.querySelector(`.color-swatch[data-resourcetype="${resourceType}"]`);
+                        if (swatch) {
+                            swatch.style.backgroundColor = newColor;
+                        }
                     });
                 });
                 
@@ -437,7 +544,7 @@
         // Toggle all particles
         document.getElementById('toggleAll').addEventListener('change', (e) => {
             const checked = e.target.checked;
-            document.querySelectorAll('.category-toggle').forEach(checkbox => {
+            document.querySelectorAll('.resourceType-toggle').forEach(checkbox => {
                 checkbox.checked = checked;
             });
             particles.forEach(particle => {
@@ -468,8 +575,17 @@
                 const gameX = -intersectionPoint.x;
                 const gameY = intersectionPoint.y;
                 
-                document.getElementById('coord-x').textContent = Math.round(gameX);
-                document.getElementById('coord-y').textContent = Math.round(gameY);
+                // Convert to lat/long if coordinate system is available
+                if (coordinateSystem) {
+                    const lat = 50 + (gameY - coordinateSystem.centerY) / coordinateSystem.scaleY;
+                    const long = 50 + (gameX - coordinateSystem.centerX) / coordinateSystem.scaleX;
+                    
+                    document.getElementById('coord-lat').textContent = lat.toFixed(1);
+                    document.getElementById('coord-long').textContent = long.toFixed(1);
+                } else {
+                    document.getElementById('coord-lat').textContent = '-';
+                    document.getElementById('coord-long').textContent = '-';
+                }
             }
         });
         
