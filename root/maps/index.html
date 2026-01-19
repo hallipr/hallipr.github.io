@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARK Map Resources</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #mapSelector {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+        }
+        #mapSelector select {
+            background: #2a2a2a;
+            color: white;
+            border: 1px solid #444;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 250px;
+            cursor: pointer;
+        }
+        #mapSelector select:hover {
+            border-color: #4fc3f7;
+        }
+        #mapSelector label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        #info {
+            position: absolute;
+            top: 80px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+            font-size: 12px;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 20px 40px;
+            border-radius: 8px;
+            z-index: 1000;
+            font-size: 16px;
+            display: none;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+            font-size: 12px;
+        }
+        #coordinates {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+            font-size: 12px;
+            min-width: 150px;
+        }
+        #categoryPanel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(26, 26, 26, 0.95);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 100;
+            max-height: calc(100vh - 20px);
+            overflow-y: auto;
+            min-width: 250px;
+            max-width: 350px;
+        }
+        #categoryPanel h3 {
+            margin: 0 0 10px 0;
+            color: #4fc3f7;
+            font-size: 16px;
+        }
+        #categoryTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        #categoryTable th {
+            background: #2a2a2a;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 11px;
+        }
+        #categoryTable td {
+            padding: 4px 8px;
+            border-bottom: 1px solid #333;
+        }
+        #categoryTable tr:hover {
+            background: rgba(79, 195, 247, 0.1);
+        }
+        .color-swatch {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div id="mapSelector">
+        <label for="mapSelect">Select Map:</label>
+        <select id="mapSelect">
+            <option value="">-- Choose a map --</option>
+        </select>
+    </div>
+    <div id="loading">Loading map data...</div>
+    <div id="categoryPanel">
+        <h3>Resources</h3>
+        <table id="categoryTable">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="toggleAll" checked></th>
+                    <th>Resource</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody id="categoryTableBody">
+            </tbody>
+        </table>
+    </div>
+    <div id="info">
+        <strong id="mapName">Select a map</strong><br>
+        Points: <span id="pointCount">0</span>
+    </div>
+    <div id="controls">
+        <strong>Controls:</strong><br>
+        Left Mouse: Rotate<br>
+        Right Mouse: Pan<br>
+        Scroll: Zoom<br>
+        <label><input type="checkbox" id="sizeAttenuation" checked> Size Attenuation</label>
+    </div>
+    <div id="coordinates">
+        <strong>Cursor Position:</strong><br>
+        X: <span id="coord-x">-</span><br>
+        Y: <span id="coord-y">-</span>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // Available maps
+        const availableMaps = [{"category":"Base Game","dataUrl":"./data/game/Aberration_WP.json","name":"Aberration_WP"},{"category":"Base Game","dataUrl":"./data/game/Astraeos_WP.json","name":"Astraeos_WP"},{"category":"Base Game","dataUrl":"./data/game/Extinction_WP.json","name":"Extinction_WP"},{"category":"Base Game","dataUrl":"./data/game/LostColony_WP.json","name":"LostColony_WP"},{"category":"Base Game","dataUrl":"./data/game/Ragnarok_WP.json","name":"Ragnarok_WP"},{"category":"Base Game","dataUrl":"./data/game/ScorchedEarth_WP.json","name":"ScorchedEarth_WP"},{"category":"Base Game","dataUrl":"./data/game/TheCenter_WP.json","name":"TheCenter_WP"},{"category":"Base Game","dataUrl":"./data/game/TheIsland_WP.json","name":"TheIsland_WP"},{"category":"Base Game","dataUrl":"./data/game/Valguero_WP.json","name":"Valguero_WP"}];
+        
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
+        
+        const camera = new THREE.PerspectiveCamera(
+            75, 
+            window.innerWidth / window.innerHeight, 
+            1,
+            10000000
+        );
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+        
+        // Orbit controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+        
+        // Global objects
+        let gridHelper = null;
+        let compassSprites = [];
+        let particles = [];
+        
+        // Populate map selector
+        const mapSelect = document.getElementById('mapSelect');
+        const categories = {};
+        
+        availableMaps.forEach(map => {
+            if (!categories[map.category]) {
+                categories[map.category] = [];
+            }
+            categories[map.category].push(map);
+        });
+        
+        Object.keys(categories).sort().forEach(category => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = category;
+            categories[category].forEach(map => {
+                const option = document.createElement('option');
+                option.value = map.dataUrl;
+                option.textContent = map.name;
+                optgroup.appendChild(option);
+            });
+            mapSelect.appendChild(optgroup);
+        });
+        
+        // Load map on selection
+        mapSelect.addEventListener('change', async (e) => {
+            if (!e.target.value) return;
+            await loadMap(e.target.value);
+        });
+        
+        // Create compass labels as sprites
+        function createTextSprite(text, color, scale) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 256;
+            canvas.height = 256;
+            
+            context.font = 'Bold 120px Arial';
+            context.fillStyle = color;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, 128, 128);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(scale, scale, 1);
+            
+            return sprite;
+        }
+        
+        async function loadMap(dataUrl) {
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                // Clear existing scene objects
+                if (gridHelper) scene.remove(gridHelper);
+                compassSprites.forEach(sprite => scene.remove(sprite));
+                compassSprites = [];
+                particles.forEach(particle => scene.remove(particle));
+                particles = [];
+                
+                // Fetch map data
+                const response = await fetch(dataUrl);
+                const mapData = await response.json();
+                const pointData = mapData.points;
+                
+                // Update UI
+                document.getElementById('mapName').textContent = mapData.mapName;
+                document.getElementById('pointCount').textContent = pointData.length;
+                
+                // Calculate world bounds
+                let minX = Infinity, maxX = -Infinity;
+                let minY = Infinity, maxY = -Infinity;
+                let minZ = Infinity, maxZ = -Infinity;
+                
+                pointData.forEach(point => {
+                    minX = Math.min(minX, point.p[0]);
+                    maxX = Math.max(maxX, point.p[0]);
+                    minY = Math.min(minY, point.p[1]);
+                    maxY = Math.max(maxY, point.p[1]);
+                    minZ = Math.min(minZ, point.p[2]);
+                    maxZ = Math.max(maxZ, point.p[2]);
+                });
+                
+                const worldWidth = maxX - minX;
+                const worldHeight = maxY - minY;
+                const worldDepth = maxZ - minZ;
+                const worldSize = Math.max(worldWidth, worldHeight, worldDepth);
+                
+                const centerX = (minX + maxX) / 2;
+                const centerY = (minY + maxY) / 2;
+                const centerZ = (minZ + maxZ) / 2;
+                
+                // Create grid
+                const gridSize = Math.ceil(worldSize * 1.2);
+                const gridDivisions = Math.min(100, Math.max(20, Math.floor(gridSize / 100)));
+                gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x444444, 0x222222);
+                gridHelper.rotation.x = Math.PI / 2;
+                scene.add(gridHelper);
+                
+                // Create compass
+                const compassScale = worldSize * 0.05;
+                const compassDistance = gridSize / 2;
+                const compassHeight = worldSize * 0.01;
+                
+                compassSprites.push(createTextSprite('N', '#ff6b6b', compassScale));
+                compassSprites[0].position.set(0, -compassDistance, compassHeight);
+                scene.add(compassSprites[0]);
+                
+                compassSprites.push(createTextSprite('S', '#ffffff', compassScale));
+                compassSprites[1].position.set(0, compassDistance, compassHeight);
+                scene.add(compassSprites[1]);
+                
+                compassSprites.push(createTextSprite('E', '#ffffff', compassScale));
+                compassSprites[2].position.set(-compassDistance, 0, compassHeight);
+                scene.add(compassSprites[2]);
+                
+                compassSprites.push(createTextSprite('W', '#ffffff', compassScale));
+                compassSprites[3].position.set(compassDistance, 0, compassHeight);
+                scene.add(compassSprites[3]);
+                
+                // Group points by category
+                const particleGroups = new Map();
+                
+                pointData.forEach(point => {
+                    const category = point.c;
+                    
+                    if (!particleGroups.has(category)) {
+                        particleGroups.set(category, {
+                            color: point.l,
+                            points: []
+                        });
+                    }
+                    
+                    particleGroups.get(category).points.push(point.p);
+                });
+                
+                // Create particle systems
+                const categoryColorMap = new Map();
+                
+                particleGroups.forEach((data, category) => {
+                    const positions = new Float32Array(data.points.length * 3);
+                    data.points.forEach((pos, i) => {
+                        positions[i * 3] = pos[0];
+                        positions[i * 3 + 1] = pos[1];
+                        positions[i * 3 + 2] = pos[2];
+                    });
+                    
+                    const geometry = new THREE.BufferGeometry();
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    
+                    const material = new THREE.PointsMaterial({
+                        color: data.color,
+                        size: 8,
+                        sizeAttenuation: document.getElementById('sizeAttenuation').checked
+                    });
+                    
+                    const particleSystem = new THREE.Points(geometry, material);
+                    particleSystem.userData = {
+                        category: category,
+                        count: data.points.length
+                    };
+                    
+                    scene.add(particleSystem);
+                    particles.push(particleSystem);
+                    categoryColorMap.set(category, data.color);
+                });
+                
+                // Update category table
+                const categoryTableBody = document.getElementById('categoryTableBody');
+                categoryTableBody.innerHTML = '';
+                const sortedCategories = Array.from(particleGroups.keys()).sort();
+                
+                sortedCategories.forEach(category => {
+                    const count = particleGroups.get(category).points.length;
+                    const color = categoryColorMap.get(category);
+                    const hexColor = '#' + color.toString(16).padStart(6, '0');
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><input type="checkbox" class="category-toggle" data-category="${category}" checked></td>
+                        <td>
+                            <span class="color-swatch" style="background-color: ${hexColor}"></span>
+                            ${category}
+                        </td>
+                        <td>${count}</td>
+                    `;
+                    categoryTableBody.appendChild(row);
+                });
+                
+                // Attach event listeners
+                document.querySelectorAll('.category-toggle').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const category = e.target.dataset.category;
+                        const checked = e.target.checked;
+                        particles.forEach(particle => {
+                            if (particle.userData.category === category) {
+                                particle.visible = checked;
+                            }
+                        });
+                    });
+                });
+                
+                document.getElementById('toggleAll').checked = true;
+                
+                // Position camera
+                camera.up.set(0, -1, 0);
+                const vFOV = camera.fov * Math.PI / 180;
+                const height = worldSize;
+                const cameraDistance = height / (2 * Math.tan(vFOV / 2)) * 1.2;
+                
+                camera.position.set(centerX, centerY, centerZ + cameraDistance);
+                controls.target.set(centerX, centerY, centerZ);
+                controls.update();
+                
+            } catch (error) {
+                console.error('Error loading map:', error);
+                alert('Failed to load map data');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        // Toggle all particles
+        document.getElementById('toggleAll').addEventListener('change', (e) => {
+            const checked = e.target.checked;
+            document.querySelectorAll('.category-toggle').forEach(checkbox => {
+                checkbox.checked = checked;
+            });
+            particles.forEach(particle => {
+                particle.visible = checked;
+            });
+        });
+        
+        // Size attenuation toggle
+        document.getElementById('sizeAttenuation').addEventListener('change', (e) => {
+            particles.forEach(particle => {
+                particle.material.sizeAttenuation = e.target.checked;
+            });
+        });
+        
+        // Mouse position tracking
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+        const intersectionPoint = new THREE.Vector3();
+        
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            
+            if (raycaster.ray.intersectPlane(groundPlane, intersectionPoint)) {
+                const gameX = -intersectionPoint.x;
+                const gameY = intersectionPoint.y;
+                
+                document.getElementById('coord-x').textContent = Math.round(gameX);
+                document.getElementById('coord-y').textContent = Math.round(gameY);
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
