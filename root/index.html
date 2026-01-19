@@ -274,7 +274,10 @@
         let maps = [];
 
         async function loadIndex() {
-            const response = await fetch('data/index.json');
+            const response = await fetch('./data/index.json');
+            if (!response.ok) {
+                throw new Error(`Failed to load index.json: ${response.status} ${response.statusText}`);
+            }
             let index = await response.json();
             resourceTypes = index.resourceTypes;
             maps = index.maps;
@@ -355,7 +358,11 @@
                 particles = [];
                 
                 // Fetch map data
-                const response = await fetch(dataUrl);
+                const response = await fetch(`./data/${dataUrl}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch map data: ${response.status} ${response.statusText}`);
+                }
+
                 const mapData = await response.json();
                 coordinateSystem = mapData.coordinates;
                 

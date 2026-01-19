@@ -1,50 +1,50 @@
 {
-  "generatedAt": "2026-01-19T18:50:43.4017851+00:00",
+  "generatedAt": "2026-01-19T15:17:15.0116210-08:00",
   "maps": [
     {
       "name": "Aberration_WP",
       "modName": "",
-      "dataUrl": "./game/Aberration_WP.json"
+      "dataUrl": "game/Aberration_WP.json"
     },
     {
       "name": "Astraeos_WP",
       "modName": "",
-      "dataUrl": "./game/Astraeos_WP.json"
+      "dataUrl": "game/Astraeos_WP.json"
     },
     {
       "name": "Extinction_WP",
       "modName": "",
-      "dataUrl": "./game/Extinction_WP.json"
+      "dataUrl": "game/Extinction_WP.json"
     },
     {
       "name": "LostColony_WP",
       "modName": "",
-      "dataUrl": "./game/LostColony_WP.json"
+      "dataUrl": "game/LostColony_WP.json"
     },
     {
       "name": "Ragnarok_WP",
       "modName": "",
-      "dataUrl": "./game/Ragnarok_WP.json"
+      "dataUrl": "game/Ragnarok_WP.json"
     },
     {
       "name": "ScorchedEarth_WP",
       "modName": "",
-      "dataUrl": "./game/ScorchedEarth_WP.json"
+      "dataUrl": "game/ScorchedEarth_WP.json"
     },
     {
       "name": "TheCenter_WP",
       "modName": "",
-      "dataUrl": "./game/TheCenter_WP.json"
+      "dataUrl": "game/TheCenter_WP.json"
     },
     {
       "name": "TheIsland_WP",
       "modName": "",
-      "dataUrl": "./game/TheIsland_WP.json"
+      "dataUrl": "game/TheIsland_WP.json"
     },
     {
       "name": "Valguero_WP",
       "modName": "",
-      "dataUrl": "./game/Valguero_WP.json"
+      "dataUrl": "game/Valguero_WP.json"
     }
   ],
   "resourceTypes": [
