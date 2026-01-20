@@ -35,8 +35,30 @@ export class MapSelector {
         this.selectElement.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
             if (target.value) {
+                this.updateUrl(target.value);
                 callback(target.value);
+                // Blur the select to allow keyboard controls to work
+                target.blur();
             }
         });
+    }
+
+    setValue(dataUrl: string): void {
+        this.selectElement.value = dataUrl;
+    }
+
+    getValue(): string {
+        return this.selectElement.value;
+    }
+
+    private updateUrl(dataUrl: string): void {
+        const url = new URL(window.location.href);
+        url.searchParams.set('map', dataUrl);
+        window.history.pushState({}, '', url);
+    }
+
+    getMapFromUrl(): string | null {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('map');
     }
 }

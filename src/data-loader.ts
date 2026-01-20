@@ -9,6 +9,11 @@ export class DataLoader {
             throw new Error(`Failed to load index.json: ${response.status} ${response.statusText}`);
         }
         this.indexData = await response.json();
+
+        if(!this.indexData) {
+            throw new Error('Index data is null or undefined');
+        }
+
         return this.indexData;
     }
 

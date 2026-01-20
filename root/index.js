@@ -24046,6 +24046,9 @@
         throw new Error(`Failed to load index.json: ${response.status} ${response.statusText}`);
       }
       this.indexData = await response.json();
+      if (!this.indexData) {
+        throw new Error("Index data is null or undefined");
+      }
       return this.indexData;
     }
     async loadMapData(dataUrl) {
@@ -24234,13 +24237,20 @@
 
   // src/map-controller.ts
   var MapController = class {
-    constructor(sceneManager2, uiManager2, dataLoader2, sceneBuilder2, resourceTableManager2) {
+    constructor(sceneManager2, uiManager2, dataLoader2, sceneBuilder2, resourceTableManager2, clusteringManager2) {
       this.currentCoordinateSystem = null;
       this.sceneManager = sceneManager2;
       this.uiManager = uiManager2;
       this.dataLoader = dataLoader2;
       this.sceneBuilder = sceneBuilder2;
       this.resourceTableManager = resourceTableManager2;
+      this.clusteringManager = clusteringManager2;
+      this.clusteringManager.setClusterUpdateCallback(() => this.updateClustering());
+    }
+    updateClustering() {
+      if (this.clusteringManager.isEnabled()) {
+        this.clusteringManager.clusterPoints(this.sceneManager.particles);
+      }
     }
     getCurrentCoordinateSystem() {
       return this.currentCoordinateSystem;
@@ -24285,6 +24295,9 @@
           this.sceneManager.addParticles(particleSystem);
         });
         this.resourceTableManager.updateTable(mapData, resourceTypes, this.sceneManager.particles);
+        if (this.clusteringManager.isEnabled()) {
+          this.updateClustering();
+        }
         const cameraPos = this.sceneBuilder.calculateCameraPosition(
           worldSize,
           centerX,
@@ -24339,9 +24352,26 @@
       this.selectElement.addEventListener("change", (e) => {
         const target = e.target;
         if (target.value) {
+          this.updateUrl(target.value);
           callback(target.value);
+          target.blur();
         }
       });
+    }
+    setValue(dataUrl) {
+      this.selectElement.value = dataUrl;
+    }
+    getValue() {
+      return this.selectElement.value;
+    }
+    updateUrl(dataUrl) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("map", dataUrl);
+      window.history.pushState({}, "", url);
+    }
+    getMapFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("map");
     }
   };
 
@@ -24410,18 +24440,180 @@
     }
   };
 
+  // src/clustering/clustering.ts
+  var DBSCANClustering = class {
+    constructor(index) {
+      this.index = index;
+      this.points = index.points;
+    }
+    cluster(epsilon, minPoints) {
+      const n = this.points.length;
+      const labels = new Array(n).fill(-1);
+      let clusterId = 0;
+      for (let i = 0; i < n; i++) {
+        if (labels[i] !== -1) continue;
+        const neighbors = this.getNeighbors(i, this.points, epsilon);
+        if (neighbors.length < minPoints) {
+          labels[i] = -1;
+          continue;
+        }
+        clusterId++;
+        this.expandCluster(i, neighbors, clusterId, labels, this.points, epsilon, minPoints);
+      }
+      return labels.map((clusterId2, pointIndex) => ({
+        clusterId: clusterId2,
+        pointIndex
+      }));
+    }
+    expandCluster(pointIndex, neighbors, clusterId, labels, points, epsilon, minPoints) {
+      labels[pointIndex] = clusterId;
+      const queue = [...neighbors];
+      while (queue.length > 0) {
+        const currentIndex = queue.shift();
+        if (labels[currentIndex] === -1) {
+          labels[currentIndex] = clusterId;
+        }
+        if (labels[currentIndex] !== -1) continue;
+        labels[currentIndex] = clusterId;
+        const currentNeighbors = this.getNeighbors(currentIndex, points, epsilon);
+        if (currentNeighbors.length >= minPoints) {
+          queue.push(...currentNeighbors);
+        }
+      }
+    }
+    getNeighbors(pointIndex, points, epsilon) {
+      const point = points[pointIndex];
+      const candidates = this.index.searchRadius(point.x, point.y, point.z, epsilon);
+      const neighbors = [];
+      for (const candidate of candidates) {
+        if (candidate.index === pointIndex) continue;
+        neighbors.push(candidate.index);
+      }
+      return neighbors;
+    }
+  };
+
+  // src/clustering/clustering-manager.ts
+  var ClusteringManager = class {
+    constructor() {
+      this.epsilon = 1e3;
+      this.minPoints = 5;
+      this.enabled = false;
+      this.debounceTimer = null;
+      this.onClusterUpdate = null;
+      this.setupUI();
+    }
+    setupUI() {
+      const epsilonSlider = document.getElementById("epsilonSlider");
+      const minPointsSlider = document.getElementById("minPointsSlider");
+      const clusteringCheckbox = document.getElementById("clusteringEnabled");
+      const epsilonValue = document.getElementById("epsilonValue");
+      const minPointsValue = document.getElementById("minPointsValue");
+      epsilonSlider?.addEventListener("input", (e) => {
+        const value = e.target.value;
+        this.epsilon = parseInt(value);
+        if (epsilonValue) epsilonValue.textContent = value;
+        this.debouncedCluster();
+      });
+      minPointsSlider?.addEventListener("input", (e) => {
+        const value = e.target.value;
+        this.minPoints = parseInt(value);
+        if (minPointsValue) minPointsValue.textContent = value;
+        this.debouncedCluster();
+      });
+      clusteringCheckbox?.addEventListener("change", (e) => {
+        this.enabled = e.target.checked;
+        if (this.enabled) {
+          this.performClustering();
+        } else {
+          this.clearClustering();
+        }
+      });
+    }
+    debouncedCluster() {
+      if (!this.enabled) return;
+      if (this.debounceTimer) {
+        clearTimeout(this.debounceTimer);
+      }
+      this.debounceTimer = window.setTimeout(() => {
+        this.performClustering();
+      }, 300);
+    }
+    setClusterUpdateCallback(callback) {
+      this.onClusterUpdate = callback;
+    }
+    performClustering() {
+      if (!this.enabled || !this.onClusterUpdate) return;
+      console.log("Clustering with epsilon:", this.epsilon, "minPoints:", this.minPoints);
+      this.onClusterUpdate(/* @__PURE__ */ new Map());
+    }
+    clusterPoints(particles) {
+      const allPoints = [];
+      const pointToParticle = [];
+      particles.forEach((particle, particleIdx) => {
+        const positions = particle.geometry.attributes.position;
+        const count = positions.count;
+        for (let i = 0; i < count; i++) {
+          allPoints.push({
+            x: positions.getX(i),
+            y: positions.getY(i),
+            z: positions.getZ(i)
+          });
+          pointToParticle.push(particleIdx);
+        }
+      });
+      console.log(`Clustering ${allPoints.length} points...`);
+      const startTime = performance.now();
+      const clustering = new DBSCANClustering(this.epsilon, this.minPoints);
+      const results = clustering.cluster(allPoints);
+      const endTime = performance.now();
+      console.log(`Clustering completed in ${(endTime - startTime).toFixed(2)}ms`);
+      const clustersByParticle = /* @__PURE__ */ new Map();
+      results.forEach((result, idx) => {
+        const particleIdx = pointToParticle[idx];
+        if (!clustersByParticle.has(particleIdx)) {
+          clustersByParticle.set(particleIdx, []);
+        }
+        clustersByParticle.get(particleIdx).push(result);
+      });
+      const clusterIds = new Set(results.map((r) => r.clusterId).filter((id) => id !== -1));
+      const noiseCount = results.filter((r) => r.clusterId === -1).length;
+      console.log(`Found ${clusterIds.size} clusters with ${noiseCount} noise points`);
+      console.log("Cluster IDs:", Array.from(clusterIds).sort((a, b) => a - b));
+      const statsEl = document.getElementById("clusterStats");
+      if (statsEl) {
+        statsEl.textContent = `Clusters: ${clusterIds.size} | Noise: ${noiseCount}`;
+      }
+      return clustersByParticle;
+    }
+    clearClustering() {
+      const statsEl = document.getElementById("clusterStats");
+      if (statsEl) {
+        statsEl.textContent = "";
+      }
+      if (this.onClusterUpdate) {
+        this.onClusterUpdate(/* @__PURE__ */ new Map());
+      }
+    }
+    isEnabled() {
+      return this.enabled;
+    }
+  };
+
   // src/index.ts
   var sceneManager = new SceneManager();
   var uiManager = new UIManager();
   var dataLoader = new DataLoader();
   var sceneBuilder = new SceneBuilder();
   var resourceTableManager = new ResourceTableManager();
+  var clusteringManager = new ClusteringManager();
   var mapController = new MapController(
     sceneManager,
     uiManager,
     dataLoader,
     sceneBuilder,
-    resourceTableManager
+    resourceTableManager,
+    clusteringManager
   );
   var mapSelector = new MapSelector("mapSelect");
   var coordinateTracker = new CoordinateTracker(sceneManager.camera, uiManager, mapController);
@@ -24431,6 +24623,11 @@
       await dataLoader.loadIndex();
       mapSelector.populateOptions(dataLoader.getMaps());
       mapSelector.onChange((dataUrl) => mapController.loadMap(dataUrl));
+      const mapFromUrl = mapSelector.getMapFromUrl();
+      if (mapFromUrl) {
+        mapSelector.setValue(mapFromUrl);
+        await mapController.loadMap(mapFromUrl);
+      }
     } catch (error) {
       console.error("Failed to initialize application:", error);
       alert("Failed to load application");

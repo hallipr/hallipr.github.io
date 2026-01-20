@@ -4,6 +4,7 @@ import { UIManager } from './ui';
 import { DataLoader } from './data-loader';
 import { SceneBuilder } from './scene-builder';
 import { ResourceTableManager } from './resource-table';
+import { ClusteringManager } from './clustering/clustering-manager';
 import { CoordinateSystem, MapData, ResourceType } from './types';
 
 export class MapController {
@@ -12,6 +13,7 @@ export class MapController {
     private dataLoader: DataLoader;
     private sceneBuilder: SceneBuilder;
     private resourceTableManager: ResourceTableManager;
+    private clusteringManager: ClusteringManager;
     private currentCoordinateSystem: CoordinateSystem | null = null;
 
     constructor(
@@ -19,13 +21,24 @@ export class MapController {
         uiManager: UIManager,
         dataLoader: DataLoader,
         sceneBuilder: SceneBuilder,
-        resourceTableManager: ResourceTableManager
+        resourceTableManager: ResourceTableManager,
+        clusteringManager: ClusteringManager
     ) {
         this.sceneManager = sceneManager;
         this.uiManager = uiManager;
         this.dataLoader = dataLoader;
         this.sceneBuilder = sceneBuilder;
         this.resourceTableManager = resourceTableManager;
+        this.clusteringManager = clusteringManager;
+
+        // Set up clustering callback
+        this.clusteringManager.setClusterUpdateCallback(() => this.updateClustering());
+    }
+
+    private updateClustering(): void {
+        if (this.clusteringManager.isEnabled()) {
+            this.clusteringManager.clusterPoints(this.sceneManager.particles);
+        }
     }
 
     getCurrentCoordinateSystem(): CoordinateSystem | null {
@@ -94,6 +107,11 @@ export class MapController {
 
             // Update resource table
             this.resourceTableManager.updateTable(mapData, resourceTypes, this.sceneManager.particles);
+
+            // Trigger clustering if enabled
+            if (this.clusteringManager.isEnabled()) {
+                this.updateClustering();
+            }
 
             // Position camera
             const cameraPos = this.sceneBuilder.calculateCameraPosition(

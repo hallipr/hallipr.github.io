@@ -16,16 +16,42 @@
         "preLaunchTask": "start server",        
       },
       {
-        "name": "Debug Jest Tests",
+        "name": "Debug Tests",
         "type": "node",
         "request": "launch",
         "runtimeArgs": [
-          "--inspect-brk",
-          "${workspaceRoot}/node_modules/jest/bin/jest.js",
-          "--runInBand"
+          "--import",
+          "tsx",
+          "--test"
         ],
+        "args": [
+          "${workspaceFolder}/tests/**/*.test.ts"
+        ],
+        "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
-        "internalConsoleOptions": "neverOpen"
+        "internalConsoleOptions": "neverOpen",
+        "skipFiles": [
+          "<node_internals>/**"
+        ]
+      },
+      {
+        "name": "Debug Current Test File",
+        "type": "node",
+        "request": "launch",
+        "runtimeArgs": [
+          "--import",
+          "tsx",
+          "--test"
+        ],
+        "args": [
+          "${file}"
+        ],
+        "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "skipFiles": [
+          "<node_internals>/**"
+        ]
       }
     ]
 }

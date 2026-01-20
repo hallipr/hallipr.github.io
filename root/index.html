@@ -102,17 +102,6 @@
         #errorBox button:hover {
             background: #ff5252;
         }
-        #controls {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 100;
-            font-size: 12px;
-        }
         #coordinates {
             position: absolute;
             bottom: 10px;
@@ -169,6 +158,59 @@
             border-radius: 2px;
             margin-right: 6px;
         }
+        #clusteringPanel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            color: white;
+            min-width: 250px;
+        }
+        #clusteringPanel h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        #clusteringPanel label {
+            display: block;
+            margin: 8px 0 4px 0;
+            font-size: 12px;
+        }
+        #clusteringPanel input[type="range"] {
+            width: 100%;
+        }
+        #clusteringPanel .value-display {
+            float: right;
+            color: #4fc3f7;
+        }
+        #clusteringPanel .checkbox-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+        #clusteringPanel .checkbox-row label {
+            margin: 0;
+        }
+        #clusteringPanel button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            background: #4fc3f7;
+            border: none;
+            border-radius: 4px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #clusteringPanel button:hover {
+            background: #6dd5ff;
+        }
+        #clusteringPanel button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -202,17 +244,34 @@
         <strong id="mapName">Select a map</strong><br>
         Points: <span id="pointCount">0</span>
     </div>
-    <div id="controls">
-        <strong>Controls:</strong><br>
-        Left Mouse: Rotate<br>
-        Right Mouse: Pan<br>
-        Scroll: Zoom<br>
-        <label><input type="checkbox" id="sizeAttenuation" checked> Size Attenuation</label>
-    </div>
     <div id="coordinates">
         <strong>Cursor Position:</strong><br>
         Lat: <span id="coord-lat">-</span><br>
         Long: <span id="coord-long">-</span>
+    </div>
+    
+    <div id="clusteringPanel">
+        <h3>Resource Clustering</h3>
+        <label>
+            Epsilon (cluster radius): <span class="value-display" id="epsilonValue">1000</span>
+        </label>
+        <input type="range" id="epsilonSlider" min="100" max="5000" step="100" value="1000">
+        
+        <label>
+            Min Points: <span class="value-display" id="minPointsValue">5</span>
+        </label>
+        <input type="range" id="minPointsSlider" min="2" max="20" step="1" value="5">
+        
+        <div class="checkbox-row">
+            <label>
+                <input type="checkbox" id="clusteringEnabled"> Enable Clustering
+            </label>
+            <label>
+                <input type="checkbox" id="sizeAttenuation" checked> Size Attenuation
+            </label>
+        </div>
+        
+        <div id="clusterStats" style="margin-top: 10px; font-size: 11px; color: #aaa;"></div>
     </div>
     
     <script src="index.js"></script>
