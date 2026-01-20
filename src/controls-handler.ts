@@ -27,8 +27,10 @@ export class ControlsHandler {
         sizeAttenuationCheckbox?.addEventListener('change', (e) => {
             const target = e.target as HTMLInputElement;
             this.particles().forEach(particle => {
-                (particle.material as THREE.PointsMaterial).sizeAttenuation = target.checked;
-                particle.material.needsUpdate = true;
+                const material = particle.material as THREE.PointsMaterial;
+                material.sizeAttenuation = target.checked;
+                material.size = target.checked ? 500 : 4;
+                material.needsUpdate = true;
             });
         });
     }

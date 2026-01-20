@@ -24128,7 +24128,7 @@
       geometry.setAttribute("position", new BufferAttribute(positions, 3));
       const material = new PointsMaterial({
         color,
-        size: 10,
+        size: sizeAttenuation ? 500 : 4,
         sizeAttenuation,
         map: this.getCircleTexture(),
         transparent: true,
@@ -24401,8 +24401,10 @@
       sizeAttenuationCheckbox?.addEventListener("change", (e) => {
         const target = e.target;
         this.particles().forEach((particle) => {
-          particle.material.sizeAttenuation = target.checked;
-          particle.material.needsUpdate = true;
+          const material = particle.material;
+          material.sizeAttenuation = target.checked;
+          material.size = target.checked ? 500 : 4;
+          material.needsUpdate = true;
         });
       });
     }

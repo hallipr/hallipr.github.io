@@ -87,7 +87,7 @@ export class SceneBuilder {
 
         const material = new THREE.PointsMaterial({
             color: color,
-            size: 10,
+            size: sizeAttenuation ? 500 : 4,
             sizeAttenuation: sizeAttenuation,
             map: this.getCircleTexture(),
             transparent: true,
