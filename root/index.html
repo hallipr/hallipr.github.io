@@ -234,6 +234,7 @@
                     <th><input type="checkbox" id="toggleAll" checked></th>
                     <th>Resource</th>
                     <th>Count</th>
+                    <th>Clusters</th>
                 </tr>
             </thead>
             <tbody id="resourceTypeTableBody">
@@ -242,7 +243,8 @@
     </div>
     <div id="info">
         <strong id="mapName">Select a map</strong><br>
-        Points: <span id="pointCount">0</span>
+        Points: <span id="pointCount">0</span><br>
+        <button id="resetCameraBtn" style="margin-top: 8px; padding: 4px 8px; background: #4fc3f7; color: black; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Reset Camera</button>
     </div>
     <div id="coordinates">
         <strong>Cursor Position:</strong><br>
@@ -253,21 +255,26 @@
     <div id="clusteringPanel">
         <h3>Resource Clustering</h3>
         <label>
-            Epsilon (cluster radius): <span class="value-display" id="epsilonValue">1000</span>
+            Epsilon (cluster radius): <span class="value-display" id="epsilonValue">5000</span>
         </label>
-        <input type="range" id="epsilonSlider" min="100" max="5000" step="100" value="1000">
+        <input type="range" id="epsilonSlider" min="100" max="20000" step="100" value="5000">
         
         <label>
             Min Points: <span class="value-display" id="minPointsValue">5</span>
         </label>
         <input type="range" id="minPointsSlider" min="2" max="20" step="1" value="5">
         
+        <label>
+            Point Size: <span class="value-display" id="pointSizeValue">4</span>
+        </label>
+        <input type="range" id="pointSizeSlider" min="1" max="12" step="1" value="4">
+        
         <div class="checkbox-row">
             <label>
-                <input type="checkbox" id="clusteringEnabled"> Enable Clustering
+                <input type="checkbox" id="clusteringEnabled" checked> Enable Clustering
             </label>
             <label>
-                <input type="checkbox" id="sizeAttenuation" checked> Size Attenuation
+                <input type="checkbox" id="sizeAttenuation"> Size Attenuation
             </label>
         </div>
         

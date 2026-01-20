@@ -20,6 +20,17 @@ export class ResourceTableManager {
 
             const count = particle.userData.count;
             const hexColor = typeConfig.colorHex;
+            
+            // Calculate cluster information
+            let clusterInfo = '-';
+            if (particle.userData.isClustered && particle.userData.clusterInfo) {
+                const clusters = particle.userData.clusterInfo.filter((info: any) => info.clusterSize !== undefined);
+                const noisePoints = particle.userData.clusterInfo.filter((info: any) => info.isNoise);
+                clusterInfo = `${clusters.length}`;
+                if (noisePoints.length > 0) {
+                    clusterInfo += ` (+${noisePoints.length})`;
+                }
+            }
 
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -33,11 +44,43 @@ export class ResourceTableManager {
                     </label>
                 </td>
                 <td>${count}</td>
+                <td><span class="cluster-count" data-resourcetype="${name}">${clusterInfo}</span></td>
             `;
             resourceTypeTableBody.appendChild(row);
         });
 
         this.attachEventListeners(particles);
+    }
+    
+    updateClusterCounts(particles: THREE.Points[]): void {
+        console.log('Updating cluster counts for', particles.length, 'particles');
+        particles.forEach(particle => {
+            const resourceType = particle.userData.resourceType;
+            const clusterCountEl = document.querySelector(`[data-resourcetype="${resourceType}"].cluster-count`) as HTMLElement;
+            
+            console.log(`Checking particle for ${resourceType}:`, {
+                isClustered: particle.userData.isClustered,
+                hasClusterInfo: !!particle.userData.clusterInfo,
+                clusterInfoLength: particle.userData.clusterInfo?.length,
+                elementFound: !!clusterCountEl
+            });
+            
+            if (clusterCountEl) {
+                let clusterInfo = '-';
+                if (particle.userData.isClustered && particle.userData.clusterInfo) {
+                    const clusters = particle.userData.clusterInfo.filter((info: any) => info.clusterSize !== undefined);
+                    const noisePoints = particle.userData.clusterInfo.filter((info: any) => info.isNoise);
+                    clusterInfo = `${clusters.length}`;
+                    if (noisePoints.length > 0) {
+                        clusterInfo += ` (+${noisePoints.length})`;
+                    }
+                    console.log(`Setting cluster info for ${resourceType}: ${clusterInfo}`);
+                }
+                clusterCountEl.textContent = clusterInfo;
+            } else {
+                console.warn(`Could not find cluster count element for ${resourceType}`);
+            }
+        });
     }
 
     private attachEventListeners(particles: THREE.Points[]): void {

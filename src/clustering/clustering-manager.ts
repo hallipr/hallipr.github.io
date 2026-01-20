@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { DBSCANClustering, Point3D, ClusterResult } from './clustering';
+import { cluster, ClusterResult } from './clustering';
+import { PointsWithIndex } from './PointsWithIndex';
 
 export class ClusteringManager {
     private epsilon: number = 1000;
@@ -41,6 +42,8 @@ export class ClusteringManager {
                 this.clearClustering();
             }
         });
+
+        this.enabled = clusteringCheckbox?.checked || false;
     }
 
     private debouncedCluster(): void {
@@ -66,59 +69,10 @@ export class ClusteringManager {
         this.onClusterUpdate(new Map());
     }
 
-    clusterPoints(particles: THREE.Points[]): Map<number, ClusterResult[]> {
-        const allPoints: Point3D[] = [];
-        const pointToParticle: number[] = [];
-
-        // Collect all points from all particle systems
-        particles.forEach((particle, particleIdx) => {
-            const positions = particle.geometry.attributes.position;
-            const count = positions.count;
-
-            for (let i = 0; i < count; i++) {
-                allPoints.push({
-                    x: positions.getX(i),
-                    y: positions.getY(i),
-                    z: positions.getZ(i)
-                });
-                pointToParticle.push(particleIdx);
-            }
+    clusterPoints(particles: PointsWithIndex[]) {
+        particles.forEach(p => {
+            p.cluster(this.epsilon, this.minPoints);
         });
-
-        console.log(`Clustering ${allPoints.length} points...`);
-        const startTime = performance.now();
-
-        // Perform clustering
-        const clustering = new DBSCANClustering(this.epsilon, this.minPoints);
-        const results = clustering.cluster(allPoints);
-
-        const endTime = performance.now();
-        console.log(`Clustering completed in ${(endTime - startTime).toFixed(2)}ms`);
-
-        // Group results by particle system
-        const clustersByParticle = new Map<number, ClusterResult[]>();
-        
-        results.forEach((result, idx) => {
-            const particleIdx = pointToParticle[idx];
-            if (!clustersByParticle.has(particleIdx)) {
-                clustersByParticle.set(particleIdx, []);
-            }
-            clustersByParticle.get(particleIdx)!.push(result);
-        });
-
-        // Update stats
-        const clusterIds = new Set(results.map(r => r.clusterId).filter(id => id !== -1));
-        const noiseCount = results.filter(r => r.clusterId === -1).length;
-        
-        console.log(`Found ${clusterIds.size} clusters with ${noiseCount} noise points`);
-        console.log('Cluster IDs:', Array.from(clusterIds).sort((a, b) => a - b));
-        
-        const statsEl = document.getElementById('clusterStats');
-        if (statsEl) {
-            statsEl.textContent = `Clusters: ${clusterIds.size} | Noise: ${noiseCount}`;
-        }
-
-        return clustersByParticle;
     }
 
     private clearClustering(): void {
@@ -130,6 +84,13 @@ export class ClusteringManager {
         if (this.onClusterUpdate) {
             this.onClusterUpdate(new Map());
         }
+    }
+    
+    resetClustering(particles: PointsWithIndex[]): void {
+        particles.forEach(p => {
+            p.resetClustering();
+        });
+        this.clearClustering();
     }
 
     isEnabled(): boolean {

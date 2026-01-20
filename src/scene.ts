@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { PointsWithIndex } from './clustering/PointsWithIndex';
 
 export class SceneManager {
     scene: THREE.Scene;
@@ -8,7 +9,7 @@ export class SceneManager {
     controls: OrbitControls;
     gridHelper: THREE.GridHelper | null = null;
     compassSprites: THREE.Sprite[] = [];
-    particles: THREE.Points[] = [];
+    particles: PointsWithIndex[] = [];
 
     constructor() {
         // Scene setup
@@ -58,9 +59,15 @@ export class SceneManager {
         this.particles = [];
     }
 
-    addGrid(size: number, divisions: number): void {
+    addGrid(size: number, divisions: number, minZ?: number): void {
         this.gridHelper = new THREE.GridHelper(size, divisions, 0x444444, 0x222222);
         this.gridHelper.rotation.x = Math.PI / 2;
+        
+        // Position grid below the lowest point if minZ is provided
+        if (minZ !== undefined) {
+            this.gridHelper.position.z = minZ - 1000; // 1000 units below the lowest point
+        }
+        
         this.scene.add(this.gridHelper);
     }
 
@@ -69,15 +76,23 @@ export class SceneManager {
         this.scene.add(sprite);
     }
 
-    addParticles(particles: THREE.Points): void {
-        this.particles.push(particles);
-        this.scene.add(particles);
+    addParticle(points: PointsWithIndex): void {
+        this.particles.push(points);
+        this.scene.add(points);
     }
 
     positionCamera(x: number, y: number, z: number, targetX: number, targetY: number, targetZ: number): void {
         this.camera.up.set(0, -1, 0);
         this.camera.position.set(x, y, z);
         this.controls.target.set(targetX, targetY, targetZ);
+        this.controls.update();
+    }
+    
+    resetCameraToTopDown(): void {
+        // Position camera directly above the origin looking down
+        this.camera.up.set(0, -1, 0);
+        this.camera.position.set(0, 0, 50000); // High up looking down
+        this.controls.target.set(0, 0, 0); // Look at origin
         this.controls.update();
     }
 

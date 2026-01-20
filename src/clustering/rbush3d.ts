@@ -138,12 +138,14 @@ export class RBush3D {
     private readonly data: Node;
     private readonly maxEntries: number;
     readonly points: Point3D[]; // Expose points in index order
+    readonly length: number;
 
     constructor(points: Point3D[], maxEntries: number = 9) {
         this.maxEntries = Math.max(4, maxEntries);
         // Store points in index order for fast access
         this.points = points.slice().sort((a, b) => a.index - b.index);
         this.data = this.buildFromPoints(points);
+        this.length = points.length;
     }
 
     private buildFromPoints(points: Point3D[]): Node {
@@ -327,5 +329,4 @@ export class RBush3D {
         arr[i] = arr[j];
         arr[j] = tmp;
     }
-
 }

@@ -8,6 +8,7 @@ import { MapSelector } from './map-selector';
 import { CoordinateTracker } from './coordinate-tracker';
 import { ControlsHandler } from './controls-handler';
 import { ClusteringManager } from './clustering/clustering-manager';
+import { VisualizationManager } from './visualization-manager';
 
 // Initialize all managers
 const sceneManager = new SceneManager();
@@ -16,6 +17,7 @@ const dataLoader = new DataLoader();
 const sceneBuilder = new SceneBuilder();
 const resourceTableManager = new ResourceTableManager();
 const clusteringManager = new ClusteringManager();
+const visualizationManager = new VisualizationManager();
 
 const mapController = new MapController(
     sceneManager,
@@ -23,7 +25,8 @@ const mapController = new MapController(
     dataLoader,
     sceneBuilder,
     resourceTableManager,
-    clusteringManager
+    clusteringManager,
+    visualizationManager
 );
 
 const mapSelector = new MapSelector('mapSelect');
@@ -35,6 +38,15 @@ const controlsHandler = new ControlsHandler(() => mapController.getParticles());
     try {
         await dataLoader.loadIndex();
         mapSelector.populateOptions(dataLoader.getMaps());
+        
+        // Set up camera reset button
+        const resetCameraBtn = document.getElementById('resetCameraBtn');
+        if (resetCameraBtn) {
+            resetCameraBtn.addEventListener('click', () => {
+                mapController.resetCamera();
+            });
+        }
+        
         mapSelector.onChange((dataUrl) => mapController.loadMap(dataUrl));
         
         // Check URL for initial map to load

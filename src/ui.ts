@@ -54,6 +54,40 @@ export class UIManager {
         if (longEl) longEl.textContent = '-';
     }
 
+    showPointHover(resourceType: string, mouseLat: number, mouseLong: number, nodeLat: number, nodeLong: number, nodeZ: number, clusterSize?: number, isNoise?: boolean): void {
+        const coordinatesEl = document.getElementById('coordinates');
+        if (coordinatesEl) {
+            let clusterInfo = '';
+            if (clusterSize !== undefined) {
+                clusterInfo = `<br>Cluster: <span style="color: #4fc3f7;">${clusterSize} items</span>`;
+            } else if (isNoise) {
+                clusterInfo = `<br>Cluster: <span style="color: #ff9800;">Noise point</span>`;
+            }
+            
+            coordinatesEl.innerHTML = `
+                <strong>Point Details:</strong><br>
+                Resource: <span style="color: #4fc3f7;">${resourceType}</span>${clusterInfo}<br>
+                Node Lat: <span style="color: #4fc3f7;">${nodeLat.toFixed(1)}</span><br>
+                Node Long: <span style="color: #4fc3f7;">${nodeLong.toFixed(1)}</span><br>
+                Node Z: <span style="color: #4fc3f7;">${nodeZ.toFixed(1)}</span><br>
+                <strong>Cursor Position:</strong><br>
+                Lat: <span id="coord-lat">${mouseLat.toFixed(1)}</span><br>
+                Long: <span id="coord-long">${mouseLong.toFixed(1)}</span>
+            `;
+        }
+    }
+
+    hidePointHover(): void {
+        const coordinatesEl = document.getElementById('coordinates');
+        if (coordinatesEl) {
+            coordinatesEl.innerHTML = `
+                <strong>Cursor Position:</strong><br>
+                Lat: <span id="coord-lat">-</span><br>
+                Long: <span id="coord-long">-</span>
+            `;
+        }
+    }
+
     getElement<T extends HTMLElement>(id: string): T | null {
         return document.getElementById(id) as T | null;
     }

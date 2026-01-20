@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { CoordinateSystem, MapData, ResourceType } from './types';
+import { CoordinateSystem, MapResource, ResourceType } from './types';
+import { PointsWithIndex } from './clustering/PointsWithIndex';
+import { RBush3D, Point3D } from './clustering/rbush3d';
 
 export class SceneBuilder {
     private circleTexture: THREE.Texture | null = null;
@@ -69,32 +71,31 @@ export class SceneBuilder {
     }
 
     createParticleSystem(
-        resource: MapData['resources'][0],
+        resource: MapResource,
         typeConfig: ResourceType,
         sizeAttenuation: boolean
-    ): THREE.Points {
+    ): PointsWithIndex {
         const color = new THREE.Color(typeConfig.color);
 
-        const positions = new Float32Array(resource.points.length * 3);
-        resource.points.forEach((pos, i) => {
-            positions[i * 3] = pos[0];
-            positions[i * 3 + 1] = pos[1];
-            positions[i * 3 + 2] = pos[2];
-        });
-
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        // Check WebGL point size limits
+        const renderer = new THREE.WebGLRenderer();
+        const gl = renderer.getContext();
+        const maxPointSize = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)[1];
+        console.log('Max point size:', maxPointSize);
 
         const material = new THREE.PointsMaterial({
             color: color,
-            size: sizeAttenuation ? 500 : 4,
+            size: sizeAttenuation ? Math.min(maxPointSize, 1024) : 4,
             sizeAttenuation: sizeAttenuation,
             map: this.getCircleTexture(),
             transparent: true,
-            alphaTest: 0.5
+            alphaTest: 0.5,
+            // Try disabling depth test for better visibility
+            depthTest: !sizeAttenuation
         });
 
-        const particleSystem = new THREE.Points(geometry, material);
+        const index = new RBush3D(resource.points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], index: i })));
+        const particleSystem = new PointsWithIndex(index, material);
         particleSystem.userData = {
             resourceType: resource.resourceType,
             count: resource.points.length

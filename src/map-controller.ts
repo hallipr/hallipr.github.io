@@ -5,6 +5,7 @@ import { DataLoader } from './data-loader';
 import { SceneBuilder } from './scene-builder';
 import { ResourceTableManager } from './resource-table';
 import { ClusteringManager } from './clustering/clustering-manager';
+import { VisualizationManager } from './visualization-manager';
 import { CoordinateSystem, MapData, ResourceType } from './types';
 
 export class MapController {
@@ -14,6 +15,7 @@ export class MapController {
     private sceneBuilder: SceneBuilder;
     private resourceTableManager: ResourceTableManager;
     private clusteringManager: ClusteringManager;
+    private visualizationManager: VisualizationManager;
     private currentCoordinateSystem: CoordinateSystem | null = null;
 
     constructor(
@@ -22,7 +24,8 @@ export class MapController {
         dataLoader: DataLoader,
         sceneBuilder: SceneBuilder,
         resourceTableManager: ResourceTableManager,
-        clusteringManager: ClusteringManager
+        clusteringManager: ClusteringManager,
+        visualizationManager: VisualizationManager
     ) {
         this.sceneManager = sceneManager;
         this.uiManager = uiManager;
@@ -30,15 +33,28 @@ export class MapController {
         this.sceneBuilder = sceneBuilder;
         this.resourceTableManager = resourceTableManager;
         this.clusteringManager = clusteringManager;
+        this.visualizationManager = visualizationManager;
 
         // Set up clustering callback
         this.clusteringManager.setClusterUpdateCallback(() => this.updateClustering());
+
+        this.updateClustering()
+    }
+    
+    resetCamera(): void {
+        this.sceneManager.resetCameraToTopDown();
     }
 
     private updateClustering(): void {
         if (this.clusteringManager.isEnabled()) {
             this.clusteringManager.clusterPoints(this.sceneManager.particles);
+        } else {
+            this.clusteringManager.resetClustering(this.sceneManager.particles);
         }
+        // Update cluster counts in resource table with slight delay to ensure clustering is complete
+        setTimeout(() => {
+            this.resourceTableManager.updateClusterCounts(this.sceneManager.particles);
+        }, 100);
     }
 
     getCurrentCoordinateSystem(): CoordinateSystem | null {
@@ -71,10 +87,24 @@ export class MapController {
                 mapData.coordinates
             );
 
-            // Create grid
+            // Calculate actual Z bounds from resource points
+            let actualMinZ = Infinity;
+            let actualMaxZ = -Infinity;
+            mapData.resources.forEach(resource => {
+                resource.points.forEach(point => {
+                    const z = point[2]; // Z is the third element
+                    if (z < actualMinZ) actualMinZ = z;
+                    if (z > actualMaxZ) actualMaxZ = z;
+                });
+            });
+
+            console.log(`Actual Z range: ${actualMinZ.toFixed(2)} to ${actualMaxZ.toFixed(2)}`);
+            console.log(`Coordinate system Z range: ${mapData.coordinates.minZ} to ${mapData.coordinates.maxZ}`);
+
+            // Create grid using actual minimum Z
             const gridSize = Math.ceil(worldSize * 1.2);
             const gridDivisions = Math.min(100, Math.max(20, Math.floor(gridSize / 100)));
-            this.sceneManager.addGrid(gridSize, gridDivisions);
+            this.sceneManager.addGrid(gridSize, gridDivisions, actualMinZ);
 
             // Create compass
             const compassSprites = this.sceneBuilder.createCompassSprites(worldSize, gridSize);
@@ -102,11 +132,14 @@ export class MapController {
                     typeConfig,
                     sizeAttenuation
                 );
-                this.sceneManager.addParticles(particleSystem);
+                this.sceneManager.addParticle(particleSystem);
             });
 
             // Update resource table
             this.resourceTableManager.updateTable(mapData, resourceTypes, this.sceneManager.particles);
+
+            // Give visualization manager access to particles for point size control
+            this.visualizationManager.setParticles(this.sceneManager.particles);
 
             // Trigger clustering if enabled
             if (this.clusteringManager.isEnabled()) {
