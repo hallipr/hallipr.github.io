@@ -1,101 +1,116 @@
 {
-  "maps": [
-    {
-      "name": "Aberration_WP",
-      "modName": "",
-      "dataUrl": "game/Aberration_WP.json"
-    },
-    {
-      "name": "Astraeos_WP",
-      "modName": "",
-      "dataUrl": "game/Astraeos_WP.json"
-    },
-    {
-      "name": "Extinction_WP",
-      "modName": "",
-      "dataUrl": "game/Extinction_WP.json"
-    },
-    {
-      "name": "LostColony_WP",
-      "modName": "",
-      "dataUrl": "game/LostColony_WP.json"
-    },
-    {
-      "name": "Ragnarok_WP",
-      "modName": "",
-      "dataUrl": "game/Ragnarok_WP.json"
-    },
-    {
-      "name": "ScorchedEarth_WP",
-      "modName": "",
-      "dataUrl": "game/ScorchedEarth_WP.json"
-    },
-    {
-      "name": "TheCenter_WP",
-      "modName": "",
-      "dataUrl": "game/TheCenter_WP.json"
-    },
-    {
-      "name": "TheIsland_WP",
-      "modName": "",
-      "dataUrl": "game/TheIsland_WP.json"
-    },
-    {
-      "name": "Valguero_WP",
-      "modName": "",
-      "dataUrl": "game/Valguero_WP.json"
-    }
-  ],
-  "resourceTypes": [
-    {
-      "name": "Metal",
-      "color": 9146520,
-      "colorHex": "#8B9098"
-    },
-    {
-      "name": "Oil",
-      "color": 102,
-      "colorHex": "#000066"
-    },
-    {
-      "name": "Crystal",
-      "color": 54527,
-      "colorHex": "#00D4FF"
-    },
-    {
-      "name": "Obsidian",
-      "color": 5832883,
-      "colorHex": "#5900B3"
-    },
-    {
-      "name": "Silica Pearls",
-      "color": 16770273,
-      "colorHex": "#FFE4E1"
-    },
-    {
-      "name": "Black Pearls",
-      "color": 8421504,
-      "colorHex": "#808080"
-    },
-    {
-      "name": "Green Gems",
-      "color": 65280,
-      "colorHex": "#00FF00"
-    },
-    {
-      "name": "Blue Gems",
-      "color": 255,
-      "colorHex": "#0000FF"
-    },
-    {
-      "name": "Red Gems",
-      "color": 16711680,
-      "colorHex": "#FF0000"
-    },
-    {
-      "name": "Element Ore",
-      "color": 11665587,
-      "colorHex": "#B200B3"
-    }
-  ]
+    "maps": [
+        {
+            "name": "Aberration",
+            "modName": "",
+            "dataUrl": "game/Aberration_WP.json"
+        },
+        {
+            "name": "Astraeos",
+            "modName": "",
+            "dataUrl": "game/Astraeos_WP.json"
+        },
+        {
+            "name": "Extinction",
+            "modName": "",
+            "dataUrl": "game/Extinction_WP.json"
+        },
+        {
+            "name": "Lost Colony",
+            "modName": "",
+            "dataUrl": "game/LostColony_WP.json"
+        },
+        {
+            "name": "Ragnarok",
+            "modName": "",
+            "dataUrl": "game/Ragnarok_WP.json"
+        },
+        {
+            "name": "Scorched Earth",
+            "modName": "",
+            "dataUrl": "game/ScorchedEarth_WP.json"
+        },
+        {
+            "name": "The Center",
+            "modName": "",
+            "dataUrl": "game/TheCenter_WP.json"
+        },
+        {
+            "name": "The Island",
+            "modName": "",
+            "dataUrl": "game/TheIsland_WP.json"
+        },
+        {
+            "name": "Valguero",
+            "modName": "",
+            "dataUrl": "game/Valguero_WP.json"
+        },
+        {
+            "name": "Forglar_WP",
+            "modName": "Forglar Part I (MAP)",
+            "dataUrl": "mods/forglar-premium/Forglar_WP.json"
+        },
+        {
+            "name": "Svartalfheim_WP",
+            "modName": "Svartalfheim Premium [PC & Crossplay]",
+            "dataUrl": "mods/svartalfheim-premium/Svartalfheim_WP.json"
+        },
+        {
+            "name": "ASurviveTheNight",
+            "modName": "Survive The Night",
+            "dataUrl": "mods/survive-the-night/ASurviveTheNight.json"
+        }
+    ],
+    "resourceTypes": [
+        {
+            "name": "Metal",
+            "color": 9146520,
+            "colorHex": "#8B9098"
+        },
+        {
+            "name": "Oil",
+            "color": 102,
+            "colorHex": "#000066"
+        },
+        {
+            "name": "Crystal",
+            "color": 54527,
+            "colorHex": "#00D4FF"
+        },
+        {
+            "name": "Obsidian",
+            "color": 5832883,
+            "colorHex": "#5900B3"
+        },
+        {
+            "name": "Silica Pearls",
+            "color": 16770273,
+            "colorHex": "#FFE4E1"
+        },
+        {
+            "name": "Black Pearls",
+            "color": 6309300,
+            "colorHex": "#404040"
+        },
+        {
+            "name": "Green Gems",
+            "color": 65280,
+            "colorHex": "#00FF00"
+        },
+        {
+            "name": "Blue Gems",
+            "color": 255,
+            "colorHex": "#0000FF"
+        },
+        {
+            "name": "Red Gems",
+            "color": 16711680,
+            "colorHex": "#FF0000"
+        },
+        {
+            "name": "Element Ore",
+            "color": 11665587,
+            "colorHex": "#B200B3"
+        }
+    ]
 }

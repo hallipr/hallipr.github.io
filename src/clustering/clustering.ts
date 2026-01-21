@@ -1,11 +1,15 @@
-import { RBush3D } from './rbush3d';
+import { RBush3D } from './RBush3D.js';
 
 export interface ClusterResult {
     clusterId: number; // -1 for noise/unassigned
     pointIndex: number;
 }
 
-export function cluster(spatialIndex: RBush3D, epsilon: number, minPoints: number): ClusterResult[] {
+export function cluster(
+    spatialIndex: RBush3D,
+    epsilon: number,
+    minPoints: number,
+): ClusterResult[] {
     const n = spatialIndex.length;
     const labels = new Array(n).fill(-1); // -1 = unassigned
     let clusterId = 0;
@@ -28,7 +32,7 @@ export function cluster(spatialIndex: RBush3D, epsilon: number, minPoints: numbe
 
     return labels.map((clusterId, pointIndex) => ({
         clusterId,
-        pointIndex
+        pointIndex,
     }));
 }
 
@@ -39,7 +43,7 @@ function expandCluster(
     labels: number[],
     spatialIndex: RBush3D,
     epsilon: number,
-    minPoints: number
+    minPoints: number,
 ): void {
     labels[pointIndex] = clusterId;
 
@@ -64,13 +68,9 @@ function expandCluster(
     }
 }
 
-function getNeighbors(
-    spatialIndex: RBush3D,
-    pointIndex: number,
-    epsilon: number
-): number[] {
+function getNeighbors(spatialIndex: RBush3D, pointIndex: number, epsilon: number): number[] {
     const point = spatialIndex.points[pointIndex];
-    
+
     // Find all points within epsilon distance using 3D R-tree
     const candidates = spatialIndex.searchRadius(point.x, point.y, point.z, epsilon);
     const neighbors: number[] = [];
@@ -82,4 +82,3 @@ function getNeighbors(
 
     return neighbors;
 }
-

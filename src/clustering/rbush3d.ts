@@ -36,40 +36,6 @@ const compareMinZ = (a: Point3D | Node, b: Point3D | Node) => {
     return ('z' in a ? a.z : a.minZ) - ('z' in b ? b.z : b.minZ);
 };
 
-function distBBox(node: Node, k: number, p: number): BBox {
-    const bbox: BBox = {
-        minX: Infinity,
-        minY: Infinity,
-        minZ: Infinity,
-        maxX: -Infinity,
-        maxY: -Infinity,
-        maxZ: -Infinity
-    };
-
-    for (let i = k; i < p; i++) {
-        const child = node.children[i];
-        if ('x' in child) {
-            // Point
-            bbox.minX = Math.min(bbox.minX, child.x);
-            bbox.minY = Math.min(bbox.minY, child.y);
-            bbox.minZ = Math.min(bbox.minZ, child.z);
-            bbox.maxX = Math.max(bbox.maxX, child.x);
-            bbox.maxY = Math.max(bbox.maxY, child.y);
-            bbox.maxZ = Math.max(bbox.maxZ, child.z);
-        } else {
-            // Node
-            bbox.minX = Math.min(bbox.minX, child.minX);
-            bbox.minY = Math.min(bbox.minY, child.minY);
-            bbox.minZ = Math.min(bbox.minZ, child.minZ);
-            bbox.maxX = Math.max(bbox.maxX, child.maxX);
-            bbox.maxY = Math.max(bbox.maxY, child.maxY);
-            bbox.maxZ = Math.max(bbox.maxZ, child.maxZ);
-        }
-    }
-
-    return bbox;
-}
-
 function extend(a: BBox, b: BBox | Point3D): void {
     if ('x' in b) {
         // Point
@@ -113,25 +79,27 @@ function createNode(children: (Node | Point3D)[]): Node {
         minZ: Infinity,
         maxX: -Infinity,
         maxY: -Infinity,
-        maxZ: -Infinity
+        maxZ: -Infinity,
     };
-    
+
     // Fast path for empty nodes
     if (children.length === 0) {
         return node;
     }
-    
+
     calcBBox(node);
     return node;
 }
 
 function intersects(a: BBox, b: BBox): boolean {
-    return b.minX <= a.maxX &&
-           b.minY <= a.maxY &&
-           b.minZ <= a.maxZ &&
-           b.maxX >= a.minX &&
-           b.maxY >= a.minY &&
-           b.maxZ >= a.minZ;
+    return (
+        b.minX <= a.maxX &&
+        b.minY <= a.maxY &&
+        b.minZ <= a.maxZ &&
+        b.maxX >= a.minX &&
+        b.maxY >= a.minY &&
+        b.maxZ >= a.minZ
+    );
 }
 
 export class RBush3D {
@@ -163,7 +131,7 @@ export class RBush3D {
 
     search(bbox: BBox): Point3D[] {
         const result: Point3D[] = [];
-        
+
         if (!intersects(bbox, this.data)) return result;
 
         const nodesToSearch: Node[] = [];
@@ -172,15 +140,20 @@ export class RBush3D {
         while (node) {
             const children = node.children;
             const isLeaf = node.leaf;
-            
+
             for (let i = 0; i < children.length; i++) {
                 const child = children[i];
-                
+
                 if (isLeaf) {
                     const point = child as Point3D;
-                    if (point.x >= bbox.minX && point.x <= bbox.maxX &&
-                        point.y >= bbox.minY && point.y <= bbox.maxY &&
-                        point.z >= bbox.minZ && point.z <= bbox.maxZ) {
+                    if (
+                        point.x >= bbox.minX &&
+                        point.x <= bbox.maxX &&
+                        point.y >= bbox.minY &&
+                        point.y <= bbox.maxY &&
+                        point.z >= bbox.minZ &&
+                        point.z <= bbox.maxZ
+                    ) {
                         result.push(point);
                     }
                 } else {
@@ -204,7 +177,7 @@ export class RBush3D {
             minZ: z - radius,
             maxX: x + radius,
             maxY: y + radius,
-            maxZ: z + radius
+            maxZ: z + radius,
         };
 
         const candidates = this.search(bbox);
@@ -269,7 +242,13 @@ export class RBush3D {
         return node;
     }
 
-    private multiSelect(arr: Point3D[], left: number, right: number, n: number, compare: (a: Point3D | Node, b: Point3D | Node) => number): void {
+    private multiSelect(
+        arr: Point3D[],
+        left: number,
+        right: number,
+        n: number,
+        compare: (a: Point3D | Node, b: Point3D | Node) => number,
+    ): void {
         const stack = [left, right];
 
         while (stack.length) {
@@ -285,16 +264,22 @@ export class RBush3D {
         }
     }
 
-    private quickselect(arr: Point3D[], k: number, left: number, right: number, compare: (a: Point3D | Node, b: Point3D | Node) => number): void {
+    private quickselect(
+        arr: Point3D[],
+        k: number,
+        left: number,
+        right: number,
+        compare: (a: Point3D | Node, b: Point3D | Node) => number,
+    ): void {
         while (right > left) {
             if (right - left > 600) {
                 const n = right - left + 1;
                 const m = k - left + 1;
                 const z = Math.log(n);
-                const s = 0.5 * Math.exp(2 * z / 3);
-                const sd = 0.5 * Math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
-                const newLeft = Math.max(left, Math.floor(k - m * s / n + sd));
-                const newRight = Math.min(right, Math.floor(k + (n - m) * s / n + sd));
+                const s = 0.5 * Math.exp((2 * z) / 3);
+                const sd = 0.5 * Math.sqrt((z * s * (n - s)) / n) * (m - n / 2 < 0 ? -1 : 1);
+                const newLeft = Math.max(left, Math.floor(k - (m * s) / n + sd));
+                const newRight = Math.min(right, Math.floor(k + ((n - m) * s) / n + sd));
                 this.quickselect(arr, k, newLeft, newRight, compare);
             }
 

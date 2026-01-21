@@ -1,5 +1,543 @@
 "use strict";
 (() => {
+  // src/data/DataLoader.ts
+  var DataLoader = class {
+    constructor() {
+      this.indexData = null;
+    }
+    async loadIndex() {
+      const response = await fetch("./data/index.json");
+      if (!response.ok) {
+        throw new Error(`Failed to load index.json: ${response.status} ${response.statusText}`);
+      }
+      this.indexData = await response.json();
+      if (!this.indexData) {
+        throw new Error("Index data is null or undefined");
+      }
+      return this.indexData;
+    }
+    async loadMapData(dataUrl) {
+      const normalizedUrl = dataUrl.startsWith("http") || dataUrl.startsWith("/") ? dataUrl : `./data/${dataUrl.replace(/^\.\//, "")}`;
+      const response = await fetch(normalizedUrl);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load map data from ${normalizedUrl}: ${response.status} ${response.statusText}`
+        );
+      }
+      const data = await response.json();
+      return data;
+    }
+    getResourceTypes() {
+      if (!this.indexData) {
+        throw new Error("Index data not loaded. Call loadIndex() first.");
+      }
+      return this.indexData.resourceTypes;
+    }
+    getMaps() {
+      if (!this.indexData) {
+        throw new Error("Index data not loaded. Call loadIndex() first.");
+      }
+      return this.indexData.maps;
+    }
+    async getMapList() {
+      if (!this.indexData) {
+        await this.loadIndex();
+      }
+      return this.getMaps().map((map) => map.name);
+    }
+    async loadMapByName(mapName) {
+      if (!this.indexData) {
+        await this.loadIndex();
+      }
+      const mapInfo = this.getMaps().find((map) => map.name === mapName);
+      if (!mapInfo) {
+        throw new Error(`Map ${mapName} not found`);
+      }
+      return this.loadMapData(mapInfo.dataUrl);
+    }
+  };
+
+  // src/clustering/rbush3d.ts
+  var compareMinX = (a, b) => {
+    return ("x" in a ? a.x : a.minX) - ("x" in b ? b.x : b.minX);
+  };
+  var compareMinY = (a, b) => {
+    return ("y" in a ? a.y : a.minY) - ("y" in b ? b.y : b.minY);
+  };
+  var compareMinZ = (a, b) => {
+    return ("z" in a ? a.z : a.minZ) - ("z" in b ? b.z : b.minZ);
+  };
+  function extend(a, b) {
+    if ("x" in b) {
+      a.minX = Math.min(a.minX, b.x);
+      a.minY = Math.min(a.minY, b.y);
+      a.minZ = Math.min(a.minZ, b.z);
+      a.maxX = Math.max(a.maxX, b.x);
+      a.maxY = Math.max(a.maxY, b.y);
+      a.maxZ = Math.max(a.maxZ, b.z);
+    } else {
+      a.minX = Math.min(a.minX, b.minX);
+      a.minY = Math.min(a.minY, b.minY);
+      a.minZ = Math.min(a.minZ, b.minZ);
+      a.maxX = Math.max(a.maxX, b.maxX);
+      a.maxY = Math.max(a.maxY, b.maxY);
+      a.maxZ = Math.max(a.maxZ, b.maxZ);
+    }
+  }
+  function calcBBox(node) {
+    node.minX = Infinity;
+    node.minY = Infinity;
+    node.minZ = Infinity;
+    node.maxX = -Infinity;
+    node.maxY = -Infinity;
+    node.maxZ = -Infinity;
+    for (const child of node.children) {
+      extend(node, child);
+    }
+  }
+  function createNode(children) {
+    const node = {
+      children,
+      height: 1,
+      leaf: true,
+      minX: Infinity,
+      minY: Infinity,
+      minZ: Infinity,
+      maxX: -Infinity,
+      maxY: -Infinity,
+      maxZ: -Infinity
+    };
+    if (children.length === 0) {
+      return node;
+    }
+    calcBBox(node);
+    return node;
+  }
+  function intersects(a, b) {
+    return b.minX <= a.maxX && b.minY <= a.maxY && b.minZ <= a.maxZ && b.maxX >= a.minX && b.maxY >= a.minY && b.maxZ >= a.minZ;
+  }
+  var RBush3D = class {
+    constructor(points, maxEntries = 9) {
+      this.maxEntries = Math.max(4, maxEntries);
+      this.points = points.slice().sort((a, b) => a.index - b.index);
+      this.data = this.buildFromPoints(points);
+      this.length = points.length;
+    }
+    buildFromPoints(points) {
+      if (!points || points.length === 0) {
+        return createNode([]);
+      }
+      if (points.length <= this.maxEntries) {
+        return createNode(points.slice());
+      }
+      return this.build(points.slice(), 0, points.length - 1, 0);
+    }
+    search(bbox) {
+      const result = [];
+      if (!intersects(bbox, this.data)) return result;
+      const nodesToSearch = [];
+      let node = this.data;
+      while (node) {
+        const children = node.children;
+        const isLeaf = node.leaf;
+        for (let i = 0; i < children.length; i++) {
+          const child = children[i];
+          if (isLeaf) {
+            const point = child;
+            if (point.x >= bbox.minX && point.x <= bbox.maxX && point.y >= bbox.minY && point.y <= bbox.maxY && point.z >= bbox.minZ && point.z <= bbox.maxZ) {
+              result.push(point);
+            }
+          } else {
+            const childNode = child;
+            if (intersects(bbox, childNode)) {
+              nodesToSearch.push(childNode);
+            }
+          }
+        }
+        node = nodesToSearch.pop();
+      }
+      return result;
+    }
+    // Search for items within a spherical radius
+    searchRadius(x, y, z, radius) {
+      const bbox = {
+        minX: x - radius,
+        minY: y - radius,
+        minZ: z - radius,
+        maxX: x + radius,
+        maxY: y + radius,
+        maxZ: z + radius
+      };
+      const candidates = this.search(bbox);
+      const result = [];
+      const radiusSquared = radius * radius;
+      for (const point of candidates) {
+        const dx = x - point.x;
+        const dy = y - point.y;
+        const dz = z - point.z;
+        const distSquared = dx * dx + dy * dy + dz * dz;
+        if (distSquared <= radiusSquared) {
+          result.push(point);
+        }
+      }
+      return result;
+    }
+    build(items, left, right, height) {
+      const N = right - left + 1;
+      let M = this.maxEntries;
+      if (N <= M) {
+        const children = new Array(N);
+        for (let i = 0; i < N; i++) {
+          children[i] = items[left + i];
+        }
+        return createNode(children);
+      }
+      if (!height) {
+        height = Math.ceil(Math.log(N) / Math.log(M));
+        M = Math.ceil(N / Math.pow(M, height - 1));
+      }
+      const node = createNode([]);
+      node.leaf = false;
+      node.height = height;
+      const N3 = Math.ceil(N / M);
+      const N2 = N3 * Math.ceil(Math.sqrt(M));
+      this.multiSelect(items, left, right, N2, compareMinX);
+      for (let i = left; i <= right; i += N2) {
+        const right2 = Math.min(i + N2 - 1, right);
+        this.multiSelect(items, i, right2, N3, compareMinY);
+        for (let j = i; j <= right2; j += N3) {
+          const right3 = Math.min(j + N3 - 1, right2);
+          this.multiSelect(items, j, right3, 1, compareMinZ);
+          node.children.push(this.build(items, j, right3, height - 1));
+        }
+      }
+      calcBBox(node);
+      return node;
+    }
+    multiSelect(arr, left, right, n, compare) {
+      const stack = [left, right];
+      while (stack.length) {
+        right = stack.pop();
+        left = stack.pop();
+        if (right - left <= n) continue;
+        const mid = left + Math.ceil((right - left) / n / 2) * n;
+        this.quickselect(arr, mid, left, right, compare);
+        stack.push(left, mid, mid, right);
+      }
+    }
+    quickselect(arr, k, left, right, compare) {
+      while (right > left) {
+        if (right - left > 600) {
+          const n = right - left + 1;
+          const m = k - left + 1;
+          const z = Math.log(n);
+          const s = 0.5 * Math.exp(2 * z / 3);
+          const sd = 0.5 * Math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
+          const newLeft = Math.max(left, Math.floor(k - m * s / n + sd));
+          const newRight = Math.min(right, Math.floor(k + (n - m) * s / n + sd));
+          this.quickselect(arr, k, newLeft, newRight, compare);
+        }
+        const t = arr[k];
+        let i = left;
+        let j = right;
+        this.swap(arr, left, k);
+        if (compare(arr[right], t) > 0) this.swap(arr, left, right);
+        while (i < j) {
+          this.swap(arr, i, j);
+          i++;
+          j--;
+          while (compare(arr[i], t) < 0) i++;
+          while (compare(arr[j], t) > 0) j--;
+        }
+        if (compare(arr[left], t) === 0) this.swap(arr, left, j);
+        else {
+          j++;
+          this.swap(arr, j, right);
+        }
+        if (j <= k) left = j + 1;
+        if (k <= j) right = j - 1;
+      }
+    }
+    swap(arr, i, j) {
+      const tmp2 = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp2;
+    }
+  };
+
+  // src/clustering/clustering.ts
+  function cluster(spatialIndex, epsilon, minPoints) {
+    const n = spatialIndex.length;
+    const labels = new Array(n).fill(-1);
+    let clusterId = 0;
+    for (let i = 0; i < n; i++) {
+      if (labels[i] !== -1) continue;
+      const neighbors = getNeighbors(spatialIndex, i, epsilon);
+      if (neighbors.length < minPoints) {
+        labels[i] = -1;
+        continue;
+      }
+      clusterId++;
+      expandCluster(i, neighbors, clusterId, labels, spatialIndex, epsilon, minPoints);
+    }
+    return labels.map((clusterId2, pointIndex) => ({
+      clusterId: clusterId2,
+      pointIndex
+    }));
+  }
+  function expandCluster(pointIndex, neighbors, clusterId, labels, spatialIndex, epsilon, minPoints) {
+    labels[pointIndex] = clusterId;
+    const queue = [...neighbors];
+    while (queue.length > 0) {
+      const currentIndex = queue.shift();
+      if (labels[currentIndex] === -1) {
+        labels[currentIndex] = clusterId;
+      }
+      if (labels[currentIndex] !== -1) continue;
+      labels[currentIndex] = clusterId;
+      const currentNeighbors = getNeighbors(spatialIndex, currentIndex, epsilon);
+      if (currentNeighbors.length >= minPoints) {
+        queue.push(...currentNeighbors);
+      }
+    }
+  }
+  function getNeighbors(spatialIndex, pointIndex, epsilon) {
+    const point = spatialIndex.points[pointIndex];
+    const candidates = spatialIndex.searchRadius(point.x, point.y, point.z, epsilon);
+    const neighbors = [];
+    for (const candidate of candidates) {
+      if (candidate.index === pointIndex) continue;
+      neighbors.push(candidate.index);
+    }
+    return neighbors;
+  }
+
+  // src/world/World.ts
+  var World = class {
+    constructor(settings) {
+      this.mapData = null;
+      this.resourceTypes = /* @__PURE__ */ new Map();
+      this.spatialIndices = /* @__PURE__ */ new Map();
+      this.cachedPoints = /* @__PURE__ */ new Map();
+      this.allPointsCache = null;
+      // Public configuration - changing this triggers reclustering
+      this.clusterConfigState = {
+        enabled: true,
+        radius: 5e3,
+        minClusterSize: 3,
+        maxLevels: 4
+      };
+      if (settings) {
+        this.setMapData(settings.mapData, settings.resourceTypes);
+      }
+    }
+    setMapData(mapData, resourceTypes) {
+      this.mapData = mapData;
+      this.resourceTypes = new Map(
+        resourceTypes.map((type) => [
+          type.name,
+          { color: type.color, colorHex: type.colorHex }
+        ])
+      );
+      this.initializeSpatialIndices();
+      this.updateClustering();
+    }
+    get clusterConfig() {
+      return { ...this.clusterConfigState };
+    }
+    set clusterConfig(config) {
+      this.clusterConfigState = { ...config };
+      this.updateClustering();
+    }
+    updateClusterConfig(config) {
+      this.clusterConfigState = { ...this.clusterConfigState, ...config };
+      this.updateClustering();
+    }
+    get coordinateSystem() {
+      return this.ensureMapData().coordinates;
+    }
+    get mapName() {
+      return this.ensureMapData().mapName;
+    }
+    get imageName() {
+      return this.ensureMapData().imageName;
+    }
+    // Get all points from all resource types
+    get points() {
+      if (!this.mapData) return [];
+      if (this.allPointsCache === null) {
+        this.allPointsCache = Array.from(this.cachedPoints.values()).flat();
+      }
+      return this.allPointsCache;
+    }
+    // Get points grouped by resource type
+    get pointsByResource() {
+      const result = {};
+      for (const [resourceType, points] of this.cachedPoints) {
+        result[resourceType] = points;
+      }
+      return result;
+    }
+    // Get points for a specific resource type
+    getPointsForResource(resourceType) {
+      return this.cachedPoints.get(resourceType) || [];
+    }
+    // Search for points within a radius (useful for hover detection)
+    searchRadius(x, y, z, radius, resourceType) {
+      const results = [];
+      if (!this.mapData) {
+        return results;
+      }
+      if (resourceType) {
+        const spatialIndex = this.spatialIndices.get(resourceType);
+        if (spatialIndex) {
+          const nearby = spatialIndex.searchRadius(x, y, z, radius);
+          results.push(...this.convertToWorldPoints(nearby, resourceType));
+        }
+      } else {
+        for (const [resType, spatialIndex] of this.spatialIndices) {
+          const nearby = spatialIndex.searchRadius(x, y, z, radius);
+          results.push(...this.convertToWorldPoints(nearby, resType));
+        }
+      }
+      return results;
+    }
+    // Get all resource types available in this world
+    get availableResourceTypes() {
+      return Array.from(this.resourceTypes.keys());
+    }
+    initializeSpatialIndices() {
+      if (!this.mapData) return;
+      this.spatialIndices.clear();
+      this.cachedPoints.clear();
+      this.allPointsCache = null;
+      for (const resource of this.mapData.resources) {
+        const points = resource.points.map((point, index) => ({
+          x: point[0],
+          y: point[1],
+          z: point[2],
+          index
+        }));
+        const spatialIndex = new RBush3D(points);
+        this.spatialIndices.set(resource.resourceType, spatialIndex);
+      }
+    }
+    updateClustering() {
+      if (!this.mapData) return;
+      this.cachedPoints.clear();
+      this.allPointsCache = null;
+      for (const [resourceType, spatialIndex] of this.spatialIndices) {
+        if (this.clusterConfigState.enabled) {
+          const worldPoints = this.createClusteredPoints(spatialIndex, resourceType);
+          this.cachedPoints.set(resourceType, worldPoints);
+        } else {
+          const worldPoints = this.convertToWorldPoints(spatialIndex.points, resourceType);
+          this.cachedPoints.set(resourceType, worldPoints);
+        }
+      }
+      this.onPointsChanged?.();
+    }
+    convertToWorldPoints(points, resourceType) {
+      const resourceInfo = this.resourceTypes.get(resourceType);
+      if (!resourceInfo) return [];
+      return points.map(
+        (point) => ({
+          x: point.x,
+          y: point.y,
+          z: point.z,
+          type: "node",
+          resourceType,
+          color: resourceInfo.color,
+          colorHex: resourceInfo.colorHex,
+          index: point.index
+        })
+      );
+    }
+    createClusteredPoints(spatialIndex, resourceType) {
+      const resourceInfo = this.resourceTypes.get(resourceType);
+      if (!resourceInfo) return [];
+      const results = cluster(
+        spatialIndex,
+        this.clusterConfigState.radius,
+        this.clusterConfigState.minClusterSize
+      );
+      const clusters = /* @__PURE__ */ new Map();
+      const noiseIndices = [];
+      for (const result of results) {
+        if (result.clusterId === -1) {
+          noiseIndices.push(result.pointIndex);
+          continue;
+        }
+        if (!clusters.has(result.clusterId)) {
+          clusters.set(result.clusterId, []);
+        }
+        clusters.get(result.clusterId).push(result.pointIndex);
+      }
+      const worldPoints = [];
+      const points = spatialIndex.points;
+      for (const indices of clusters.values()) {
+        const center = indices.reduce(
+          (acc, index) => {
+            const point = points[index];
+            acc.x += point.x;
+            acc.y += point.y;
+            acc.z += point.z;
+            return acc;
+          },
+          { x: 0, y: 0, z: 0 }
+        );
+        center.x /= indices.length;
+        center.y /= indices.length;
+        center.z /= indices.length;
+        worldPoints.push({
+          x: center.x,
+          y: center.y,
+          z: center.z,
+          type: "cluster",
+          resourceType,
+          count: indices.length,
+          color: resourceInfo.color,
+          colorHex: resourceInfo.colorHex,
+          indices: indices.map((index) => points[index].index),
+          radius: this.clusterConfigState.radius
+        });
+      }
+      for (const index of noiseIndices) {
+        const point = points[index];
+        worldPoints.push({
+          x: point.x,
+          y: point.y,
+          z: point.z,
+          type: "node",
+          resourceType,
+          color: resourceInfo.color,
+          colorHex: resourceInfo.colorHex,
+          index: point.index
+        });
+      }
+      return worldPoints;
+    }
+    getPointInfo(_pointId) {
+      return null;
+    }
+    getCurrentPoints() {
+      return this.points;
+    }
+    ensureMapData() {
+      if (!this.mapData) {
+        throw new Error("Map data not set. Call setMapData() first.");
+      }
+      return this.mapData;
+    }
+    getResourceTypes() {
+      return Array.from(this.resourceTypes.entries()).map(([name, { color, colorHex }]) => ({
+        name,
+        color,
+        colorHex
+      }));
+    }
+  };
+
   // node_modules/three/build/three.module.js
   var REVISION = "128";
   var MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
@@ -15639,7 +16177,7 @@
     let p = start;
     do {
       const a = p.prev, b = p.next.next;
-      if (!equals(a, b) && intersects(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a)) {
+      if (!equals(a, b) && intersects2(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a)) {
         triangles.push(a.i / dim);
         triangles.push(p.i / dim);
         triangles.push(b.i / dim);
@@ -15823,7 +16361,7 @@
   function equals(p1, p2) {
     return p1.x === p2.x && p1.y === p2.y;
   }
-  function intersects(p1, q1, p2, q2) {
+  function intersects2(p1, q1, p2, q2) {
     const o1 = sign(area(p1, q1, p2));
     const o2 = sign(area(p1, q1, q2));
     const o3 = sign(area(p2, q2, p1));
@@ -15844,7 +16382,7 @@
   function intersectsPolygon(a, b) {
     let p = a;
     do {
-      if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i && intersects(p, p.next, a, b)) return true;
+      if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i && intersects2(p, p.next, a, b)) return true;
       p = p.next;
     } while (p !== a);
     return false;
@@ -23918,145 +24456,784 @@
     }
   };
 
-  // src/scene.ts
-  var SceneManager = class {
-    constructor() {
-      this.gridHelper = null;
-      this.compassSprites = [];
-      this.particles = [];
-      this.scene = new Scene();
-      this.scene.background = new Color(1710618);
-      this.camera = new PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        1,
-        1e7
+  // src/rendering/SceneManager.ts
+  var CameraManager = class {
+    constructor(renderer, coordinates, onZoomChange) {
+      this.initialPerspectiveDistance = 1;
+      this.baseOrthographicSize = 1;
+      this.renderer = renderer;
+      this.onZoomChange = onZoomChange;
+      this.perspectiveCamera = this.createPerspectiveCamera(coordinates);
+      this.orthographicCamera = this.createOrthographicCamera(coordinates);
+      this.currentCamera = this.orthographicCamera;
+      this.baseOrthographicSize = Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) * 0.6;
+      this.initialPerspectiveDistance = this.perspectiveCamera.position.distanceTo(
+        new Vector3(coordinates.centerX, coordinates.centerY, 0)
       );
-      this.renderer = new WebGLRenderer({ antialias: true });
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(this.renderer.domElement);
-      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.controls = new OrbitControls(this.currentCamera, this.renderer.domElement);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.05;
-      const ambientLight = new AmbientLight(4210752, 2);
-      this.scene.add(ambientLight);
-      const directionalLight = new DirectionalLight(16777215, 1);
-      directionalLight.position.set(1, 1, 1);
-      this.scene.add(directionalLight);
-      window.addEventListener("resize", () => this.onWindowResize());
+      this.controls.mouseButtons = {
+        LEFT: MOUSE.PAN,
+        MIDDLE: MOUSE.DOLLY,
+        RIGHT: MOUSE.ROTATE
+      };
+      this.controls.addEventListener("change", () => this.handleZoomChange());
     }
-    clearScene() {
+    createPerspectiveCamera(coordinates) {
+      const mapSize = Math.max(
+        coordinates.maxX - coordinates.minX,
+        coordinates.maxY - coordinates.minY
+      );
+      const far = Math.max(mapSize * 4, 1e4);
+      const camera = new PerspectiveCamera(
+        75,
+        this.renderer.domElement.width / this.renderer.domElement.height,
+        0.1,
+        far
+      );
+      camera.up.set(0, -1, 0);
+      const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
+      camera.position.set(coordinates.centerX, coordinates.centerY, mapSize * 0.8);
+      camera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+      return camera;
+    }
+    createOrthographicCamera(coordinates) {
+      const aspect2 = this.renderer.domElement.width / this.renderer.domElement.height;
+      const mapWidth = coordinates.maxX - coordinates.minX;
+      const mapHeight = coordinates.maxY - coordinates.minY;
+      const size = Math.max(mapWidth, mapHeight) * 0.6;
+      const far = Math.max(Math.max(mapWidth, mapHeight) * 4, 1e4);
+      const camera = new OrthographicCamera(
+        -size * aspect2,
+        size * aspect2,
+        size,
+        -size,
+        0.1,
+        far
+      );
+      camera.up.set(0, -1, 0);
+      camera.position.set(coordinates.centerX, coordinates.centerY, size);
+      camera.lookAt(
+        coordinates.centerX,
+        coordinates.centerY,
+        (coordinates.minZ + coordinates.maxZ) / 2
+      );
+      return camera;
+    }
+    setCameraMode(mode, coordinates) {
+      const mapSize = Math.max(
+        coordinates.maxX - coordinates.minX,
+        coordinates.maxY - coordinates.minY
+      );
+      const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
+      switch (mode) {
+        case "perspective" /* PERSPECTIVE */:
+          this.currentCamera = this.perspectiveCamera;
+          this.perspectiveCamera.position.set(
+            coordinates.centerX,
+            coordinates.centerY,
+            mapSize * 0.8
+          );
+          this.perspectiveCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+          break;
+        case "orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */:
+          this.currentCamera = this.orthographicCamera;
+          this.orthographicCamera.position.set(
+            coordinates.centerX,
+            coordinates.centerY,
+            mapSize
+          );
+          this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+          this.orthographicCamera.up.set(0, -1, 0);
+          break;
+        case "orthographic-isometric" /* ORTHOGRAPHIC_ISOMETRIC */:
+          this.currentCamera = this.orthographicCamera;
+          this.orthographicCamera.position.set(
+            coordinates.centerX + mapSize * 0.5,
+            coordinates.centerY + mapSize * 0.5,
+            mapSize * 0.5
+          );
+          this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+          this.orthographicCamera.up.set(0, -1, 0);
+          break;
+      }
+      this.updateProjectionMatrix();
+    }
+    getCamera() {
+      return this.currentCamera;
+    }
+    updateControls() {
+      this.controls.update();
+    }
+    updateProjectionMatrix() {
+      this.currentCamera.updateProjectionMatrix();
+    }
+    handleResize(width, height) {
+      const aspect2 = width / height;
+      if (this.currentCamera === this.perspectiveCamera) {
+        this.perspectiveCamera.aspect = aspect2;
+        this.perspectiveCamera.updateProjectionMatrix();
+      } else {
+        this.orthographicCamera.left = -this.baseOrthographicSize * aspect2;
+        this.orthographicCamera.right = this.baseOrthographicSize * aspect2;
+        this.orthographicCamera.top = this.baseOrthographicSize;
+        this.orthographicCamera.bottom = -this.baseOrthographicSize;
+        this.orthographicCamera.updateProjectionMatrix();
+      }
+    }
+    updateCoordinates(coordinates) {
+      const mapSize = Math.max(
+        coordinates.maxX - coordinates.minX,
+        coordinates.maxY - coordinates.minY
+      );
+      const far = Math.max(mapSize * 4, 1e4);
+      const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
+      this.perspectiveCamera.far = far;
+      this.perspectiveCamera.position.set(
+        coordinates.centerX,
+        coordinates.centerY,
+        mapSize * 0.8
+      );
+      this.perspectiveCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+      this.perspectiveCamera.updateProjectionMatrix();
+      const aspect2 = this.renderer.domElement.width / this.renderer.domElement.height;
+      const size = Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) * 0.6;
+      this.orthographicCamera.left = -size * aspect2;
+      this.orthographicCamera.right = size * aspect2;
+      this.orthographicCamera.top = size;
+      this.orthographicCamera.bottom = -size;
+      this.orthographicCamera.far = far;
+      this.orthographicCamera.position.set(coordinates.centerX, coordinates.centerY, size);
+      this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+      this.orthographicCamera.updateProjectionMatrix();
+      this.controls.target.set(coordinates.centerX, coordinates.centerY, centerZ);
+      this.controls.update();
+    }
+    setMouseControls(viewMode) {
+      if (viewMode === "2d" /* VIEW_2D */) {
+        this.controls.mouseButtons = {
+          LEFT: MOUSE.PAN,
+          MIDDLE: MOUSE.DOLLY,
+          RIGHT: -1
+          // Disable right-click rotation
+        };
+        this.controls.enableRotate = false;
+      } else {
+        this.controls.mouseButtons = {
+          LEFT: MOUSE.PAN,
+          MIDDLE: MOUSE.DOLLY,
+          RIGHT: MOUSE.ROTATE
+        };
+        this.controls.enableRotate = true;
+      }
+    }
+    handleZoomChange() {
+      if (!this.onZoomChange) return;
+      let zoomFactor = 1;
+      if (this.currentCamera === this.orthographicCamera) {
+        zoomFactor = this.orthographicCamera.zoom;
+      } else {
+        const currentDistance = this.perspectiveCamera.position.distanceTo(
+          this.controls.target
+        );
+        zoomFactor = this.initialPerspectiveDistance / currentDistance;
+      }
+      zoomFactor = Math.max(0.1, Math.min(10, zoomFactor));
+      this.onZoomChange(zoomFactor);
+    }
+    positionCameraToMapBounds(coordinates) {
+      const centerX = coordinates.centerX;
+      const centerY = coordinates.centerY;
+      const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
+      const maxSpan = Math.max(
+        coordinates.maxX - coordinates.minX,
+        coordinates.maxY - coordinates.minY,
+        coordinates.maxZ - coordinates.minZ
+      );
+      const camera = this.getCamera();
+      const distance = maxSpan * 1.5;
+      camera.position.set(centerX, centerY, centerZ + distance);
+      camera.lookAt(centerX, centerY, centerZ);
+      camera.updateProjectionMatrix();
+    }
+  };
+  var SceneManager = class {
+    constructor(canvas) {
+      this.pointSystems = [];
+      this.hiddenResourceTypes = /* @__PURE__ */ new Set();
+      this.currentViewMode = "3d" /* VIEW_3D */;
+      this.basePointSize = 7;
+      // Base size before zoom scaling
+      this.currentZoomFactor = 1;
+      this.sizeAttenuation = false;
+      this.renderer = new WebGLRenderer({ canvas });
+      this.renderer.setSize(canvas.width, canvas.height);
+      this.renderer.setClearColor(2763306);
+      this.scene = new Scene();
+      this.scene.background = new Color(2763306);
+      this.cameraManager = void 0;
+      this.setupLights();
+      this.circleTexture = this.createCircleTexture();
+    }
+    get effectivePointSize() {
+      const zoomEffect = 1 + (this.currentZoomFactor - 1) * 0.5;
+      return this.basePointSize * zoomEffect;
+    }
+    createCircleTexture() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext("2d");
+      ctx.beginPath();
+      ctx.arc(32, 32, 32, 0, Math.PI * 2);
+      ctx.fillStyle = "white";
+      ctx.fill();
+      return new CanvasTexture(canvas);
+    }
+    initializeWithCoordinates(coordinates) {
+      if (!this.cameraManager) {
+        this.cameraManager = new CameraManager(this.renderer, coordinates, (zoomFactor) => {
+          this.handleZoomChange(zoomFactor);
+        });
+      } else {
+        this.cameraManager.updateCoordinates(coordinates);
+      }
+      this.setupGrid(coordinates);
+    }
+    setupLights() {
+      const ambientLight = new AmbientLight(4210752, 0.6);
+      this.scene.add(ambientLight);
+      const directionalLight = new DirectionalLight(16777215, 0.8);
+      directionalLight.position.set(100, 100, 100);
+      this.scene.add(directionalLight);
+    }
+    setupGrid(coordinates) {
       if (this.gridHelper) {
         this.scene.remove(this.gridHelper);
-        this.gridHelper = null;
       }
-      this.compassSprites.forEach((sprite) => this.scene.remove(sprite));
-      this.compassSprites = [];
-      this.particles.forEach((particle) => this.scene.remove(particle));
-      this.particles = [];
-    }
-    addGrid(size, divisions, minZ) {
-      this.gridHelper = new GridHelper(size, divisions, 4473924, 2236962);
-      this.gridHelper.rotation.x = Math.PI / 2;
-      if (minZ !== void 0) {
-        this.gridHelper.position.z = minZ - 1e3;
-      }
+      const sizeX = coordinates.maxX - coordinates.minX;
+      const sizeY = coordinates.maxY - coordinates.minY;
+      const gridSize = Math.max(sizeX, sizeY) * 1.3;
+      const divisions = 20;
+      this.gridHelper = new GridHelper(gridSize, divisions, 4473924, 2236962);
+      const gridZ = coordinates.minZ - 1e3;
+      this.gridHelper.position.set(coordinates.centerX, coordinates.centerY, gridZ);
       this.scene.add(this.gridHelper);
     }
-    addCompassSprite(sprite) {
-      this.compassSprites.push(sprite);
-      this.scene.add(sprite);
+    setViewMode(viewMode, cameraMode, coordinates) {
+      if (!this.cameraManager) {
+        this.initializeWithCoordinates(coordinates);
+      }
+      if (!this.cameraManager) {
+        return;
+      }
+      this.currentViewMode = viewMode;
+      this.cameraManager.setCameraMode(cameraMode, coordinates);
+      this.cameraManager.setMouseControls(viewMode);
+      if (this.gridHelper) {
+        this.gridHelper.visible = viewMode === "3d";
+      }
+      if (this.backgroundPlane) {
+        this.backgroundPlane.visible = viewMode === "2d";
+      }
     }
-    addParticle(points) {
-      this.particles.push(points);
-      this.scene.add(points);
+    addBackgroundImage(imageName, coordinates) {
+      if (this.backgroundPlane) {
+        this.scene.remove(this.backgroundPlane);
+      }
+      const loader = new TextureLoader();
+      loader.load(
+        `images/${imageName}`,
+        (texture) => {
+          const geometry = new PlaneGeometry(
+            coordinates.maxX - coordinates.minX,
+            coordinates.maxY - coordinates.minY
+          );
+          const material = new MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false,
+            // Allow points to render on top
+            depthTest: true
+          });
+          this.backgroundPlane = new Mesh(geometry, material);
+          this.backgroundPlane.position.set(coordinates.centerX, coordinates.centerY, -100);
+          this.backgroundPlane.rotation.z = Math.PI;
+          this.backgroundPlane.renderOrder = -1;
+          this.backgroundPlane.visible = this.currentViewMode === "2d";
+          this.scene.add(this.backgroundPlane);
+        },
+        void 0,
+        (error) => {
+          console.warn(`Failed to load background image ${imageName}:`, error);
+        }
+      );
     }
-    positionCamera(x, y, z, targetX, targetY, targetZ) {
-      this.camera.up.set(0, -1, 0);
-      this.camera.position.set(x, y, z);
-      this.controls.target.set(targetX, targetY, targetZ);
-      this.controls.update();
+    updatePoints(points, viewMode) {
+      this.pointSystems.forEach((system) => this.scene.remove(system));
+      this.pointSystems = [];
+      if (points.length === 0) return;
+      const pointsByResource = /* @__PURE__ */ new Map();
+      const countByResource = /* @__PURE__ */ new Map();
+      points.forEach((point) => {
+        const resourceType = point.resourceType;
+        if (!pointsByResource.has(resourceType)) {
+          pointsByResource.set(resourceType, []);
+          countByResource.set(resourceType, 0);
+        }
+        pointsByResource.get(resourceType).push(point);
+        var count = point.type === "cluster" ? point.count : 1;
+        countByResource.set(resourceType, countByResource.get(resourceType) + count);
+      });
+      const zorderByResource = /* @__PURE__ */ new Map();
+      if (viewMode === "2d" /* VIEW_2D */) {
+        Array.from(countByResource.entries()).sort((a, b) => b[1] - a[1]).forEach(([resourceType], index) => {
+          zorderByResource.set(resourceType, (index + 1) * 100);
+        });
+      }
+      for (const [resourceType, resourcePoints] of pointsByResource) {
+        if (resourcePoints.length === 0) continue;
+        const positions = new Float32Array(resourcePoints.length * 3);
+        const colors = new Float32Array(resourcePoints.length * 3);
+        resourcePoints.forEach((point, i) => {
+          positions[i * 3] = point.x;
+          positions[i * 3 + 1] = point.y;
+          positions[i * 3 + 2] = viewMode === "2d" /* VIEW_2D */ ? zorderByResource.get(point.resourceType) || 0 : point.z;
+          const color = new Color(point.colorHex);
+          colors[i * 3] = color.r;
+          colors[i * 3 + 1] = color.g;
+          colors[i * 3 + 2] = color.b;
+        });
+        const geometry = new BufferGeometry();
+        geometry.setAttribute("position", new BufferAttribute(positions, 3));
+        geometry.setAttribute("color", new BufferAttribute(colors, 3));
+        const material = new PointsMaterial({
+          size: this.effectivePointSize,
+          vertexColors: true,
+          map: this.circleTexture,
+          transparent: true,
+          alphaTest: 0.5,
+          sizeAttenuation: this.sizeAttenuation
+        });
+        const pointSystem = new Points(geometry, material);
+        pointSystem.userData.resourceType = resourceType;
+        pointSystem.visible = !this.hiddenResourceTypes.has(resourceType);
+        this.scene.add(pointSystem);
+        this.pointSystems.push(pointSystem);
+      }
     }
-    resetCameraToTopDown() {
-      this.camera.up.set(0, -1, 0);
-      this.camera.position.set(0, 0, 5e4);
-      this.controls.target.set(0, 0, 0);
-      this.controls.update();
+    render() {
+      if (this.cameraManager) {
+        this.cameraManager.updateControls();
+        this.renderer.render(this.scene, this.cameraManager.getCamera());
+      }
     }
-    onWindowResize() {
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
+    setResourceVisible(resourceType, visible) {
+      if (visible) {
+        this.hiddenResourceTypes.delete(resourceType);
+      } else {
+        this.hiddenResourceTypes.add(resourceType);
+      }
+      this.pointSystems.forEach((system) => {
+        if (system.userData.resourceType === resourceType) {
+          system.visible = visible;
+        }
+      });
     }
-    animate() {
-      requestAnimationFrame(() => this.animate());
-      this.controls.update();
-      this.renderer.render(this.scene, this.camera);
+    setPointSize(size) {
+      this.basePointSize = size;
+      this.updatePointMaterials();
+    }
+    handleZoomChange(zoomFactor) {
+      this.currentZoomFactor = zoomFactor;
+      this.updatePointMaterials();
+    }
+    setSizeAttenuation(enabled) {
+      this.sizeAttenuation = enabled;
+      this.updatePointMaterials();
+    }
+    updatePointMaterials() {
+      this.pointSystems.forEach((system) => {
+        if (system.material && "size" in system.material) {
+          system.material.size = this.effectivePointSize;
+          system.material.sizeAttenuation = this.sizeAttenuation;
+        }
+      });
+    }
+    handleResize(width, height) {
+      this.renderer.setSize(width, height);
+      if (this.cameraManager) {
+        this.cameraManager.handleResize(width, height);
+      }
+    }
+    // Raycasting for hover/click detection
+    getIntersectedPoints(mouseX, mouseY) {
+      const mouse = new Vector2(
+        mouseX / this.renderer.domElement.width * 2 - 1,
+        -(mouseY / this.renderer.domElement.height) * 2 + 1
+      );
+      if (!this.cameraManager) {
+        return [];
+      }
+      const raycaster = new Raycaster();
+      const baseThreshold = 4e3;
+      raycaster.params.Points.threshold = baseThreshold / Math.max(0.1, this.currentZoomFactor);
+      raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
+      return raycaster.intersectObjects(this.pointSystems);
+    }
+    getIntersectedPoint(mouseX, mouseY) {
+      const intersections = this.getIntersectedPoints(mouseX, mouseY);
+      return intersections.length > 0 ? intersections[0] : null;
+    }
+    screenToWorldCoordinates(mouseX, mouseY) {
+      if (!this.cameraManager) return null;
+      const mouse = new Vector2(
+        mouseX / this.renderer.domElement.width * 2 - 1,
+        -(mouseY / this.renderer.domElement.height) * 2 + 1
+      );
+      const raycaster = new Raycaster();
+      raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
+      if (this.currentViewMode === "2d" /* VIEW_2D */) {
+        const plane = new Plane(new Vector3(0, 0, 1), 0);
+        const intersectionPoint = new Vector3();
+        if (raycaster.ray.intersectPlane(plane, intersectionPoint)) {
+          return { x: intersectionPoint.x, y: intersectionPoint.y, z: intersectionPoint.z };
+        }
+      } else {
+        const target = this.cameraManager.getCamera().position.clone();
+        target.add(raycaster.ray.direction.clone().multiplyScalar(1e3));
+        return { x: target.x, y: target.y, z: target.z };
+      }
+      return null;
+    }
+    getNearbyPoints(mouseX, mouseY, radius) {
+      if (!this.cameraManager) return [];
+      const intersections = this.getIntersectedPoints(mouseX, mouseY);
+      return intersections.filter((intersection) => {
+        const screenPos = new Vector3();
+        screenPos.copy(intersection.point);
+        screenPos.project(this.cameraManager.getCamera());
+        const screenX = (screenPos.x + 1) * this.renderer.domElement.width / 2;
+        const screenY = (-screenPos.y + 1) * this.renderer.domElement.height / 2;
+        const distance = Math.sqrt(
+          Math.pow(screenX - mouseX, 2) + Math.pow(screenY - mouseY, 2)
+        );
+        return distance <= radius;
+      }).sort((a, b) => b.point.z - a.point.z).slice(0, 10);
     }
   };
 
-  // src/ui.ts
-  var UIManager = class {
-    constructor() {
-      this.loadingEl = document.getElementById("loading");
-      this.errorBoxEl = document.getElementById("errorBox");
-      this.errorContentEl = document.getElementById("errorContent");
-      this.setupErrorCapture();
+  // src/ui/UIManager.ts
+  var ViewControlsManager = class {
+    constructor(callbacks) {
+      this.callbacks = callbacks;
+      this.viewModeSelectElement = document.querySelector("#view-mode");
+      this.resetCameraBtnElement = document.querySelector(
+        "#reset-camera-btn"
+      );
+      this.clusterEnabledElement = document.querySelector("#cluster-enabled");
+      this.clusterRadiusElement = document.querySelector("#cluster-radius");
+      this.clusterRadiusValueElement = document.querySelector(
+        "#cluster-radius-value"
+      );
+      this.pointSizeElement = document.querySelector("#point-size-slider");
+      this.pointSizeValueElement = document.querySelector("#point-size-value");
+      this.sizeAttenuationElement = document.querySelector(
+        "#size-attenuation"
+      );
+      this.attachEventListeners();
     }
-    setupErrorCapture() {
-      const originalConsoleError = console.error;
-      console.error = (...args) => {
-        originalConsoleError.apply(console, args);
-        if (!this.errorBoxEl || !this.errorContentEl) return;
-        const errorText = args.map(
-          (arg) => typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(" ");
-        this.errorContentEl.innerHTML += "<pre>" + errorText + "</pre>";
-        this.errorBoxEl.style.display = "block";
+    attachEventListeners() {
+      const updateViewConfig = () => {
+        const config = {
+          viewMode: this.viewModeSelectElement.value
+        };
+        this.callbacks.onViewConfigChange(config);
       };
+      this.viewModeSelectElement.addEventListener("change", updateViewConfig);
+      if (this.resetCameraBtnElement && this.callbacks.onResetCamera) {
+        this.resetCameraBtnElement.addEventListener("click", () => {
+          if (this.callbacks.onResetCamera) {
+            this.callbacks.onResetCamera();
+          }
+        });
+      }
+      const updateClusterConfig = () => {
+        const config = {
+          enabled: this.clusterEnabledElement.checked,
+          radius: parseInt(this.clusterRadiusElement.value),
+          minClusterSize: 3,
+          // Fixed value
+          maxLevels: 4
+          // Fixed value
+        };
+        this.callbacks.onClusterConfigChange(config);
+      };
+      this.clusterEnabledElement.addEventListener("change", updateClusterConfig);
+      this.clusterRadiusElement.addEventListener("input", () => {
+        this.clusterRadiusValueElement.textContent = this.clusterRadiusElement.value;
+        updateClusterConfig();
+      });
+      if (this.pointSizeElement) {
+        this.pointSizeElement.addEventListener("input", () => {
+          const size = parseInt(this.pointSizeElement.value);
+          this.pointSizeValueElement.textContent = size.toString();
+          if (this.callbacks.onPointSizeChange) {
+            this.callbacks.onPointSizeChange(size);
+          }
+        });
+      }
+      if (this.sizeAttenuationElement) {
+        this.sizeAttenuationElement.addEventListener("change", () => {
+          if (this.callbacks.onSizeAttenuationChange) {
+            this.callbacks.onSizeAttenuationChange(this.sizeAttenuationElement.checked);
+          }
+        });
+      }
+      updateViewConfig();
+      updateClusterConfig();
     }
-    showLoading() {
-      if (this.loadingEl) this.loadingEl.style.display = "block";
+    updateClusterConfig(config) {
+      this.clusterEnabledElement.checked = config.enabled;
+      this.clusterRadiusElement.value = config.radius.toString();
+      this.clusterRadiusValueElement.textContent = config.radius.toString();
     }
-    hideLoading() {
-      if (this.loadingEl) this.loadingEl.style.display = "none";
+  };
+  var HoverManager = class {
+    constructor(canvas, callbacks) {
+      this.canvas = canvas;
+      this.callbacks = callbacks;
+      this.attachEventListeners();
     }
-    updateMapInfo(mapName, pointCount) {
-      const mapNameEl = document.getElementById("mapName");
-      const pointCountEl = document.getElementById("pointCount");
-      if (mapNameEl) mapNameEl.textContent = mapName;
-      if (pointCountEl) pointCountEl.textContent = pointCount.toString();
+    attachEventListeners() {
+      this.canvas.addEventListener("mousemove", (event) => {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        if (this.callbacks.onMouseMove) {
+          this.callbacks.onMouseMove(x, y);
+        }
+      });
+      this.canvas.addEventListener("mouseleave", () => {
+        if (this.callbacks.onHoverPoint) {
+          this.callbacks.onHoverPoint();
+        }
+        this.updateCoordinateDisplay(null, null);
+      });
     }
-    updateCoordinates(lat, long) {
-      const latEl = document.getElementById("coord-lat");
-      const longEl = document.getElementById("coord-long");
-      if (latEl) latEl.textContent = lat.toFixed(1);
-      if (longEl) longEl.textContent = long.toFixed(1);
+    updateCoordinateDisplay(lat, long) {
+      const latElement = document.getElementById("coord-lat");
+      const longElement = document.getElementById("coord-long");
+      if (latElement) {
+        latElement.textContent = lat !== null ? lat.toFixed(1) : "-";
+      }
+      if (longElement) {
+        longElement.textContent = long !== null ? long.toFixed(1) : "-";
+      }
     }
-    clearCoordinates() {
-      const latEl = document.getElementById("coord-lat");
-      const longEl = document.getElementById("coord-long");
-      if (latEl) latEl.textContent = "-";
-      if (longEl) longEl.textContent = "-";
+  };
+  var InfoPanelManager = class {
+    constructor(containerId) {
+      this.container = document.getElementById(containerId);
+      this.content = this.container.querySelector("#info-content");
     }
-    showPointHover(resourceType, mouseLat, mouseLong, nodeLat, nodeLong, nodeZ, clusterSize, isNoise) {
+    showPointInfo(info) {
+      if (!this.content) return;
+      this.content.innerHTML = `
+            <strong>${info.type}</strong><br>
+            ${info.count ? `Count: ${info.count}<br>` : ""}
+            Position: (${info.position.x.toFixed(1)}, ${info.position.y.toFixed(1)}, ${info.position.z.toFixed(1)})
+        `;
+      this.container.style.display = "block";
+    }
+    hideInfo() {
+      this.container.style.display = "none";
+    }
+  };
+  var ResourcePanelManager = class {
+    constructor(onResourceToggle) {
+      this.visibleResources = /* @__PURE__ */ new Set();
+      this.tbody = document.getElementById("resourceTypeTableBody");
+      this.toggleAllCheckbox = document.getElementById("toggleAll");
+      this.onResourceToggle = onResourceToggle;
+      this.toggleAllCheckbox.addEventListener("change", () => {
+        const checkboxes = this.tbody.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach((cb) => {
+          cb.checked = this.toggleAllCheckbox.checked;
+          const resourceType = cb.dataset.resourceType;
+          if (cb.checked) {
+            this.visibleResources.add(resourceType);
+          } else {
+            this.visibleResources.delete(resourceType);
+          }
+          if (this.onResourceToggle) {
+            this.onResourceToggle(resourceType, cb.checked);
+          }
+        });
+      });
+    }
+    updateResourceTypes(resources) {
+      this.tbody.innerHTML = "";
+      this.visibleResources.clear();
+      resources.forEach((resource) => {
+        const row = document.createElement("tr");
+        const checkboxCell = document.createElement("td");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = true;
+        checkbox.dataset.resourceType = resource.name;
+        this.visibleResources.add(resource.name);
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) {
+            this.visibleResources.add(resource.name);
+          } else {
+            this.visibleResources.delete(resource.name);
+          }
+          if (this.onResourceToggle) {
+            this.onResourceToggle(resource.name, checkbox.checked);
+          }
+        });
+        checkboxCell.appendChild(checkbox);
+        row.appendChild(checkboxCell);
+        const nameCell = document.createElement("td");
+        const swatch = document.createElement("span");
+        swatch.className = "color-swatch";
+        swatch.style.backgroundColor = resource.colorHex;
+        nameCell.appendChild(swatch);
+        nameCell.appendChild(document.createTextNode(resource.name));
+        row.appendChild(nameCell);
+        const countCell = document.createElement("td");
+        countCell.textContent = resource.count.toString();
+        row.appendChild(countCell);
+        const clusterCell = document.createElement("td");
+        clusterCell.textContent = resource.clusterCount.toString();
+        row.appendChild(clusterCell);
+        this.tbody.appendChild(row);
+      });
+    }
+  };
+
+  // src/ui/Application.ts
+  var Application = class {
+    constructor() {
+      this.currentViewConfig = {
+        viewMode: "2d" /* VIEW_2D */
+      };
+      this.currentMapData = null;
+      const canvas = document.getElementById("canvas");
+      this.sceneManager = new SceneManager(canvas);
+      this.dataLoader = new DataLoader();
+      this.world = new World();
+      this.viewControls = new ViewControlsManager({
+        onViewConfigChange: (config) => this.handleViewConfigChange(config),
+        onClusterConfigChange: (config) => this.handleClusterConfigChange(config),
+        onPointSizeChange: (size) => this.handlePointSizeChange(size),
+        onSizeAttenuationChange: (enabled) => this.handleSizeAttenuationChange(enabled),
+        onHoverPoint: (pointId) => this.handlePointHover(pointId),
+        onResetCamera: () => this.handleResetCamera()
+      });
+      this.hoverManager = new HoverManager(canvas, {
+        onViewConfigChange: () => {
+        },
+        onClusterConfigChange: () => {
+        },
+        onMouseMove: (x, y) => this.handleMouseMove(x, y),
+        onHoverPoint: (pointId) => this.handlePointHover(pointId)
+      });
+      this.infoPanelManager = new InfoPanelManager("info-panel");
+      this.resourcePanel = new ResourcePanelManager((resourceType, visible) => {
+        this.sceneManager.setResourceVisible(resourceType, visible);
+      });
+      this.setupResizeHandler(canvas);
+      this.startRenderLoop();
+    }
+    async loadMap(mapName) {
+      this.currentMapData = await this.dataLoader.loadMapByName(mapName);
+      this.world.setMapData(this.currentMapData, this.dataLoader.getResourceTypes());
+      this.sceneManager.initializeWithCoordinates(this.currentMapData.coordinates);
+      if (this.currentMapData.imageName) {
+        this.sceneManager.addBackgroundImage(
+          this.currentMapData.imageName,
+          this.currentMapData.coordinates
+        );
+      }
+      this.applyViewConfiguration();
+      this.applyInitialClusterConfig();
+      this.updateRendering();
+    }
+    handleViewConfigChange(config) {
+      this.currentViewConfig = config;
+      this.applyViewConfiguration();
+      this.updateRendering();
+    }
+    handleClusterConfigChange(config) {
+      this.world.updateClusterConfig(config);
+      this.updateRendering();
+    }
+    handlePointSizeChange(size) {
+      this.sceneManager.setPointSize(size);
+    }
+    handleSizeAttenuationChange(enabled) {
+      this.sceneManager.setSizeAttenuation(enabled);
+    }
+    handleResetCamera() {
+      if (!this.currentMapData) return;
+      this.applyViewConfiguration();
+    }
+    handlePointHover(pointId) {
+      if (!pointId) {
+        this.infoPanelManager.hideInfo();
+        return;
+      }
+      const pointInfo = this.world.getPointInfo(pointId);
+      if (pointInfo) {
+        this.infoPanelManager.showPointInfo(pointInfo);
+      }
+    }
+    handleMouseMove(mouseX, mouseY) {
+      if (!this.currentMapData) return;
+      const worldCoords = this.sceneManager.screenToWorldCoordinates(mouseX, mouseY);
+      if (worldCoords) {
+        const coords = this.currentMapData.coordinates;
+        const cursorLat = (worldCoords.y - coords.centerY) / coords.scaleY + 50;
+        const cursorLong = 50 - (worldCoords.x - coords.centerX) / coords.scaleX;
+        const intersection = this.sceneManager.getIntersectedPoint(mouseX, mouseY);
+        if (intersection && intersection.object.userData.resourceType) {
+          const resourceType = intersection.object.userData.resourceType;
+          const point = intersection.point;
+          const nodeLat = (point.y - coords.centerY) / coords.scaleY + 50;
+          const nodeLong = 50 - (point.x - coords.centerX) / coords.scaleX;
+          const nodeZ = point.z;
+          this.showPointHover(resourceType, cursorLat, cursorLong, nodeLat, nodeLong, nodeZ);
+        } else {
+          this.hidePointHover();
+          this.updateCoordinateDisplay(cursorLat, cursorLong);
+        }
+      }
+    }
+    updateCoordinateDisplay(lat, long) {
+      const latElement = document.getElementById("coord-lat");
+      const longElement = document.getElementById("coord-long");
+      if (latElement) {
+        latElement.textContent = lat.toFixed(1);
+      }
+      if (longElement) {
+        longElement.textContent = long.toFixed(1);
+      }
+    }
+    showPointHover(resourceType, cursorLat, cursorLong, nodeLat, nodeLong, nodeZ) {
       const coordinatesEl = document.getElementById("coordinates");
       if (coordinatesEl) {
-        let clusterInfo = "";
-        if (clusterSize !== void 0) {
-          clusterInfo = `<br>Cluster: <span style="color: #4fc3f7;">${clusterSize} items</span>`;
-        } else if (isNoise) {
-          clusterInfo = `<br>Cluster: <span style="color: #ff9800;">Noise point</span>`;
-        }
         coordinatesEl.innerHTML = `
                 <strong>Point Details:</strong><br>
-                Resource: <span style="color: #4fc3f7;">${resourceType}</span>${clusterInfo}<br>
+                Resource: <span style="color: #4fc3f7;">${resourceType}</span><br>
                 Node Lat: <span style="color: #4fc3f7;">${nodeLat.toFixed(1)}</span><br>
                 Node Long: <span style="color: #4fc3f7;">${nodeLong.toFixed(1)}</span><br>
                 Node Z: <span style="color: #4fc3f7;">${nodeZ.toFixed(1)}</span><br>
                 <strong>Cursor Position:</strong><br>
-                Lat: <span id="coord-lat">${mouseLat.toFixed(1)}</span><br>
-                Long: <span id="coord-long">${mouseLong.toFixed(1)}</span>
+                Lat: <span id="coord-lat">${cursorLat.toFixed(1)}</span><br>
+                Long: <span id="coord-long">${cursorLong.toFixed(1)}</span>
             `;
       }
     }
@@ -24070,1021 +25247,175 @@
             `;
       }
     }
-    getElement(id) {
-      return document.getElementById(id);
+    applyViewConfiguration() {
+      if (!this.currentMapData) return;
+      const cameraMode = this.currentViewConfig.viewMode === "2d" /* VIEW_2D */ ? "orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */ : "perspective" /* PERSPECTIVE */;
+      this.sceneManager.setViewMode(
+        this.currentViewConfig.viewMode,
+        cameraMode,
+        this.currentMapData.coordinates
+      );
     }
-  };
-
-  // src/data-loader.ts
-  var DataLoader = class {
-    constructor() {
-      this.indexData = null;
-    }
-    async loadIndex() {
-      const response = await fetch("./data/index.json");
-      if (!response.ok) {
-        throw new Error(`Failed to load index.json: ${response.status} ${response.statusText}`);
-      }
-      this.indexData = await response.json();
-      if (!this.indexData) {
-        throw new Error("Index data is null or undefined");
-      }
-      return this.indexData;
-    }
-    async loadMapData(dataUrl) {
-      const response = await fetch(`./data/${dataUrl}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch map data: ${response.status} ${response.statusText}`);
-      }
-      return await response.json();
-    }
-    getResourceTypes() {
-      return this.indexData?.resourceTypes ?? [];
-    }
-    getMaps() {
-      return this.indexData?.maps ?? [];
-    }
-  };
-
-  // src/clustering/clustering.ts
-  function cluster(spatialIndex, epsilon, minPoints) {
-    const n = spatialIndex.length;
-    const labels = new Array(n).fill(-1);
-    let clusterId = 0;
-    for (let i = 0; i < n; i++) {
-      if (labels[i] !== -1) continue;
-      const neighbors = getNeighbors(spatialIndex, i, epsilon);
-      if (neighbors.length < minPoints) {
-        labels[i] = -1;
-        continue;
-      }
-      clusterId++;
-      expandCluster(i, neighbors, clusterId, labels, spatialIndex, epsilon, minPoints);
-    }
-    return labels.map((clusterId2, pointIndex) => ({
-      clusterId: clusterId2,
-      pointIndex
-    }));
-  }
-  function expandCluster(pointIndex, neighbors, clusterId, labels, spatialIndex, epsilon, minPoints) {
-    labels[pointIndex] = clusterId;
-    const queue = [...neighbors];
-    while (queue.length > 0) {
-      const currentIndex = queue.shift();
-      if (labels[currentIndex] === -1) {
-        labels[currentIndex] = clusterId;
-      }
-      if (labels[currentIndex] !== -1) continue;
-      labels[currentIndex] = clusterId;
-      const currentNeighbors = getNeighbors(spatialIndex, currentIndex, epsilon);
-      if (currentNeighbors.length >= minPoints) {
-        queue.push(...currentNeighbors);
+    applyInitialClusterConfig() {
+      const clusterEnabledElement = document.querySelector(
+        "#cluster-enabled"
+      );
+      const clusterRadiusElement = document.querySelector("#cluster-radius");
+      const minClusterSizeElement = document.querySelector(
+        "#min-cluster-size"
+      );
+      const maxClusterLevelElement = document.querySelector(
+        "#max-cluster-level"
+      );
+      if (clusterEnabledElement && clusterRadiusElement && minClusterSizeElement && maxClusterLevelElement) {
+        const config = {
+          enabled: clusterEnabledElement.checked,
+          radius: parseInt(clusterRadiusElement.value),
+          minClusterSize: parseInt(minClusterSizeElement.value),
+          maxLevels: parseInt(maxClusterLevelElement.value)
+        };
+        this.world.updateClusterConfig(config);
       }
     }
-  }
-  function getNeighbors(spatialIndex, pointIndex, epsilon) {
-    const point = spatialIndex.points[pointIndex];
-    const candidates = spatialIndex.searchRadius(point.x, point.y, point.z, epsilon);
-    const neighbors = [];
-    for (const candidate of candidates) {
-      if (candidate.index === pointIndex) continue;
-      neighbors.push(candidate.index);
+    updateRendering() {
+      if (!this.currentMapData) return;
+      const points = this.world.getCurrentPoints();
+      this.sceneManager.updatePoints(points, this.currentViewConfig.viewMode);
+      this.updateResourcePanel(points);
     }
-    return neighbors;
-  }
-
-  // src/clustering/PointsWithIndex.ts
-  var PointsWithIndex = class extends Points {
-    constructor(spatialIndex, material) {
-      const positions = new Float32Array(spatialIndex.length * 3);
-      spatialIndex.points.forEach((pos, i) => {
-        positions[i * 3] = pos.x;
-        positions[i * 3 + 1] = pos.y;
-        positions[i * 3 + 2] = pos.z;
-      });
-      const geometry = new BufferGeometry();
-      geometry.setAttribute("position", new BufferAttribute(positions, 3));
-      super(geometry, material);
-      this.spatialIndex = spatialIndex;
-      this.points = spatialIndex.points;
-    }
-    cluster(epsilon, minPoints) {
-      console.log(`Clustering ${this.spatialIndex.points.length} points...`);
-      const startTime = performance.now();
-      const results = cluster(this.spatialIndex, epsilon, minPoints);
-      const endTime = performance.now();
-      console.log(`Clustering completed in ${(endTime - startTime).toFixed(2)}ms`);
-      const clusters = /* @__PURE__ */ new Map();
-      results.forEach((x) => {
-        if (x.clusterId !== -1) {
-          if (!clusters.has(x.clusterId)) {
-            clusters.set(x.clusterId, []);
-          }
-          clusters.get(x.clusterId).push(this.points[x.pointIndex]);
-        }
-      });
-      const clustersIds = Array.from(clusters.keys());
-      const noiseIds = results.filter((r) => r.clusterId === -1).map((x) => x.pointIndex);
-      console.log(`Found ${clusters.size} clusters with ${noiseIds.length} noise points`);
-      const statsEl = document.getElementById("clusterStats");
-      if (statsEl) {
-        statsEl.textContent = `Clusters: ${clusters.size} | Noise: ${noiseIds.length}`;
-      }
-      const positions = new Float32Array((clustersIds.length + noiseIds.length) * 3);
-      const clusterInfo = [];
-      for (let i = 0; i < clustersIds.length; i++) {
-        const clusterId = clustersIds[i];
-        const points = clusters.get(clusterId);
-        const centroid = points.reduce((acc, p) => {
-          acc.x += p.x;
-          acc.y += p.y;
-          acc.z += p.z;
-          return acc;
-        }, { x: 0, y: 0, z: 0 });
-        centroid.x /= points.length;
-        centroid.y /= points.length;
-        centroid.z /= points.length;
-        const offset = i * 3;
-        positions[offset] = centroid.x;
-        positions[offset + 1] = centroid.y;
-        positions[offset + 2] = centroid.z;
-        clusterInfo.push({ clusterSize: points.length, clusterCenter: centroid });
-      }
-      for (let i = 0; i < noiseIds.length; i++) {
-        const pointIndex = noiseIds[i];
-        const point = this.points[pointIndex];
-        const offset = (clustersIds.length + i) * 3;
-        positions[offset] = point.x;
-        positions[offset + 1] = point.y;
-        positions[offset + 2] = point.z;
-        clusterInfo.push({ isNoise: true, clusterCenter: point });
-      }
-      this.geometry.setAttribute("position", new BufferAttribute(positions, 3));
-      this.userData.clusterInfo = clusterInfo;
-      this.userData.isClustered = true;
-    }
-    resetClustering() {
-      const positions = new Float32Array(this.points.length * 3);
-      this.points.forEach((pos, i) => {
-        positions[i * 3] = pos.x;
-        positions[i * 3 + 1] = pos.y;
-        positions[i * 3 + 2] = pos.z;
-      });
-      this.geometry.setAttribute("position", new BufferAttribute(positions, 3));
-      this.userData.clusterInfo = void 0;
-      this.userData.isClustered = false;
-    }
-  };
-
-  // src/clustering/rbush3d.ts
-  var compareMinX = (a, b) => {
-    return ("x" in a ? a.x : a.minX) - ("x" in b ? b.x : b.minX);
-  };
-  var compareMinY = (a, b) => {
-    return ("y" in a ? a.y : a.minY) - ("y" in b ? b.y : b.minY);
-  };
-  var compareMinZ = (a, b) => {
-    return ("z" in a ? a.z : a.minZ) - ("z" in b ? b.z : b.minZ);
-  };
-  function extend(a, b) {
-    if ("x" in b) {
-      a.minX = Math.min(a.minX, b.x);
-      a.minY = Math.min(a.minY, b.y);
-      a.minZ = Math.min(a.minZ, b.z);
-      a.maxX = Math.max(a.maxX, b.x);
-      a.maxY = Math.max(a.maxY, b.y);
-      a.maxZ = Math.max(a.maxZ, b.z);
-    } else {
-      a.minX = Math.min(a.minX, b.minX);
-      a.minY = Math.min(a.minY, b.minY);
-      a.minZ = Math.min(a.minZ, b.minZ);
-      a.maxX = Math.max(a.maxX, b.maxX);
-      a.maxY = Math.max(a.maxY, b.maxY);
-      a.maxZ = Math.max(a.maxZ, b.maxZ);
-    }
-  }
-  function calcBBox(node) {
-    node.minX = Infinity;
-    node.minY = Infinity;
-    node.minZ = Infinity;
-    node.maxX = -Infinity;
-    node.maxY = -Infinity;
-    node.maxZ = -Infinity;
-    for (const child of node.children) {
-      extend(node, child);
-    }
-  }
-  function createNode(children) {
-    const node = {
-      children,
-      height: 1,
-      leaf: true,
-      minX: Infinity,
-      minY: Infinity,
-      minZ: Infinity,
-      maxX: -Infinity,
-      maxY: -Infinity,
-      maxZ: -Infinity
-    };
-    if (children.length === 0) {
-      return node;
-    }
-    calcBBox(node);
-    return node;
-  }
-  function intersects2(a, b) {
-    return b.minX <= a.maxX && b.minY <= a.maxY && b.minZ <= a.maxZ && b.maxX >= a.minX && b.maxY >= a.minY && b.maxZ >= a.minZ;
-  }
-  var RBush3D = class {
-    constructor(points, maxEntries = 9) {
-      this.maxEntries = Math.max(4, maxEntries);
-      this.points = points.slice().sort((a, b) => a.index - b.index);
-      this.data = this.buildFromPoints(points);
-      this.length = points.length;
-    }
-    buildFromPoints(points) {
-      if (!points || points.length === 0) {
-        return createNode([]);
-      }
-      if (points.length <= this.maxEntries) {
-        return createNode(points.slice());
-      }
-      return this.build(points.slice(), 0, points.length - 1, 0);
-    }
-    search(bbox) {
-      const result = [];
-      if (!intersects2(bbox, this.data)) return result;
-      const nodesToSearch = [];
-      let node = this.data;
-      while (node) {
-        const children = node.children;
-        const isLeaf = node.leaf;
-        for (let i = 0; i < children.length; i++) {
-          const child = children[i];
-          if (isLeaf) {
-            const point = child;
-            if (point.x >= bbox.minX && point.x <= bbox.maxX && point.y >= bbox.minY && point.y <= bbox.maxY && point.z >= bbox.minZ && point.z <= bbox.maxZ) {
-              result.push(point);
-            }
-          } else {
-            const childNode = child;
-            if (intersects2(bbox, childNode)) {
-              nodesToSearch.push(childNode);
-            }
-          }
-        }
-        node = nodesToSearch.pop();
-      }
-      return result;
-    }
-    // Search for items within a spherical radius
-    searchRadius(x, y, z, radius) {
-      const bbox = {
-        minX: x - radius,
-        minY: y - radius,
-        minZ: z - radius,
-        maxX: x + radius,
-        maxY: y + radius,
-        maxZ: z + radius
-      };
-      const candidates = this.search(bbox);
-      const result = [];
-      const radiusSquared = radius * radius;
-      for (const point of candidates) {
-        const dx = x - point.x;
-        const dy = y - point.y;
-        const dz = z - point.z;
-        const distSquared = dx * dx + dy * dy + dz * dz;
-        if (distSquared <= radiusSquared) {
-          result.push(point);
-        }
-      }
-      return result;
-    }
-    build(items, left, right, height) {
-      const N = right - left + 1;
-      let M = this.maxEntries;
-      if (N <= M) {
-        const children = new Array(N);
-        for (let i = 0; i < N; i++) {
-          children[i] = items[left + i];
-        }
-        return createNode(children);
-      }
-      if (!height) {
-        height = Math.ceil(Math.log(N) / Math.log(M));
-        M = Math.ceil(N / Math.pow(M, height - 1));
-      }
-      const node = createNode([]);
-      node.leaf = false;
-      node.height = height;
-      const N3 = Math.ceil(N / M);
-      const N2 = N3 * Math.ceil(Math.sqrt(M));
-      this.multiSelect(items, left, right, N2, compareMinX);
-      for (let i = left; i <= right; i += N2) {
-        const right2 = Math.min(i + N2 - 1, right);
-        this.multiSelect(items, i, right2, N3, compareMinY);
-        for (let j = i; j <= right2; j += N3) {
-          const right3 = Math.min(j + N3 - 1, right2);
-          this.multiSelect(items, j, right3, 1, compareMinZ);
-          node.children.push(this.build(items, j, right3, height - 1));
-        }
-      }
-      calcBBox(node);
-      return node;
-    }
-    multiSelect(arr, left, right, n, compare) {
-      const stack = [left, right];
-      while (stack.length) {
-        right = stack.pop();
-        left = stack.pop();
-        if (right - left <= n) continue;
-        const mid = left + Math.ceil((right - left) / n / 2) * n;
-        this.quickselect(arr, mid, left, right, compare);
-        stack.push(left, mid, mid, right);
-      }
-    }
-    quickselect(arr, k, left, right, compare) {
-      while (right > left) {
-        if (right - left > 600) {
-          const n = right - left + 1;
-          const m = k - left + 1;
-          const z = Math.log(n);
-          const s = 0.5 * Math.exp(2 * z / 3);
-          const sd = 0.5 * Math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
-          const newLeft = Math.max(left, Math.floor(k - m * s / n + sd));
-          const newRight = Math.min(right, Math.floor(k + (n - m) * s / n + sd));
-          this.quickselect(arr, k, newLeft, newRight, compare);
-        }
-        const t = arr[k];
-        let i = left;
-        let j = right;
-        this.swap(arr, left, k);
-        if (compare(arr[right], t) > 0) this.swap(arr, left, right);
-        while (i < j) {
-          this.swap(arr, i, j);
-          i++;
-          j--;
-          while (compare(arr[i], t) < 0) i++;
-          while (compare(arr[j], t) > 0) j--;
-        }
-        if (compare(arr[left], t) === 0) this.swap(arr, left, j);
-        else {
-          j++;
-          this.swap(arr, j, right);
-        }
-        if (j <= k) left = j + 1;
-        if (k <= j) right = j - 1;
-      }
-    }
-    swap(arr, i, j) {
-      const tmp2 = arr[i];
-      arr[i] = arr[j];
-      arr[j] = tmp2;
-    }
-  };
-
-  // src/scene-builder.ts
-  var SceneBuilder = class {
-    constructor() {
-      this.circleTexture = null;
-    }
-    getCircleTexture() {
-      if (this.circleTexture) return this.circleTexture;
-      const canvas = document.createElement("canvas");
-      canvas.width = 64;
-      canvas.height = 64;
-      const ctx = canvas.getContext("2d");
-      ctx.beginPath();
-      ctx.arc(32, 32, 32, 0, Math.PI * 2);
-      ctx.fillStyle = "white";
-      ctx.fill();
-      this.circleTexture = new CanvasTexture(canvas);
-      return this.circleTexture;
-    }
-    createTextSprite(text, color, scale) {
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      canvas.width = 256;
-      canvas.height = 256;
-      context.font = "Bold 120px Arial";
-      context.fillStyle = color;
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-      context.fillText(text, 128, 128);
-      const texture = new CanvasTexture(canvas);
-      const spriteMaterial = new SpriteMaterial({ map: texture });
-      const sprite = new Sprite(spriteMaterial);
-      sprite.scale.set(scale, scale, 1);
-      return sprite;
-    }
-    createCompassSprites(worldSize, gridSize) {
-      const compassScale = worldSize * 0.05;
-      const compassDistance = gridSize / 2;
-      const compassHeight = worldSize * 0.01;
-      const sprites = [];
-      const north = this.createTextSprite("N", "#ff6b6b", compassScale);
-      north.position.set(0, -compassDistance, compassHeight);
-      sprites.push(north);
-      const south = this.createTextSprite("S", "#ffffff", compassScale);
-      south.position.set(0, compassDistance, compassHeight);
-      sprites.push(south);
-      const east = this.createTextSprite("E", "#ffffff", compassScale);
-      east.position.set(-compassDistance, 0, compassHeight);
-      sprites.push(east);
-      const west = this.createTextSprite("W", "#ffffff", compassScale);
-      west.position.set(compassDistance, 0, compassHeight);
-      sprites.push(west);
-      return sprites;
-    }
-    createParticleSystem(resource, typeConfig, sizeAttenuation) {
-      const color = new Color(typeConfig.color);
-      const renderer = new WebGLRenderer();
-      const gl = renderer.getContext();
-      const maxPointSize = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)[1];
-      console.log("Max point size:", maxPointSize);
-      const material = new PointsMaterial({
-        color,
-        size: sizeAttenuation ? Math.min(maxPointSize, 1024) : 4,
-        sizeAttenuation,
-        map: this.getCircleTexture(),
-        transparent: true,
-        alphaTest: 0.5,
-        // Try disabling depth test for better visibility
-        depthTest: !sizeAttenuation
-      });
-      const index = new RBush3D(resource.points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], index: i })));
-      const particleSystem = new PointsWithIndex(index, material);
-      particleSystem.userData = {
-        resourceType: resource.resourceType,
-        count: resource.points.length
-      };
-      return particleSystem;
-    }
-    calculateWorldBounds(coords) {
-      const worldWidth = coords.maxX - coords.minX;
-      const worldHeight = coords.maxY - coords.minY;
-      const worldDepth = coords.maxZ - coords.minZ;
-      const worldSize = Math.max(worldWidth, worldHeight, worldDepth);
-      const centerX = (coords.minX + coords.maxX) / 2;
-      const centerY = (coords.minY + coords.maxY) / 2;
-      const centerZ = (coords.minZ + coords.maxZ) / 2;
-      return { worldSize, centerX, centerY, centerZ };
-    }
-    calculateCameraPosition(worldSize, centerX, centerY, centerZ, fov2) {
-      const vFOV = fov2 * Math.PI / 180;
-      const height = worldSize;
-      const cameraDistance = height / (2 * Math.tan(vFOV / 2)) * 1.2;
-      return {
-        x: centerX,
-        y: centerY,
-        z: centerZ + cameraDistance,
-        targetX: centerX,
-        targetY: centerY,
-        targetZ: centerZ
-      };
-    }
-  };
-
-  // src/resource-table.ts
-  var ResourceTableManager = class {
-    updateTable(mapData, resourceTypes, particles) {
-      const resourceTypeTableBody = document.getElementById("resourceTypeTableBody");
-      if (!resourceTypeTableBody) return;
-      resourceTypeTableBody.innerHTML = "";
-      resourceTypes.forEach((typeConfig) => {
-        const name = typeConfig.name;
-        if (!mapData.resources.find((r) => r.resourceType === name)) {
-          return;
-        }
-        const particle = particles.find((p) => p.userData.resourceType === name);
-        if (!particle) return;
-        const count = particle.userData.count;
-        const hexColor = typeConfig.colorHex;
-        let clusterInfo = "-";
-        if (particle.userData.isClustered && particle.userData.clusterInfo) {
-          const clusters = particle.userData.clusterInfo.filter((info) => info.clusterSize !== void 0);
-          const noisePoints = particle.userData.clusterInfo.filter((info) => info.isNoise);
-          clusterInfo = `${clusters.length}`;
-          if (noisePoints.length > 0) {
-            clusterInfo += ` (+${noisePoints.length})`;
-          }
-        }
-        const row = document.createElement("tr");
-        row.innerHTML = `
-                <td><input type="checkbox" class="resourceType-toggle" data-resourcetype="${name}" checked></td>
-                <td>
-                    <label style="cursor: pointer; display: inline-flex; align-items: center;">
-                        <input type="color" class="color-picker" data-resourcetype="${name}" value="${hexColor}" 
-                               style="width: 0; height: 0; padding: 0; border: 0; position: absolute; opacity: 0;">
-                        <span class="color-swatch" style="background-color: ${hexColor}" data-resourcetype="${name}"></span>
-                        <span style="margin-left: 6px;">${name}</span>
-                    </label>
-                </td>
-                <td>${count}</td>
-                <td><span class="cluster-count" data-resourcetype="${name}">${clusterInfo}</span></td>
-            `;
-        resourceTypeTableBody.appendChild(row);
-      });
-      this.attachEventListeners(particles);
-    }
-    updateClusterCounts(particles) {
-      console.log("Updating cluster counts for", particles.length, "particles");
-      particles.forEach((particle) => {
-        const resourceType = particle.userData.resourceType;
-        const clusterCountEl = document.querySelector(`[data-resourcetype="${resourceType}"].cluster-count`);
-        console.log(`Checking particle for ${resourceType}:`, {
-          isClustered: particle.userData.isClustered,
-          hasClusterInfo: !!particle.userData.clusterInfo,
-          clusterInfoLength: particle.userData.clusterInfo?.length,
-          elementFound: !!clusterCountEl
-        });
-        if (clusterCountEl) {
-          let clusterInfo = "-";
-          if (particle.userData.isClustered && particle.userData.clusterInfo) {
-            const clusters = particle.userData.clusterInfo.filter((info) => info.clusterSize !== void 0);
-            const noisePoints = particle.userData.clusterInfo.filter((info) => info.isNoise);
-            clusterInfo = `${clusters.length}`;
-            if (noisePoints.length > 0) {
-              clusterInfo += ` (+${noisePoints.length})`;
-            }
-            console.log(`Setting cluster info for ${resourceType}: ${clusterInfo}`);
-          }
-          clusterCountEl.textContent = clusterInfo;
+    updateResourcePanel(points) {
+      const resourceStats = /* @__PURE__ */ new Map();
+      points.forEach((point) => {
+        const existing = resourceStats.get(point.resourceType) || { count: 0, clusterCount: 0 };
+        if (point.type === "cluster") {
+          existing.clusterCount++;
+          existing.count += point.count;
         } else {
-          console.warn(`Could not find cluster count element for ${resourceType}`);
+          existing.count++;
         }
+        resourceStats.set(point.resourceType, existing);
       });
+      const resourceTypes = this.dataLoader.getResourceTypes();
+      const resourceInfo = resourceTypes.map((rt) => {
+        const stats = resourceStats.get(rt.name) || { count: 0, clusterCount: 0 };
+        return {
+          name: rt.name,
+          color: rt.color,
+          colorHex: rt.colorHex,
+          count: stats.count,
+          clusterCount: stats.clusterCount
+        };
+      });
+      this.resourcePanel.updateResourceTypes(resourceInfo);
     }
-    attachEventListeners(particles) {
-      document.querySelectorAll(".resourceType-toggle").forEach((checkbox) => {
-        checkbox.addEventListener("change", (e) => {
-          const target = e.target;
-          const resourceType = target.dataset.resourcetype;
-          const checked = target.checked;
-          particles.forEach((particle) => {
-            if (particle.userData.resourceType === resourceType) {
-              particle.visible = checked;
-            }
-          });
-        });
-      });
-      document.querySelectorAll(".color-picker").forEach((picker) => {
-        picker.addEventListener("input", (e) => {
-          const target = e.target;
-          const resourceType = target.dataset.resourcetype;
-          const newColor = target.value;
-          particles.forEach((particle) => {
-            if (particle.userData.resourceType === resourceType) {
-              particle.material.color.setStyle(newColor);
-            }
-          });
-          const swatch = document.querySelector(`.color-swatch[data-resourcetype="${resourceType}"]`);
-          if (swatch) {
-            swatch.style.backgroundColor = newColor;
-          }
-        });
-      });
-      const toggleAllCheckbox = document.getElementById("toggleAll");
-      if (toggleAllCheckbox) toggleAllCheckbox.checked = true;
+    setupResizeHandler(canvas) {
+      const handleResize = () => {
+        const container = canvas.parentElement;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        this.sceneManager.handleResize(width, height);
+      };
+      window.addEventListener("resize", handleResize);
+      handleResize();
+    }
+    startRenderLoop() {
+      const animate = () => {
+        this.sceneManager.render();
+        requestAnimationFrame(animate);
+      };
+      animate();
+    }
+    // Public API for external control
+    getCurrentViewConfig() {
+      return { ...this.currentViewConfig };
+    }
+    setViewMode(viewMode) {
+      this.currentViewConfig.viewMode = viewMode;
+      this.applyViewConfiguration();
+      this.updateRendering();
+    }
+    getAvailableMaps() {
+      return this.dataLoader.getMapList();
+    }
+    getCurrentMapData() {
+      return this.currentMapData;
     }
   };
 
-  // src/map-controller.ts
-  var MapController = class {
-    constructor(sceneManager2, uiManager2, dataLoader2, sceneBuilder2, resourceTableManager2, clusteringManager2, visualizationManager2) {
-      this.currentCoordinateSystem = null;
-      this.sceneManager = sceneManager2;
-      this.uiManager = uiManager2;
-      this.dataLoader = dataLoader2;
-      this.sceneBuilder = sceneBuilder2;
-      this.resourceTableManager = resourceTableManager2;
-      this.clusteringManager = clusteringManager2;
-      this.visualizationManager = visualizationManager2;
-      this.clusteringManager.setClusterUpdateCallback(() => this.updateClustering());
-      this.updateClustering();
+  // src/main.ts
+  var MainApplication = class {
+    constructor() {
+      this.app = new Application();
+      this.setupUI();
+      this.loadInitialMap();
     }
-    resetCamera() {
-      this.sceneManager.resetCameraToTopDown();
+    setupUI() {
+      this.createMapSelector();
     }
-    updateClustering() {
-      if (this.clusteringManager.isEnabled()) {
-        this.clusteringManager.clusterPoints(this.sceneManager.particles);
-      } else {
-        this.clusteringManager.resetClustering(this.sceneManager.particles);
+    async createMapSelector() {
+      const select = document.getElementById("mapSelect");
+      if (!select) {
+        console.error("mapSelect element not found");
+        return;
       }
-      setTimeout(() => {
-        this.resourceTableManager.updateClusterCounts(this.sceneManager.particles);
-      }, 100);
-    }
-    getCurrentCoordinateSystem() {
-      return this.currentCoordinateSystem;
-    }
-    getParticles() {
-      return this.sceneManager.particles;
-    }
-    async loadMap(dataUrl) {
-      this.uiManager.showLoading();
       try {
-        this.sceneManager.clearScene();
-        const mapData = await this.dataLoader.loadMapData(dataUrl);
-        this.currentCoordinateSystem = mapData.coordinates;
-        const totalPoints = mapData.resources.reduce((sum, r) => sum + r.points.length, 0);
-        this.uiManager.updateMapInfo(mapData.mapName, totalPoints);
-        const { worldSize, centerX, centerY, centerZ } = this.sceneBuilder.calculateWorldBounds(
-          mapData.coordinates
-        );
-        let actualMinZ = Infinity;
-        let actualMaxZ = -Infinity;
-        mapData.resources.forEach((resource) => {
-          resource.points.forEach((point) => {
-            const z = point[2];
-            if (z < actualMinZ) actualMinZ = z;
-            if (z > actualMaxZ) actualMaxZ = z;
-          });
-        });
-        console.log(`Actual Z range: ${actualMinZ.toFixed(2)} to ${actualMaxZ.toFixed(2)}`);
-        console.log(`Coordinate system Z range: ${mapData.coordinates.minZ} to ${mapData.coordinates.maxZ}`);
-        const gridSize = Math.ceil(worldSize * 1.2);
-        const gridDivisions = Math.min(100, Math.max(20, Math.floor(gridSize / 100)));
-        this.sceneManager.addGrid(gridSize, gridDivisions, actualMinZ);
-        const compassSprites = this.sceneBuilder.createCompassSprites(worldSize, gridSize);
-        compassSprites.forEach((sprite) => this.sceneManager.addCompassSprite(sprite));
-        const resourceTypes = this.dataLoader.getResourceTypes();
-        const resourceTypeLookup = {};
-        resourceTypes.forEach((type) => {
-          resourceTypeLookup[type.name] = type;
-        });
-        const sizeAttenuationCheckbox = this.uiManager.getElement("sizeAttenuation");
-        const sizeAttenuation = sizeAttenuationCheckbox?.checked ?? true;
-        mapData.resources.forEach((resource) => {
-          const typeConfig = resourceTypeLookup[resource.resourceType];
-          if (!typeConfig) {
-            console.error("Resource type not found:", resource.resourceType);
-            return;
-          }
-          const particleSystem = this.sceneBuilder.createParticleSystem(
-            resource,
-            typeConfig,
-            sizeAttenuation
-          );
-          this.sceneManager.addParticle(particleSystem);
-        });
-        this.resourceTableManager.updateTable(mapData, resourceTypes, this.sceneManager.particles);
-        this.visualizationManager.setParticles(this.sceneManager.particles);
-        if (this.clusteringManager.isEnabled()) {
-          this.updateClustering();
-        }
-        const cameraPos = this.sceneBuilder.calculateCameraPosition(
-          worldSize,
-          centerX,
-          centerY,
-          centerZ,
-          this.sceneManager.camera.fov
-        );
-        this.sceneManager.positionCamera(
-          cameraPos.x,
-          cameraPos.y,
-          cameraPos.z,
-          cameraPos.targetX,
-          cameraPos.targetY,
-          cameraPos.targetZ
-        );
-      } catch (error) {
-        console.error("Error loading map:", error);
-        alert("Failed to load map data");
-      } finally {
-        this.uiManager.hideLoading();
-      }
-    }
-  };
-
-  // src/map-selector.ts
-  var MapSelector = class {
-    constructor(selectElementId) {
-      this.selectElement = document.getElementById(selectElementId);
-    }
-    populateOptions(maps) {
-      const categories = {};
-      maps.forEach((map) => {
-        const modName = map.modName || "";
-        if (!categories[modName]) {
-          categories[modName] = [];
-        }
-        categories[modName].push(map);
-      });
-      Object.keys(categories).sort().forEach((category) => {
-        const optgroup = document.createElement("optgroup");
-        optgroup.label = category || "Base Game";
-        categories[category].forEach((map) => {
+        const maps = await this.app.getAvailableMaps();
+        select.innerHTML = '<option value="">-- Choose a map --</option>';
+        maps.forEach((map) => {
           const option = document.createElement("option");
-          option.value = map.dataUrl;
-          option.textContent = map.name;
-          optgroup.appendChild(option);
+          option.value = map;
+          option.textContent = map;
+          select.appendChild(option);
         });
-        this.selectElement.appendChild(optgroup);
-      });
-    }
-    onChange(callback) {
-      this.selectElement.addEventListener("change", (e) => {
-        const target = e.target;
-        if (target.value) {
-          this.updateUrl(target.value);
-          callback(target.value);
-          target.blur();
-        }
-      });
-    }
-    setValue(dataUrl) {
-      this.selectElement.value = dataUrl;
-    }
-    getValue() {
-      return this.selectElement.value;
-    }
-    updateUrl(dataUrl) {
-      const url = new URL(window.location.href);
-      url.searchParams.set("map", dataUrl);
-      window.history.pushState({}, "", url);
-    }
-    getMapFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("map");
-    }
-  };
-
-  // src/coordinate-tracker.ts
-  var CoordinateTracker = class {
-    constructor(camera, uiManager2, mapController2) {
-      this.camera = camera;
-      this.uiManager = uiManager2;
-      this.mapController = mapController2;
-      this.isHoveringPoint = false;
-      this.raycaster = new Raycaster();
-      this.mouse = new Vector2();
-      this.groundPlane = new Plane(new Vector3(0, 0, 1), 0);
-      this.intersectionPoint = new Vector3();
-      if (this.raycaster.params.Points) {
-        this.raycaster.params.Points.threshold = 2e3;
-      }
-      window.addEventListener("mousemove", (event) => this.onMouseMove(event));
-    }
-    onMouseMove(event) {
-      this.mouse.x = event.clientX / window.innerWidth * 2 - 1;
-      this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-      this.raycaster.setFromCamera(this.mouse, this.camera);
-      const particles = this.mapController.getParticles();
-      const intersects3 = this.raycaster.intersectObjects(particles.filter((p) => p.visible));
-      if (intersects3.length > 0) {
-        const intersectedParticle = intersects3[0].object;
-        const resourceType = intersectedParticle.userData.resourceType;
-        const mouseGameX = -this.intersectionPoint.x;
-        const mouseGameY = this.intersectionPoint.y;
-        let clusterSize;
-        let isNoise;
-        let clusterCenter;
-        if (intersectedParticle.userData.isClustered && intersectedParticle.userData.clusterInfo) {
-          const pointIndex = intersects3[0].index || 0;
-          const clusterInfo = intersectedParticle.userData.clusterInfo[pointIndex];
-          if (clusterInfo) {
-            clusterSize = clusterInfo.clusterSize;
-            isNoise = clusterInfo.isNoise;
-            clusterCenter = clusterInfo.clusterCenter;
+        select.addEventListener("change", (event) => {
+          const target = event.target;
+          if (target.value) {
+            this.loadMap(target.value);
           }
-        }
-        const coordinateSystem = this.mapController.getCurrentCoordinateSystem();
-        if (coordinateSystem && resourceType) {
-          const mouseLat = 50 + (mouseGameY - coordinateSystem.centerY) / coordinateSystem.scaleY;
-          const mouseLong = 50 + (mouseGameX - coordinateSystem.centerX) / coordinateSystem.scaleX;
-          let nodeLat = 50 + (mouseGameY - coordinateSystem.centerY) / coordinateSystem.scaleY;
-          let nodeLong = 50 + (mouseGameX - coordinateSystem.centerX) / coordinateSystem.scaleX;
-          let nodeGameZ = 0;
-          if (clusterCenter) {
-            nodeLat = 50 + (clusterCenter.y - coordinateSystem.centerY) / coordinateSystem.scaleY;
-            nodeLong = 50 + (-clusterCenter.x - coordinateSystem.centerX) / coordinateSystem.scaleX;
-            nodeGameZ = clusterCenter.z;
-          }
-          this.uiManager.showPointHover(resourceType, mouseLat, mouseLong, nodeLat, nodeLong, nodeGameZ, clusterSize, isNoise);
-          this.isHoveringPoint = true;
-          return;
-        }
-      }
-      if (this.isHoveringPoint) {
-        this.uiManager.hidePointHover();
-        this.isHoveringPoint = false;
-      }
-      if (this.raycaster.ray.intersectPlane(this.groundPlane, this.intersectionPoint)) {
-        const gameX = -this.intersectionPoint.x;
-        const gameY = this.intersectionPoint.y;
-        const coordinateSystem = this.mapController.getCurrentCoordinateSystem();
-        if (coordinateSystem) {
-          const lat = 50 + (gameY - coordinateSystem.centerY) / coordinateSystem.scaleY;
-          const long = 50 + (gameX - coordinateSystem.centerX) / coordinateSystem.scaleX;
-          this.uiManager.updateCoordinates(lat, long);
-        } else {
-          this.uiManager.clearCoordinates();
-        }
-      }
-    }
-  };
-
-  // src/controls-handler.ts
-  var ControlsHandler = class {
-    constructor(particles) {
-      this.particles = particles;
-      this.setupToggleAll();
-      this.setupSizeAttenuation();
-    }
-    setupToggleAll() {
-      const toggleAllCheckbox = document.getElementById("toggleAll");
-      toggleAllCheckbox?.addEventListener("change", (e) => {
-        const target = e.target;
-        const checked = target.checked;
-        document.querySelectorAll(".resourceType-toggle").forEach((checkbox) => {
-          checkbox.checked = checked;
         });
-        this.particles().forEach((particle) => {
-          particle.visible = checked;
-        });
-      });
+      } catch (error) {
+        console.error("Error loading map list:", error);
+      }
     }
-    setupSizeAttenuation() {
-      const sizeAttenuationCheckbox = document.getElementById("sizeAttenuation");
-      sizeAttenuationCheckbox?.addEventListener("change", (e) => {
-        const target = e.target;
-        this.particles().forEach((particle) => {
-          const material = particle.material;
-          material.sizeAttenuation = target.checked;
-          material.size = target.checked ? 500 : 4;
-          material.needsUpdate = true;
-        });
-      });
-    }
-  };
-
-  // src/clustering/clustering-manager.ts
-  var ClusteringManager = class {
-    constructor() {
-      this.epsilon = 1e3;
-      this.minPoints = 5;
-      this.enabled = false;
-      this.debounceTimer = null;
-      this.onClusterUpdate = null;
-      this.setupUI();
-    }
-    setupUI() {
-      const epsilonSlider = document.getElementById("epsilonSlider");
-      const minPointsSlider = document.getElementById("minPointsSlider");
-      const clusteringCheckbox = document.getElementById("clusteringEnabled");
-      const epsilonValue = document.getElementById("epsilonValue");
-      const minPointsValue = document.getElementById("minPointsValue");
-      epsilonSlider?.addEventListener("input", (e) => {
-        const value = e.target.value;
-        this.epsilon = parseInt(value);
-        if (epsilonValue) epsilonValue.textContent = value;
-        this.debouncedCluster();
-      });
-      minPointsSlider?.addEventListener("input", (e) => {
-        const value = e.target.value;
-        this.minPoints = parseInt(value);
-        if (minPointsValue) minPointsValue.textContent = value;
-        this.debouncedCluster();
-      });
-      clusteringCheckbox?.addEventListener("change", (e) => {
-        this.enabled = e.target.checked;
-        if (this.enabled) {
-          this.performClustering();
-        } else {
-          this.clearClustering();
+    async loadInitialMap() {
+      const maps = await this.app.getAvailableMaps();
+      if (maps.length > 0) {
+        await this.loadMap(maps[0]);
+        const select = document.getElementById("mapSelect");
+        if (select) {
+          select.value = maps[0];
         }
-      });
-      this.enabled = clusteringCheckbox?.checked || false;
-    }
-    debouncedCluster() {
-      if (!this.enabled) return;
-      if (this.debounceTimer) {
-        clearTimeout(this.debounceTimer);
-      }
-      this.debounceTimer = window.setTimeout(() => {
-        this.performClustering();
-      }, 300);
-    }
-    setClusterUpdateCallback(callback) {
-      this.onClusterUpdate = callback;
-    }
-    performClustering() {
-      if (!this.enabled || !this.onClusterUpdate) return;
-      console.log("Clustering with epsilon:", this.epsilon, "minPoints:", this.minPoints);
-      this.onClusterUpdate(/* @__PURE__ */ new Map());
-    }
-    clusterPoints(particles) {
-      particles.forEach((p) => {
-        p.cluster(this.epsilon, this.minPoints);
-      });
-    }
-    clearClustering() {
-      const statsEl = document.getElementById("clusterStats");
-      if (statsEl) {
-        statsEl.textContent = "";
-      }
-      if (this.onClusterUpdate) {
-        this.onClusterUpdate(/* @__PURE__ */ new Map());
       }
     }
-    resetClustering(particles) {
-      particles.forEach((p) => {
-        p.resetClustering();
-      });
-      this.clearClustering();
+    async loadMap(mapName) {
+      console.log(`Loading map: ${mapName}`);
+      await this.app.loadMap(mapName);
+      console.log(`Successfully loaded ${mapName}`);
     }
-    isEnabled() {
-      return this.enabled;
+    // Public API for debugging and external access
+    getApplication() {
+      return this.app;
+    }
+    async switchToMap(mapName) {
+      return this.loadMap(mapName);
+    }
+    setView(viewMode) {
+      this.app.setViewMode(viewMode);
     }
   };
-
-  // src/visualization-manager.ts
-  var VisualizationManager = class {
-    constructor() {
-      this.pointSize = 4;
-      this.particles = [];
-      this.setupUI();
-    }
-    setupUI() {
-      const pointSizeSlider = document.getElementById("pointSizeSlider");
-      const pointSizeValue = document.getElementById("pointSizeValue");
-      pointSizeSlider?.addEventListener("input", (e) => {
-        const value = parseInt(e.target.value);
-        this.pointSize = value;
-        if (pointSizeValue) pointSizeValue.textContent = value.toString();
-        this.updatePointSize();
-      });
-      if (pointSizeSlider) {
-        pointSizeSlider.value = this.pointSize.toString();
-      }
-      if (pointSizeValue) {
-        pointSizeValue.textContent = this.pointSize.toString();
-      }
-    }
-    // Update point size for all particles
-    updatePointSize() {
-      this.particles.forEach((particle) => {
-        if (particle.material instanceof PointsMaterial) {
-          particle.material.size = this.pointSize;
-          particle.material.needsUpdate = true;
-        }
-      });
-    }
-    // Set particles to control
-    setParticles(particles) {
-      this.particles = particles;
-      this.updatePointSize();
-    }
-    getPointSize() {
-      return this.pointSize;
-    }
-  };
-
-  // src/index.ts
-  var sceneManager = new SceneManager();
-  var uiManager = new UIManager();
-  var dataLoader = new DataLoader();
-  var sceneBuilder = new SceneBuilder();
-  var resourceTableManager = new ResourceTableManager();
-  var clusteringManager = new ClusteringManager();
-  var visualizationManager = new VisualizationManager();
-  var mapController = new MapController(
-    sceneManager,
-    uiManager,
-    dataLoader,
-    sceneBuilder,
-    resourceTableManager,
-    clusteringManager,
-    visualizationManager
-  );
-  var mapSelector = new MapSelector("mapSelect");
-  var coordinateTracker = new CoordinateTracker(sceneManager.camera, uiManager, mapController);
-  var controlsHandler = new ControlsHandler(() => mapController.getParticles());
-  (async () => {
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("Initializing ARK Resource Map Application...");
     try {
-      await dataLoader.loadIndex();
-      mapSelector.populateOptions(dataLoader.getMaps());
-      const resetCameraBtn = document.getElementById("resetCameraBtn");
-      if (resetCameraBtn) {
-        resetCameraBtn.addEventListener("click", () => {
-          mapController.resetCamera();
-        });
-      }
-      mapSelector.onChange((dataUrl) => mapController.loadMap(dataUrl));
-      const mapFromUrl = mapSelector.getMapFromUrl();
-      if (mapFromUrl) {
-        mapSelector.setValue(mapFromUrl);
-        await mapController.loadMap(mapFromUrl);
-      }
+      const mainApp = new MainApplication();
+      window.arkApp = mainApp;
+      console.log("Application initialized successfully");
+      console.log("Use window.arkApp to access the application in the console");
     } catch (error) {
       console.error("Failed to initialize application:", error);
-      alert("Failed to load application");
     }
-  })();
-  sceneManager.animate();
+  });
 })();
 /*! Bundled license information:
 

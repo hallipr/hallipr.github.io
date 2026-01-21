@@ -1,286 +1,268 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARK Map Resources</title>
-    <style>
-        body { 
-            margin: 0; 
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-        #mapSelector {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 100;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-        }
-        #mapSelector select {
-            background: #2a2a2a;
-            color: white;
-            border: 1px solid #444;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            min-width: 250px;
-            cursor: pointer;
-        }
-        #mapSelector select:hover {
-            border-color: #4fc3f7;
-        }
-        #mapSelector label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 12px;
-            color: #aaa;
-        }
-        #info {
-            position: absolute;
-            top: 80px;
-            left: 10px;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 100;
-            font-size: 12px;
-        }
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            background: rgba(0,0,0,0.8);
-            padding: 20px 40px;
-            border-radius: 8px;
-            z-index: 1000;
-            font-size: 16px;
-            display: none;
-        }
-        #errorBox {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ff6b6b;
-            background: rgba(40, 0, 0, 0.95);
-            padding: 20px;
-            border-radius: 8px;
-            border: 2px solid #ff6b6b;
-            z-index: 2000;
-            font-size: 14px;
-            display: none;
-            max-width: 80%;
-            max-height: 80%;
-            overflow-y: auto;
-            font-family: monospace;
-        }
-        #errorBox h3 {
-            margin: 0 0 10px 0;
-            color: #ff6b6b;
-        }
-        #errorBox pre {
-            margin: 5px 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        #errorBox button {
-            margin-top: 10px;
-            padding: 8px 16px;
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        #errorBox button:hover {
-            background: #ff5252;
-        }
-        #coordinates {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 100;
-            font-size: 12px;
-            min-width: 150px;
-        }
-        #resourceTypePanel {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(26, 26, 26, 0.95);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            z-index: 100;
-            max-height: calc(100vh - 20px);
-            overflow-y: auto;
-            min-width: 250px;
-            max-width: 350px;
-        }
-        #resourceTypePanel h3 {
-            margin: 0 0 10px 0;
-            color: #4fc3f7;
-            font-size: 16px;
-        }
-        #resourceTypeTable {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-        #resourceTypeTable th {
-            background: #2a2a2a;
-            padding: 6px 8px;
-            text-align: left;
-            font-size: 11px;
-        }
-        #resourceTypeTable td {
-            padding: 4px 8px;
-            border-bottom: 1px solid #333;
-        }
-        #resourceTypeTable tr:hover {
-            background: rgba(79, 195, 247, 0.1);
-        }
-        .color-swatch {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
-            margin-right: 6px;
-        }
-        #clusteringPanel {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 5px;
-            z-index: 100;
-            color: white;
-            min-width: 250px;
-        }
-        #clusteringPanel h3 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
-        }
-        #clusteringPanel label {
-            display: block;
-            margin: 8px 0 4px 0;
-            font-size: 12px;
-        }
-        #clusteringPanel input[type="range"] {
-            width: 100%;
-        }
-        #clusteringPanel .value-display {
-            float: right;
-            color: #4fc3f7;
-        }
-        #clusteringPanel .checkbox-row {
-            display: flex;
-            gap: 15px;
-            margin-top: 8px;
-        }
-        #clusteringPanel .checkbox-row label {
-            margin: 0;
-        }
-        #clusteringPanel button {
-            width: 100%;
-            margin-top: 10px;
-            padding: 8px;
-            background: #4fc3f7;
-            border: none;
-            border-radius: 4px;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #clusteringPanel button:hover {
-            background: #6dd5ff;
-        }
-        #clusteringPanel button:disabled {
-            background: #555;
-            cursor: not-allowed;
-        }
-    </style>
-</head>
-<body>
-    <div id="mapSelector">
-        <label for="mapSelect">Select Map:</label>
-        <select id="mapSelect">
-            <option value="">-- Choose a map --</option>
-        </select>
-    </div>
-    <div id="loading">Loading map data...</div>
-    <div id="errorBox">
-        <h3>⚠️ Error</h3>
-        <div id="errorContent"></div>
-        <button onclick="document.getElementById('errorBox').style.display='none'">Close</button>
-    </div>
-    <div id="resourceTypePanel">
-        <h3>Resources</h3>
-        <table id="resourceTypeTable">
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="toggleAll" checked></th>
-                    <th>Resource</th>
-                    <th>Count</th>
-                    <th>Clusters</th>
-                </tr>
-            </thead>
-            <tbody id="resourceTypeTableBody">
-            </tbody>
-        </table>
-    </div>
-    <div id="info">
-        <strong id="mapName">Select a map</strong><br>
-        Points: <span id="pointCount">0</span><br>
-        <button id="resetCameraBtn" style="margin-top: 8px; padding: 4px 8px; background: #4fc3f7; color: black; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">Reset Camera</button>
-    </div>
-    <div id="coordinates">
-        <strong>Cursor Position:</strong><br>
-        Lat: <span id="coord-lat">-</span><br>
-        Long: <span id="coord-long">-</span>
-    </div>
-    
-    <div id="clusteringPanel">
-        <h3>Resource Clustering</h3>
-        <label>
-            Epsilon (cluster radius): <span class="value-display" id="epsilonValue">5000</span>
-        </label>
-        <input type="range" id="epsilonSlider" min="100" max="20000" step="100" value="5000">
-        
-        <label>
-            Min Points: <span class="value-display" id="minPointsValue">5</span>
-        </label>
-        <input type="range" id="minPointsSlider" min="2" max="20" step="1" value="5">
-        
-        <label>
-            Point Size: <span class="value-display" id="pointSizeValue">4</span>
-        </label>
-        <input type="range" id="pointSizeSlider" min="1" max="12" step="1" value="4">
-        
-        <div class="checkbox-row">
-            <label>
-                <input type="checkbox" id="clusteringEnabled" checked> Enable Clustering
-            </label>
-            <label>
-                <input type="checkbox" id="sizeAttenuation"> Size Attenuation
-            </label>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ARK Map Resources</title>
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+                font-family: Arial, sans-serif;
+                height: 100vh;
+            }
+            html {
+                height: 100%;
+            }
+            .color-swatch {
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                border-radius: 2px;
+                margin-right: 6px;
+            }
+            .control-group {
+                position: absolute;
+                margin-bottom: 10px;
+                color: white;
+                background: rgba(0, 0, 0, 0.7);
+                padding: 15px;
+                border-radius: 5px;
+                min-width: 250px;
+                z-index: 100;
+            }
+            .control-group select {
+                background: #2a2a2a;
+                color: white;
+                border: 1px solid #444;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 14px;
+                width: 100%;
+                cursor: pointer;
+            }
+            .control-group select:hover {
+                border-color: #4fc3f7;
+            }
+            .control-group .value-display {
+                float: right;
+                color: #4fc3f7;
+            }
+            .control-group .checkbox-row {
+                display: flex;
+                gap: 15px;
+                margin-top: 8px;
+            }
+            .control-group .checkbox-row label {
+                margin: 0;
+            }
+            .control-group button {
+                width: 100%;
+                margin-top: 10px;
+                padding: 8px;
+                background: #4fc3f7;
+                border: none;
+                border-radius: 4px;
+                color: black;
+                font-weight: bold;
+                cursor: pointer;
+            }
+            .control-group button:hover {
+                background: #6dd5ff;
+            }
+            .control-group button:disabled {
+                background: #555;
+                cursor: not-allowed;
+            }
+            .control-group h3 {
+                margin: 0 0 10px 0;
+                font-size: 14px;
+            }
+            .control-group label {
+                display: block;
+                margin: 8px 0 4px 0;
+                font-size: 12px;
+            }
+            .control-group input[type='range'] {
+                width: 100%;
+            }
+            #canvas {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 0;
+            }
+            #loading {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: white;
+                background: rgba(0, 0, 0, 0.8);
+                padding: 20px 40px;
+                border-radius: 8px;
+                z-index: 1000;
+                font-size: 16px;
+                display: none;
+            }
+            #errorBox {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #ff6b6b;
+                background: rgba(40, 0, 0, 0.95);
+                padding: 20px;
+                border-radius: 8px;
+                border: 2px solid #ff6b6b;
+                z-index: 2000;
+                font-size: 14px;
+                display: none;
+                max-width: 80%;
+                max-height: 80%;
+                overflow-y: auto;
+                font-family: monospace;
+            }
+            #errorBox h3 {
+                margin: 0 0 10px 0;
+                color: #ff6b6b;
+            }
+            #errorBox button {
+                margin-top: 10px;
+                padding: 8px 16px;
+                background: #ff6b6b;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            #errorBox button:hover {
+                background: #ff5252;
+            }
+            #info-panel {
+                bottom: 100px;
+                right: 10px;
+            }
+            #coordinates {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+            }
+            #resourceTypePanel {
+                top: 10px;
+                right: 10px;
+            }
+            #resourceTypePanel h3 {
+                margin: 0 0 10px 0;
+                color: #4fc3f7;
+                font-size: 16px;
+            }
+            #resourceTypeTable {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 12px;
+            }
+            #resourceTypeTable th {
+                background: #2a2a2a;
+                padding: 6px 8px;
+                text-align: left;
+                font-size: 11px;
+            }
+            #resourceTypeTable td {
+                padding: 4px 8px;
+                border-bottom: 1px solid #333;
+            }
+            #resourceTypeTable tr:hover {
+                background: rgba(79, 195, 247, 0.1);
+            }
+            #viewcontrols {
+                top: 120px;
+                left: 10px;
+            }
+            #clusteringPanel {
+                bottom: 10px;
+                left: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+
+        <div id="mapSelector" class="control-group" style="top: 10px; left: 10px">
+            <label for="mapSelect">Select Map:</label>
+            <select id="mapSelect">
+                <option value="">-- Choose a map --</option>
+            </select>
         </div>
-        
-        <div id="clusterStats" style="margin-top: 10px; font-size: 11px; color: #aaa;"></div>
-    </div>
-    
-    <script src="index.js"></script>
-</body>
+
+        <div id="loading">Loading map data...</div>
+        <div id="errorBox">
+            <h3>⚠️ Error</h3>
+            <div id="errorContent"></div>
+            <button onclick="document.getElementById('errorBox').style.display = 'none'">
+                Close
+            </button>
+        </div>
+
+        <div class="control-group" id="viewcontrols">
+            <label for="view-mode">View Mode:</label>
+            <select id="view-mode">
+                <option value="2d">2D View</option>
+                <option value="3d">3D View</option>
+            </select>
+
+            <button id="reset-camera-btn">Reset Camera</button>
+        </div>
+
+        <div id="clusteringPanel" class="control-group">
+            <h3>Resource Clustering</h3>
+            <label>
+                Epsilon (cluster radius):
+                <span class="value-display" id="cluster-radius-value">5000</span>
+            </label>
+            <input type="range" id="cluster-radius" min="100" max="20000" step="100" value="5000" />
+
+            <label> Point Size: <span class="value-display" id="point-size-value">7</span> </label>
+            <input type="range" id="point-size-slider" min="1" max="12" step="1" value="7" />
+
+            <div class="checkbox-row">
+                <label>
+                    <input type="checkbox" id="cluster-enabled" checked /> Enable Clustering
+                </label>
+                <label> <input type="checkbox" id="size-attenuation" /> Size Attenuation </label>
+            </div>
+        </div>
+
+        <div id="resourceTypePanel" class="control-group">
+            <h3>Resources</h3>
+            <table id="resourceTypeTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="toggleAll" checked /></th>
+                        <th>Resource</th>
+                        <th>Count</th>
+                        <th>Clusters</th>
+                    </tr>
+                </thead>
+                <tbody id="resourceTypeTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Info panel hidden for now -->
+        <div id="info-panel" style="display: none" class="control-group">
+            <strong>Resource Info</strong>
+            <div id="info-content"></div>
+        </div>
+
+        <div id="coordinates" class="control-group">
+            <strong>Cursor Position:</strong><br />
+            Lat: <span id="coord-lat">-</span><br />
+            Long: <span id="coord-long">-</span>
+        </div>
+
+        <script src="index.js"></script>
+    </body>
 </html>
