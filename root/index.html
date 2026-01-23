@@ -151,6 +151,10 @@
                 bottom: 10px;
                 right: 10px;
             }
+            #debug-panel {
+                bottom: 200px;
+                left: 10px;
+            }
             #resourceTypePanel {
                 top: 10px;
                 right: 10px;
@@ -261,6 +265,17 @@
             <strong>Cursor Position:</strong><br />
             Lat: <span id="coord-lat">-</span><br />
             Long: <span id="coord-long">-</span>
+        </div>
+
+        <div id="debug-panel" class="control-group">
+            <strong>Coordinate System:</strong><br />
+            <span id="debug-system" style="color: #ffacea;"></span><br />
+            <strong>Canvas:</strong><br />
+            <span id="debug-canvas" style="color: #81c784;"></span><br />
+            <strong>Unreal:</strong><br />
+            <span id="debug-unreal" style="color: #ffb74d;"></span><br />
+            <strong>Ark:</strong><br />
+            <span id="debug-ark" style="color: #4fc3f7;"></span><br />
         </div>
 
         <script src="index.js"></script>

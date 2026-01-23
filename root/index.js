@@ -1,5 +1,46 @@
 "use strict";
 (() => {
+  // src/data/types.ts
+  var CoordinateSystem = class {
+    constructor(minX, maxX, minY, maxY, minZ, maxZ, centerX, centerY, scaleX, scaleY) {
+      this.minX = minX;
+      this.maxX = maxX;
+      this.minY = minY;
+      this.maxY = maxY;
+      this.minZ = minZ;
+      this.maxZ = maxZ;
+      this.centerX = centerX;
+      this.centerY = centerY;
+      this.scaleX = scaleX;
+      this.scaleY = scaleY;
+    }
+    getArkCoordinates(worldCoords) {
+      const lat = (worldCoords.y - this.centerY) / this.scaleY + 50;
+      const long = (worldCoords.x - this.centerX) / this.scaleX + 50;
+      const z = worldCoords.z;
+      return { lat, long, z };
+    }
+  };
+  var MapData = class {
+    constructor(data) {
+      this.mapName = data.mapName;
+      this.coordinates = new CoordinateSystem(
+        data.coordinates.minX,
+        data.coordinates.maxX,
+        data.coordinates.minY,
+        data.coordinates.maxY,
+        data.coordinates.minZ,
+        data.coordinates.maxZ,
+        data.coordinates.centerX,
+        data.coordinates.centerY,
+        data.coordinates.scaleX,
+        data.coordinates.scaleY
+      );
+      this.resources = data.resources;
+      this.imageName = data.imageName;
+    }
+  };
+
   // src/data/DataLoader.ts
   var DataLoader = class {
     constructor() {
@@ -25,7 +66,7 @@
         );
       }
       const data = await response.json();
-      return data;
+      return new MapData(data);
     }
     getResourceTypes() {
       if (!this.indexData) {
@@ -24738,10 +24779,14 @@
         this.backgroundPlane.visible = viewMode === "2d";
       }
     }
-    addBackgroundImage(imageName, coordinates) {
+    clearBackground() {
       if (this.backgroundPlane) {
         this.scene.remove(this.backgroundPlane);
+        this.backgroundPlane = void 0;
       }
+    }
+    addBackgroundImage(imageName, coordinates) {
+      this.clearBackground();
       const loader = new TextureLoader();
       loader.load(
         `images/${imageName}`,
@@ -24758,7 +24803,9 @@
             depthTest: true
           });
           this.backgroundPlane = new Mesh(geometry, material);
-          this.backgroundPlane.position.set(coordinates.centerX, coordinates.centerY, -100);
+          const actualCenterX = (coordinates.minX + coordinates.maxX) / 2;
+          const actualCenterY = (coordinates.minY + coordinates.maxY) / 2;
+          this.backgroundPlane.position.set(actualCenterX, actualCenterY, -100);
           this.backgroundPlane.rotation.z = Math.PI;
           this.backgroundPlane.renderOrder = -1;
           this.backgroundPlane.visible = this.currentViewMode === "2d";
@@ -25149,6 +25196,7 @@
       this.startRenderLoop();
     }
     async loadMap(mapName) {
+      this.sceneManager.clearBackground();
       this.currentMapData = await this.dataLoader.loadMapByName(mapName);
       this.world.setMapData(this.currentMapData, this.dataLoader.getResourceTypes());
       this.sceneManager.initializeWithCoordinates(this.currentMapData.coordinates);
@@ -25196,44 +25244,62 @@
       const worldCoords = this.sceneManager.screenToWorldCoordinates(mouseX, mouseY);
       if (worldCoords) {
         const coords = this.currentMapData.coordinates;
-        const cursorLat = (worldCoords.y - coords.centerY) / coords.scaleY + 50;
-        const cursorLong = 50 - (worldCoords.x - coords.centerX) / coords.scaleX;
+        const cursorArkCoords = coords.getArkCoordinates(worldCoords);
+        this.updateDebugPanel({ x: mouseX, y: mouseY }, worldCoords, coords);
         const intersection = this.sceneManager.getIntersectedPoint(mouseX, mouseY);
         if (intersection && intersection.object.userData.resourceType) {
           const resourceType = intersection.object.userData.resourceType;
           const point = intersection.point;
-          const nodeLat = (point.y - coords.centerY) / coords.scaleY + 50;
-          const nodeLong = 50 - (point.x - coords.centerX) / coords.scaleX;
-          const nodeZ = point.z;
-          this.showPointHover(resourceType, cursorLat, cursorLong, nodeLat, nodeLong, nodeZ);
+          const nodeArkCoords = coords.getArkCoordinates(point);
+          this.showPointHover(resourceType, cursorArkCoords, nodeArkCoords, point);
         } else {
           this.hidePointHover();
-          this.updateCoordinateDisplay(cursorLat, cursorLong);
+          this.updateCoordinateDisplay(cursorArkCoords);
         }
       }
     }
-    updateCoordinateDisplay(lat, long) {
+    updateCoordinateDisplay(arkCoords) {
       const latElement = document.getElementById("coord-lat");
       const longElement = document.getElementById("coord-long");
       if (latElement) {
-        latElement.textContent = lat.toFixed(1);
+        latElement.textContent = arkCoords.lat.toFixed(1);
       }
       if (longElement) {
-        longElement.textContent = long.toFixed(1);
+        longElement.textContent = arkCoords.long.toFixed(1);
       }
     }
-    showPointHover(resourceType, cursorLat, cursorLong, nodeLat, nodeLong, nodeZ) {
+    updateDebugPanel(canvasCoords, worldCoords, coords) {
+      const debugCanvas = document.getElementById("debug-canvas");
+      const debugUnreal = document.getElementById("debug-unreal");
+      const debugArk = document.getElementById("debug-ark");
+      const debugSystem = document.getElementById("debug-system");
+      const arkCoords = coords.getArkCoordinates(worldCoords);
+      debugArk.innerHTML = `X: ${arkCoords.long.toFixed(1)}<br/>Y: ${arkCoords.lat.toFixed(1)}<br/>Z: ${arkCoords.z.toFixed(1)}`;
+      debugCanvas.innerHTML = `X: ${canvasCoords.x}<br/>Y: ${canvasCoords.y}`;
+      debugUnreal.innerHTML = `X: ${worldCoords.x.toFixed(0)}<br/>Y: ${worldCoords.y.toFixed(0)}<br/>Z: ${worldCoords.z.toFixed(0)}`;
+      debugSystem.innerHTML = `
+            <table>
+                <tr><td /><td>min</td><td>max</td><td>center</td><td>scale</td></tr>
+                <tr><td>X</td><td>${coords.minX.toFixed(0)}</td><td>${coords.maxX.toFixed(0)}</td><td>${coords.centerX.toFixed(0)}</td><td>${coords.scaleX.toFixed(2)}</td></tr>
+                <tr><td>Y</td><td>${coords.minY.toFixed(0)}</td><td>${coords.maxY.toFixed(0)}</td><td>${coords.centerY.toFixed(0)}</td><td>${coords.scaleY.toFixed(2)}</td></tr>
+                <tr><td>Z</td><td>${coords.minZ.toFixed(0)}</td><td>${coords.maxZ.toFixed(0)}</td><td>N/A</td><td>N/A</td></tr>
+            </table>
+        `;
+    }
+    showPointHover(resourceType, cursorArkCoords, nodeArkCoords, nodeCoordinates) {
       const coordinatesEl = document.getElementById("coordinates");
       if (coordinatesEl) {
         coordinatesEl.innerHTML = `
                 <strong>Point Details:</strong><br>
                 Resource: <span style="color: #4fc3f7;">${resourceType}</span><br>
-                Node Lat: <span style="color: #4fc3f7;">${nodeLat.toFixed(1)}</span><br>
-                Node Long: <span style="color: #4fc3f7;">${nodeLong.toFixed(1)}</span><br>
-                Node Z: <span style="color: #4fc3f7;">${nodeZ.toFixed(1)}</span><br>
+                Node Lat: <span style="color: #4fc3f7;">${nodeArkCoords.lat.toFixed(1)}</span><br>
+                Node Long: <span style="color: #4fc3f7;">${nodeArkCoords.long.toFixed(1)}</span><br>
+                Node Z: <span style="color: #4fc3f7;">${nodeCoordinates.z.toFixed(1)}</span><br>
+                Node X (UE): <span style="color: #ffb74d;">${nodeCoordinates.x.toFixed(0)}</span><br>
+                Node Y (UE): <span style="color: #ffb74d;">${nodeCoordinates.y.toFixed(0)}</span><br>
                 <strong>Cursor Position:</strong><br>
-                Lat: <span id="coord-lat">${cursorLat.toFixed(1)}</span><br>
-                Long: <span id="coord-long">${cursorLong.toFixed(1)}</span>
+                Lat: <span id="coord-lat">${cursorArkCoords.lat.toFixed(1)}</span><br>
+                Long: <span id="coord-long">${cursorArkCoords.long.toFixed(1)}</span>
             `;
       }
     }

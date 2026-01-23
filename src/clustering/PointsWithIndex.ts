@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { RBush3D } from './RBush3D.js';
-import type { Point3D } from './RBush3D.js';
+import { RBush3D } from './rbush3d.js';
+import type { Point3D } from './rbush3d.js';
 import { cluster } from './clustering.js';
 
 // Extend THREE.Points with cached spatial index and clustering results

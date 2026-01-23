@@ -1,4 +1,4 @@
-import { RBush3D, Point3D } from '../clustering/rbush3d.js';
+import { RBush3D, Point3D, IndexedPoint3D } from '../clustering/rbush3d.js';
 import { cluster } from '../clustering/clustering.js';
 import type { MapData, CoordinateSystem, ResourceType } from '../data/types.js';
 
@@ -174,7 +174,7 @@ export class World {
         this.allPointsCache = null;
 
         for (const resource of this.mapData.resources) {
-            const points: Point3D[] = resource.points.map((point, index) => ({
+            const points: IndexedPoint3D[] = resource.points.map((point, index) => ({
                 x: point[0],
                 y: point[1],
                 z: point[2],
@@ -207,7 +207,7 @@ export class World {
         this.onPointsChanged?.();
     }
 
-    private convertToWorldPoints(points: Point3D[], resourceType: string): WorldPoint[] {
+    private convertToWorldPoints(points: IndexedPoint3D[], resourceType: string): WorldPoint[] {
         const resourceInfo = this.resourceTypes.get(resourceType);
         if (!resourceInfo) return [];
 

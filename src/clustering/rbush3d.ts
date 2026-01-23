@@ -1,11 +1,17 @@
 // Simplified 3D R-tree implementation for point-based spatial queries
 // Based on rbush-3d by Eronana which is based on rbush by Vladimir Agafonkin
 
-export interface Point3D {
+export interface IndexedPoint3D extends Point3D {
+    index: number;
+}
+
+export interface Point3D extends Point {
+    z: number;
+}
+
+export interface Point {
     x: number;
     y: number;
-    z: number;
-    index: number;
 }
 
 interface BBox {
@@ -105,10 +111,10 @@ function intersects(a: BBox, b: BBox): boolean {
 export class RBush3D {
     private readonly data: Node;
     private readonly maxEntries: number;
-    readonly points: Point3D[]; // Expose points in index order
+    readonly points: IndexedPoint3D[]; // Expose points in index order
     readonly length: number;
 
-    constructor(points: Point3D[], maxEntries: number = 9) {
+    constructor(points: IndexedPoint3D[], maxEntries: number = 9) {
         this.maxEntries = Math.max(4, maxEntries);
         // Store points in index order for fast access
         this.points = points.slice().sort((a, b) => a.index - b.index);
@@ -129,8 +135,8 @@ export class RBush3D {
         return this.build(points.slice(), 0, points.length - 1, 0);
     }
 
-    search(bbox: BBox): Point3D[] {
-        const result: Point3D[] = [];
+    search(bbox: BBox): IndexedPoint3D[] {
+        const result: IndexedPoint3D[] = [];
 
         if (!intersects(bbox, this.data)) return result;
 
@@ -145,7 +151,7 @@ export class RBush3D {
                 const child = children[i];
 
                 if (isLeaf) {
-                    const point = child as Point3D;
+                    const point = child as IndexedPoint3D;
                     if (
                         point.x >= bbox.minX &&
                         point.x <= bbox.maxX &&
@@ -170,7 +176,7 @@ export class RBush3D {
     }
 
     // Search for items within a spherical radius
-    searchRadius(x: number, y: number, z: number, radius: number): Point3D[] {
+    searchRadius(x: number, y: number, z: number, radius: number): IndexedPoint3D[] {
         const bbox: BBox = {
             minX: x - radius,
             minY: y - radius,
@@ -181,7 +187,7 @@ export class RBush3D {
         };
 
         const candidates = this.search(bbox);
-        const result: Point3D[] = [];
+        const result: IndexedPoint3D[] = [];
         const radiusSquared = radius * radius; // Avoid sqrt by comparing squared distances
 
         // Filter by actual 3D distance

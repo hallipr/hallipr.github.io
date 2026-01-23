@@ -1,4 +1,4 @@
-import { RBush3D } from './RBush3D.js';
+import { RBush3D } from './rbush3d.js';
 
 export interface ClusterResult {
     clusterId: number; // -1 for noise/unassigned

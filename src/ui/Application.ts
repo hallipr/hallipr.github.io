@@ -2,7 +2,7 @@
 
 import type { ResourceTypeInfo } from '../ui/UIManager.js';
 import type { ViewConfig } from '../rendering/types.js';
-import type { MapData } from '../data/types.js';
+import type { ArkCoordinates, CoordinateSystem, MapData } from '../data/types.js';
 import type { ClusterConfig, WorldPoint } from '../world/World.js';
 import { ViewMode, CameraMode } from '../rendering/types.js';
 import { DataLoader } from '../data/DataLoader.js';
@@ -14,6 +14,7 @@ import {
     InfoPanelManager,
     ResourcePanelManager,
 } from '../ui/UIManager.js';
+import { Point3D, Point } from '../clustering/rbush3d.js';
 
 export class Application {
     private dataLoader: DataLoader;
@@ -67,6 +68,9 @@ export class Application {
     }
 
     async loadMap(mapName: string): Promise<void> {
+        // Clear background immediately to avoid showing old map background
+        this.sceneManager.clearBackground();
+
         // Load map data using the new API
         this.currentMapData = await this.dataLoader.loadMapByName(mapName);
 
@@ -140,8 +144,10 @@ export class Application {
         const worldCoords = this.sceneManager.screenToWorldCoordinates(mouseX, mouseY);
         if (worldCoords) {
             const coords = this.currentMapData.coordinates;
-            const cursorLat = (worldCoords.y - coords.centerY) / coords.scaleY + 50;
-            const cursorLong = 50 - (worldCoords.x - coords.centerX) / coords.scaleX;
+            const cursorArkCoords = coords.getArkCoordinates(worldCoords);
+
+            // Update debug panel with canvas and Unreal coordinates
+            this.updateDebugPanel({ x: mouseX, y: mouseY}, worldCoords, coords);
 
             // Check for intersection with resource points using raycaster
             const intersection = this.sceneManager.getIntersectedPoint(mouseX, mouseY);
@@ -152,50 +158,68 @@ export class Application {
                 const point = intersection.point;
 
                 // Calculate node's lat/long coordinates
-                const nodeLat = (point.y - coords.centerY) / coords.scaleY + 50;
-                const nodeLong = 50 - (point.x - coords.centerX) / coords.scaleX;
-                const nodeZ = point.z;
+                const nodeArkCoords = coords.getArkCoordinates(point);
 
-                this.showPointHover(resourceType, cursorLat, cursorLong, nodeLat, nodeLong, nodeZ);
+                this.showPointHover(resourceType, cursorArkCoords, nodeArkCoords, point);
             } else {
                 // Not hovering over a point, hide hover info and show cursor coordinates
                 this.hidePointHover();
-                this.updateCoordinateDisplay(cursorLat, cursorLong);
+                this.updateCoordinateDisplay(cursorArkCoords);
             }
         }
     }
 
-    private updateCoordinateDisplay(lat: number, long: number): void {
+    private updateCoordinateDisplay(arkCoords: ArkCoordinates): void {
         const latElement = document.getElementById('coord-lat');
         const longElement = document.getElementById('coord-long');
 
         if (latElement) {
-            latElement.textContent = lat.toFixed(1);
+            latElement.textContent = arkCoords.lat.toFixed(1);
         }
         if (longElement) {
-            longElement.textContent = long.toFixed(1);
+            longElement.textContent = arkCoords.long.toFixed(1);
         }
+    }
+
+    private updateDebugPanel(canvasCoords: Point, worldCoords: Point3D, coords: CoordinateSystem): void {
+        const debugCanvas = document.getElementById('debug-canvas')!;
+        const debugUnreal = document.getElementById('debug-unreal')!;
+        const debugArk = document.getElementById('debug-ark')!;
+        const debugSystem = document.getElementById('debug-system')!;
+
+        const arkCoords = coords.getArkCoordinates(worldCoords);
+        debugArk.innerHTML = `X: ${arkCoords.long.toFixed(1)}<br/>Y: ${arkCoords.lat.toFixed(1)}<br/>Z: ${arkCoords.z.toFixed(1)}`;
+        debugCanvas.innerHTML = `X: ${canvasCoords.x}<br/>Y: ${canvasCoords.y}`;
+        debugUnreal.innerHTML = `X: ${worldCoords.x.toFixed(0)}<br/>Y: ${worldCoords.y.toFixed(0)}<br/>Z: ${worldCoords.z.toFixed(0)}`;
+        debugSystem.innerHTML = `
+            <table>
+                <tr><td /><td>min</td><td>max</td><td>center</td><td>scale</td></tr>
+                <tr><td>X</td><td>${coords.minX.toFixed(0)}</td><td>${coords.maxX.toFixed(0)}</td><td>${coords.centerX.toFixed(0)}</td><td>${coords.scaleX.toFixed(2)}</td></tr>
+                <tr><td>Y</td><td>${coords.minY.toFixed(0)}</td><td>${coords.maxY.toFixed(0)}</td><td>${coords.centerY.toFixed(0)}</td><td>${coords.scaleY.toFixed(2)}</td></tr>
+                <tr><td>Z</td><td>${coords.minZ.toFixed(0)}</td><td>${coords.maxZ.toFixed(0)}</td><td>N/A</td><td>N/A</td></tr>
+            </table>
+        `;
     }
 
     private showPointHover(
         resourceType: string,
-        cursorLat: number,
-        cursorLong: number,
-        nodeLat: number,
-        nodeLong: number,
-        nodeZ: number,
+        cursorArkCoords: ArkCoordinates,
+        nodeArkCoords: ArkCoordinates,
+        nodeCoordinates: Point3D,
     ): void {
         const coordinatesEl = document.getElementById('coordinates');
         if (coordinatesEl) {
             coordinatesEl.innerHTML = `
                 <strong>Point Details:</strong><br>
                 Resource: <span style="color: #4fc3f7;">${resourceType}</span><br>
-                Node Lat: <span style="color: #4fc3f7;">${nodeLat.toFixed(1)}</span><br>
-                Node Long: <span style="color: #4fc3f7;">${nodeLong.toFixed(1)}</span><br>
-                Node Z: <span style="color: #4fc3f7;">${nodeZ.toFixed(1)}</span><br>
+                Node Lat: <span style="color: #4fc3f7;">${nodeArkCoords.lat.toFixed(1)}</span><br>
+                Node Long: <span style="color: #4fc3f7;">${nodeArkCoords.long.toFixed(1)}</span><br>
+                Node Z: <span style="color: #4fc3f7;">${nodeCoordinates.z.toFixed(1)}</span><br>
+                Node X (UE): <span style="color: #ffb74d;">${nodeCoordinates.x.toFixed(0)}</span><br>
+                Node Y (UE): <span style="color: #ffb74d;">${nodeCoordinates.y.toFixed(0)}</span><br>
                 <strong>Cursor Position:</strong><br>
-                Lat: <span id="coord-lat">${cursorLat.toFixed(1)}</span><br>
-                Long: <span id="coord-long">${cursorLong.toFixed(1)}</span>
+                Lat: <span id="coord-lat">${cursorArkCoords.lat.toFixed(1)}</span><br>
+                Long: <span id="coord-long">${cursorArkCoords.long.toFixed(1)}</span>
             `;
         }
     }

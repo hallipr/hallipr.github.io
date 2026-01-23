@@ -32,8 +32,8 @@ export class DataLoader {
             );
         }
 
-        const data: MapData = await response.json();
-        return data;
+        const data: any = await response.json();
+        return new MapData(data);
     }
 
     getResourceTypes(): ResourceType[] {

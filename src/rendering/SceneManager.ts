@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CoordinateSystem } from '../data/types.js';
 import type { WorldPoint } from '../world/World.js';
 import { ViewMode, CameraMode } from './types.js';
+import { Point3D } from '../clustering/rbush3d.js';
 
 export interface CameraConfiguration {
     type: 'perspective' | 'orthographic';
@@ -409,11 +410,16 @@ export class SceneManager {
         }
     }
 
-    addBackgroundImage(imageName: string, coordinates: CoordinateSystem): void {
-        // Remove existing background
+    clearBackground(): void {
         if (this.backgroundPlane) {
             this.scene.remove(this.backgroundPlane);
+            this.backgroundPlane = undefined;
         }
+    }
+
+    addBackgroundImage(imageName: string, coordinates: CoordinateSystem): void {
+        // Remove existing background
+        this.clearBackground();
 
         const loader = new THREE.TextureLoader();
         loader.load(
@@ -431,8 +437,11 @@ export class SceneManager {
                 });
 
                 this.backgroundPlane = new THREE.Mesh(geometry, material);
+                // Position at the actual center of the coordinate range (not the center offset)
                 // Position slightly behind points at z=-100 to ensure visibility
-                this.backgroundPlane.position.set(coordinates.centerX, coordinates.centerY, -100);
+                const actualCenterX = (coordinates.minX + coordinates.maxX) / 2;
+                const actualCenterY = (coordinates.minY + coordinates.maxY) / 2;
+                this.backgroundPlane.position.set(actualCenterX, actualCenterY, -100);
                 // Rotate 180 degrees around Z axis to match Y-down coordinate system
                 this.backgroundPlane.rotation.z = Math.PI;
                 // Set render order to ensure it renders first
@@ -610,7 +619,7 @@ export class SceneManager {
     screenToWorldCoordinates(
         mouseX: number,
         mouseY: number,
-    ): { x: number; y: number; z: number } | null {
+    ): Point3D | null {
         if (!this.cameraManager) return null;
 
         const mouse = new THREE.Vector2(
