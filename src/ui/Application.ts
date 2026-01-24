@@ -309,18 +309,20 @@ export class Application {
             resourceStats.set(point.resourceType, existing);
         });
 
-        // Get resource types with colors
+        // Get resource types with colors, filtering out those with no resources on this map
         const resourceTypes = this.dataLoader.getResourceTypes();
-        const resourceInfo: ResourceTypeInfo[] = resourceTypes.map((rt) => {
-            const stats = resourceStats.get(rt.name) || { count: 0, clusterCount: 0 };
-            return {
-                name: rt.name,
-                color: rt.color,
-                colorHex: rt.colorHex,
-                count: stats.count,
-                clusterCount: stats.clusterCount,
-            };
-        });
+        const resourceInfo: ResourceTypeInfo[] = resourceTypes
+            .map((rt) => {
+                const stats = resourceStats.get(rt.name) || { count: 0, clusterCount: 0 };
+                return {
+                    name: rt.name,
+                    color: rt.color,
+                    colorHex: rt.colorHex,
+                    count: stats.count,
+                    clusterCount: stats.clusterCount,
+                };
+            })
+            .filter((ri) => ri.count > 0);
 
         this.resourcePanel.updateResourceTypes(resourceInfo);
     }

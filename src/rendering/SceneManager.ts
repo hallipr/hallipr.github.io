@@ -70,27 +70,37 @@ export class CameraManager {
             coordinates.maxY - coordinates.minY,
         );
         const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
+        const centerY = coordinates.centerY * -1; // Invert Y for Y-down coordinate system
 
         switch (cameraMode) {
             case CameraMode.PERSPECTIVE:
                 this.currentCamera = this.perspectiveCamera;
                 this.perspectiveCamera.position.set(
                     coordinates.centerX,
-                    coordinates.centerY,
+                    centerY,
                     mapSize * 0.8,
                 );
-                this.perspectiveCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+                this.perspectiveCamera.lookAt(coordinates.centerX, centerY, centerZ);
                 break;
 
             case CameraMode.ORTHOGRAPHIC_TOP_DOWN:
                 this.currentCamera = this.orthographicCamera;
                 this.orthographicCamera.position.set(
                     coordinates.centerX,
-                    coordinates.centerY,
+                    centerY,
                     mapSize,
                 );
-                this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+                this.orthographicCamera.lookAt(coordinates.centerX, centerY, centerZ);
                 break;
+        }
+
+        // Update controls target and refresh to ensure camera orbits around correct center
+        // (controls may not exist during initial construction)
+        if (this.controls) {
+            // Update controls to use the new camera
+            this.controls.object = this.currentCamera;
+            this.controls.target.set(coordinates.centerX, centerY, centerZ);
+            this.controls.update();
         }
 
         this.updateProjectionMatrix();
@@ -347,18 +357,22 @@ export class SceneManager {
             this.scene.remove(this.gridHelper);
         }
 
-        // Calculate grid size based on world bounds
+        // Calculate grid size based on world bounds (10% larger than map)
         const sizeX = coordinates.maxX - coordinates.minX;
         const sizeY = coordinates.maxY - coordinates.minY;
-        const gridSize = Math.max(sizeX, sizeY) * 1.3;
+        const gridSize = Math.max(sizeX, sizeY) * 1.1;
         const divisions = 20;
 
-        // Create grid helper
+        // Create grid helper (default is on XZ plane)
         this.gridHelper = new THREE.GridHelper(gridSize, divisions, 0x444444, 0x222222);
+
+        // Rotate grid to be on XY plane (camera looks down Z axis)
+        this.gridHelper.rotation.x = Math.PI / 2;
 
         // Position grid below the world's minimum Z
         const gridZ = coordinates.minZ - 1000;
-        this.gridHelper.position.set(coordinates.centerX, coordinates.centerY, gridZ);
+        const centerY = coordinates.centerY * -1; // Invert Y for Y-down coordinate system
+        this.gridHelper.position.set(coordinates.centerX, centerY, gridZ);
 
         // Grid is visible by default, will be controlled by view mode
         this.scene.add(this.gridHelper);
@@ -380,8 +394,10 @@ export class SceneManager {
         this.cameraManager.setMouseControls(viewMode);
 
         // Show/hide grid based on view mode
+        // In 3D mode: always show grid
+        // In 2D mode: show grid only if there's no background image
         if (this.gridHelper) {
-            this.gridHelper.visible = viewMode === '3d';
+            this.gridHelper.visible = viewMode === '3d' || !this.backgroundPlane;
         }
 
         // Show/hide background based on view mode
@@ -418,7 +434,7 @@ export class SceneManager {
 
                 this.backgroundPlane = new THREE.Mesh(geometry, material);
                 // Position slightly behind points at z=-100 to ensure visibility
-                this.backgroundPlane.position.set(coordinates.centerX, coordinates.centerY, -100);
+                this.backgroundPlane.position.set(coordinates.centerX, -coordinates.centerY, -100);
                 // Set render order to ensure it renders first
                 this.backgroundPlane.renderOrder = -1;
                 // Set visibility based on current view mode
@@ -571,7 +587,7 @@ export class SceneManager {
     getIntersectedPoints(mouseX: number, mouseY: number): THREE.Intersection[] {
         const mouse = new THREE.Vector2(
             (mouseX / this.renderer.domElement.width) * 2 - 1,
-            (mouseY / this.renderer.domElement.height) * 2 + 1,
+            -(mouseY / this.renderer.domElement.height) * 2 + 1,
         );
 
         if (!this.cameraManager) {

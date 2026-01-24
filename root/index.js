@@ -24528,25 +24528,31 @@
         coordinates.maxY - coordinates.minY
       );
       const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
+      const centerY = coordinates.centerY * -1;
       switch (cameraMode) {
         case "perspective" /* PERSPECTIVE */:
           this.currentCamera = this.perspectiveCamera;
           this.perspectiveCamera.position.set(
             coordinates.centerX,
-            coordinates.centerY,
+            centerY,
             mapSize * 0.8
           );
-          this.perspectiveCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+          this.perspectiveCamera.lookAt(coordinates.centerX, centerY, centerZ);
           break;
         case "orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */:
           this.currentCamera = this.orthographicCamera;
           this.orthographicCamera.position.set(
             coordinates.centerX,
-            coordinates.centerY,
+            centerY,
             mapSize
           );
-          this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+          this.orthographicCamera.lookAt(coordinates.centerX, centerY, centerZ);
           break;
+      }
+      if (this.controls) {
+        this.controls.object = this.currentCamera;
+        this.controls.target.set(coordinates.centerX, centerY, centerZ);
+        this.controls.update();
       }
       this.updateProjectionMatrix();
     }
@@ -24734,11 +24740,13 @@
       }
       const sizeX = coordinates.maxX - coordinates.minX;
       const sizeY = coordinates.maxY - coordinates.minY;
-      const gridSize = Math.max(sizeX, sizeY) * 1.3;
+      const gridSize = Math.max(sizeX, sizeY) * 1.1;
       const divisions = 20;
       this.gridHelper = new GridHelper(gridSize, divisions, 4473924, 2236962);
+      this.gridHelper.rotation.x = Math.PI / 2;
       const gridZ = coordinates.minZ - 1e3;
-      this.gridHelper.position.set(coordinates.centerX, coordinates.centerY, gridZ);
+      const centerY = coordinates.centerY * -1;
+      this.gridHelper.position.set(coordinates.centerX, centerY, gridZ);
       this.scene.add(this.gridHelper);
     }
     setViewMode(viewMode, cameraMode, coordinates) {
@@ -24752,7 +24760,7 @@
       this.cameraManager.setCameraMode(cameraMode, coordinates);
       this.cameraManager.setMouseControls(viewMode);
       if (this.gridHelper) {
-        this.gridHelper.visible = viewMode === "3d";
+        this.gridHelper.visible = viewMode === "3d" || !this.backgroundPlane;
       }
       if (this.backgroundPlane) {
         this.backgroundPlane.visible = viewMode === "2d";
@@ -24782,7 +24790,7 @@
             depthTest: true
           });
           this.backgroundPlane = new Mesh(geometry, material);
-          this.backgroundPlane.position.set(coordinates.centerX, coordinates.centerY, -100);
+          this.backgroundPlane.position.set(coordinates.centerX, -coordinates.centerY, -100);
           this.backgroundPlane.renderOrder = -1;
           this.backgroundPlane.visible = this.currentViewMode === "2d";
           this.scene.add(this.backgroundPlane);
@@ -24895,7 +24903,7 @@
     getIntersectedPoints(mouseX, mouseY) {
       const mouse = new Vector2(
         mouseX / this.renderer.domElement.width * 2 - 1,
-        mouseY / this.renderer.domElement.height * 2 + 1
+        -(mouseY / this.renderer.domElement.height) * 2 + 1
       );
       if (!this.cameraManager) {
         return [];
@@ -25334,7 +25342,7 @@
           count: stats.count,
           clusterCount: stats.clusterCount
         };
-      });
+      }).filter((ri) => ri.count > 0);
       this.resourcePanel.updateResourceTypes(resourceInfo);
     }
     setupResizeHandler(canvas) {

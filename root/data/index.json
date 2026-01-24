@@ -123,6 +123,11 @@
       "name": "Element Ore",
       "color": 11665587,
       "colorHex": "#B200B3"
+    },
+    {
+      "name": "Debug",
+      "color": 16776960,
+      "colorHex": "#FFFF00"
     }
   ]
 }
