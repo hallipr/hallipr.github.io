@@ -1,10 +1,9 @@
 // Application Layer - Main orchestrator that connects all layers
 
 import type { ResourceTypeInfo } from '../ui/UIManager.js';
-import type { ViewConfig } from '../rendering/types.js';
 import type { ArkCoordinates, CoordinateSystem, MapData, MapInfo } from '../data/types.js';
 import type { ClusterConfig, WorldPoint } from '../world/World.js';
-import { ViewMode, CameraMode } from '../rendering/types.js';
+import { CameraMode } from '../rendering/types.js';
 import { DataLoader } from '../data/DataLoader.js';
 import { World } from '../world/World.js';
 import { SceneManager } from '../rendering/SceneManager.js';
@@ -25,10 +24,6 @@ export class Application {
     private infoPanelManager: InfoPanelManager;
     private resourcePanel: ResourcePanelManager;
 
-    private currentViewConfig: ViewConfig = {
-        viewMode: ViewMode.VIEW_2D,
-    };
-
     private currentMapData: MapData | null = null;
 
     constructor() {
@@ -40,7 +35,6 @@ export class Application {
 
         // Initialize UI systems
         this.viewControls = new ViewControlsManager({
-            onViewConfigChange: (config) => this.handleViewConfigChange(config),
             onClusterConfigChange: (config) => this.handleClusterConfigChange(config),
             onPointSizeChange: (size) => this.handlePointSizeChange(size),
             onSizeAttenuationChange: (enabled) => this.handleSizeAttenuationChange(enabled),
@@ -49,7 +43,6 @@ export class Application {
         });
 
         this.hoverManager = new HoverManager(canvas, {
-            onViewConfigChange: () => {},
             onClusterConfigChange: () => {},
             onMouseMove: (x, y) => this.handleMouseMove(x, y),
             onHoverPoint: (pointId) => this.handlePointHover(pointId),
@@ -89,19 +82,13 @@ export class Application {
             );
         }
 
-        // Apply current view configuration
-        this.applyViewConfiguration();
+        // Reset camera to default position
+        this.resetCamera();
 
         // Ensure clustering configuration is applied on initial map load
         this.applyInitialClusterConfig();
 
         // Update the rendering with current points (no camera repositioning needed)
-        this.updateRendering();
-    }
-
-    private handleViewConfigChange(config: ViewConfig): void {
-        this.currentViewConfig = config;
-        this.applyViewConfiguration();
         this.updateRendering();
     }
 
@@ -121,8 +108,7 @@ export class Application {
     private handleResetCamera(): void {
         if (!this.currentMapData) return;
 
-        // Reapply the view configuration to reset the camera
-        this.applyViewConfiguration();
+        this.resetCamera();
     }
 
     private handlePointHover(pointId?: string): void {
@@ -236,20 +222,10 @@ export class Application {
         }
     }
 
-    private applyViewConfiguration(): void {
+    private resetCamera(): void {
         if (!this.currentMapData) return;
 
-        // Determine standard camera mode based on view mode
-        const cameraMode =
-            this.currentViewConfig.viewMode === ViewMode.VIEW_2D
-                ? CameraMode.ORTHOGRAPHIC_TOP_DOWN
-                : CameraMode.PERSPECTIVE;
-
-        this.sceneManager.setViewMode(
-            this.currentViewConfig.viewMode,
-            cameraMode,
-            this.currentMapData.coordinates,
-        );
+        this.sceneManager.resetCamera(this.currentMapData.coordinates);
     }
 
     private applyInitialClusterConfig(): void {
@@ -288,7 +264,7 @@ export class Application {
         const points = this.world.getCurrentPoints();
 
         // Update scene with the points
-        this.sceneManager.updatePoints(points, this.currentViewConfig.viewMode);
+        this.sceneManager.updatePoints(points);
 
         // Update resource panel with resource statistics
         this.updateResourcePanel(points);
@@ -352,16 +328,6 @@ export class Application {
     }
 
     // Public API for external control
-    public getCurrentViewConfig(): ViewConfig {
-        return { ...this.currentViewConfig };
-    }
-
-    public setViewMode(viewMode: ViewMode): void {
-        this.currentViewConfig.viewMode = viewMode;
-        this.applyViewConfiguration();
-        this.updateRendering();
-    }
-
     public getAvailableMaps(): Promise<MapInfo[]> {
         return this.dataLoader.getMapList();
     }

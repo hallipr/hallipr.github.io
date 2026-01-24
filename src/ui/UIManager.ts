@@ -1,11 +1,8 @@
 // UI Layer - User interface controls and orchestration
 
-import { ViewMode } from '../rendering/types.js';
-import type { ViewConfig } from '../rendering/types.js';
 import type { ClusterConfig } from '../world/World.js';
 
 export interface UICallbacks {
-    onViewConfigChange: (config: ViewConfig) => void;
     onClusterConfigChange: (config: ClusterConfig) => void;
     onPointSizeChange?: (size: number) => void;
     onSizeAttenuationChange?: (enabled: boolean) => void;
@@ -18,7 +15,6 @@ export class ViewControlsManager {
     private callbacks: UICallbacks;
 
     // DOM Elements
-    private viewModeSelectElement: HTMLSelectElement;
     private resetCameraBtnElement: HTMLButtonElement;
     private clusterEnabledElement: HTMLInputElement;
     private clusterRadiusElement: HTMLInputElement;
@@ -31,7 +27,6 @@ export class ViewControlsManager {
         this.callbacks = callbacks;
 
         // Capture all elements
-        this.viewModeSelectElement = document.querySelector('#view-mode') as HTMLSelectElement;
         this.resetCameraBtnElement = document.querySelector(
             '#reset-camera-btn',
         ) as HTMLButtonElement;
@@ -50,15 +45,6 @@ export class ViewControlsManager {
     }
 
     private attachEventListeners(): void {
-        const updateViewConfig = () => {
-            const config: ViewConfig = {
-                viewMode: this.viewModeSelectElement.value as ViewMode,
-            };
-            this.callbacks.onViewConfigChange(config);
-        };
-
-        this.viewModeSelectElement.addEventListener('change', updateViewConfig);
-
         // Reset camera button
         if (this.resetCameraBtnElement && this.callbacks.onResetCamera) {
             this.resetCameraBtnElement.addEventListener('click', () => {
@@ -70,8 +56,8 @@ export class ViewControlsManager {
 
         const updateClusterConfig = () => {
             const config: ClusterConfig = {
-                enabled: this.clusterEnabledElement.checked,
-                radius: parseInt(this.clusterRadiusElement.value),
+                enabled: this.clusterEnabledElement?.checked ?? false,
+                radius: parseInt(this.clusterRadiusElement?.value ?? '5000'),
                 minClusterSize: 3, // Fixed value
                 maxLevels: 4, // Fixed value
             };
@@ -79,17 +65,25 @@ export class ViewControlsManager {
         };
 
         // Cluster control event listeners
-        this.clusterEnabledElement.addEventListener('change', updateClusterConfig);
-        this.clusterRadiusElement.addEventListener('input', () => {
-            this.clusterRadiusValueElement.textContent = this.clusterRadiusElement.value;
-            updateClusterConfig();
-        });
+        if (this.clusterEnabledElement) {
+            this.clusterEnabledElement.addEventListener('change', updateClusterConfig);
+        }
+        if (this.clusterRadiusElement) {
+            this.clusterRadiusElement.addEventListener('input', () => {
+                if (this.clusterRadiusValueElement) {
+                    this.clusterRadiusValueElement.textContent = this.clusterRadiusElement.value;
+                }
+                updateClusterConfig();
+            });
+        }
 
         // Point size control
         if (this.pointSizeElement) {
             this.pointSizeElement.addEventListener('input', () => {
                 const size = parseInt(this.pointSizeElement.value);
-                this.pointSizeValueElement.textContent = size.toString();
+                if (this.pointSizeValueElement) {
+                    this.pointSizeValueElement.textContent = size.toString();
+                }
                 if (this.callbacks.onPointSizeChange) {
                     this.callbacks.onPointSizeChange(size);
                 }
@@ -105,19 +99,22 @@ export class ViewControlsManager {
             });
         }
 
-        // Initialize with default view config
-        updateViewConfig();
-
         // Trigger initial cluster config to ensure UI values are applied
         updateClusterConfig();
     }
 
     updateClusterConfig(config: ClusterConfig): void {
-        this.clusterEnabledElement.checked = config.enabled;
-        this.clusterRadiusElement.value = config.radius.toString();
+        if (this.clusterEnabledElement) {
+            this.clusterEnabledElement.checked = config.enabled;
+        }
+        if (this.clusterRadiusElement) {
+            this.clusterRadiusElement.value = config.radius.toString();
+        }
 
         // Update display values
-        this.clusterRadiusValueElement.textContent = config.radius.toString();
+        if (this.clusterRadiusValueElement) {
+            this.clusterRadiusValueElement.textContent = config.radius.toString();
+        }
     }
 }
 

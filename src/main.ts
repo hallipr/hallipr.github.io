@@ -1,7 +1,6 @@
 // Main Application Entry Point - Connects all layers together
 
 import { Application } from './ui/Application.js';
-import { ViewMode } from './rendering/types.js';
 
 declare global {
     interface Window {
@@ -90,10 +89,6 @@ class MainApplication {
 
     public async switchToMap(mapKey: string): Promise<void> {
         return this.loadMap(mapKey);
-    }
-
-    public setView(viewMode: ViewMode): void {
-        this.app.setViewMode(viewMode);
     }
 }
 

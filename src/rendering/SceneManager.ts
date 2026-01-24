@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CoordinateSystem } from '../data/types.js';
 import type { WorldPoint } from '../world/World.js';
-import { ViewMode, CameraMode } from './types.js';
+import { CameraMode } from './types.js';
 import { Point3D } from '../clustering/rbush3d.js';
 
 export interface CameraConfiguration {
@@ -16,13 +16,10 @@ export interface CameraConfiguration {
 }
 
 export class CameraManager {
-    private perspectiveCamera: THREE.PerspectiveCamera;
-    private orthographicCamera: THREE.OrthographicCamera;
-    private currentCamera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+    private camera: THREE.OrthographicCamera;
     private renderer: THREE.WebGLRenderer;
     private controls: OrbitControls;
     private onZoomChange?: (zoomFactor: number) => void;
-    private initialPerspectiveDistance: number = 1;
     private baseOrthographicSize: number = 1;
 
     constructor(
@@ -33,31 +30,25 @@ export class CameraManager {
         this.renderer = renderer;
         this.onZoomChange = onZoomChange;
 
-        // Create cameras
-        this.perspectiveCamera = this.createPerspectiveCamera(coordinates);
-        this.orthographicCamera = this.createOrthographicCamera(coordinates);
-        this.currentCamera = this.orthographicCamera; // Default to orthographic for 2D
+        // Create orthographic camera
+        this.camera = this.createOrthographicCamera(coordinates);
 
         // Store initial zoom values and base sizes
         this.baseOrthographicSize =
             Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) *
             0.6;
 
-        // Position cameras with default mode
+        // Position camera
         this.setCameraMode(CameraMode.ORTHOGRAPHIC_TOP_DOWN, coordinates);
 
-        this.initialPerspectiveDistance = this.perspectiveCamera.position.distanceTo(
-            new THREE.Vector3(coordinates.centerX, coordinates.centerY, 0),
-        );
-
         // Create controls
-        this.controls = new OrbitControls(this.currentCamera, this.renderer.domElement);
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
         this.controls.mouseButtons = {
-            LEFT: THREE.MOUSE.PAN,
+            LEFT: THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.DOLLY,
-            RIGHT: THREE.MOUSE.ROTATE,
+            RIGHT: THREE.MOUSE.PAN,
         };
 
         // Listen for zoom changes
@@ -72,58 +63,23 @@ export class CameraManager {
         const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
         const centerY = coordinates.centerY * -1; // Invert Y for Y-down coordinate system
 
-        switch (cameraMode) {
-            case CameraMode.PERSPECTIVE:
-                this.currentCamera = this.perspectiveCamera;
-                this.perspectiveCamera.position.set(
-                    coordinates.centerX,
-                    centerY,
-                    mapSize * 0.8,
-                );
-                this.perspectiveCamera.lookAt(coordinates.centerX, centerY, centerZ);
-                break;
-
-            case CameraMode.ORTHOGRAPHIC_TOP_DOWN:
-                this.currentCamera = this.orthographicCamera;
-                this.orthographicCamera.position.set(
-                    coordinates.centerX,
-                    centerY,
-                    mapSize,
-                );
-                this.orthographicCamera.lookAt(coordinates.centerX, centerY, centerZ);
-                break;
-        }
+        // Position orthographic camera for top-down view
+        this.camera.position.set(
+            coordinates.centerX,
+            centerY,
+            mapSize,
+        );
+        this.camera.lookAt(coordinates.centerX, centerY, centerZ);
 
         // Update controls target and refresh to ensure camera orbits around correct center
         // (controls may not exist during initial construction)
         if (this.controls) {
-            // Update controls to use the new camera
-            this.controls.object = this.currentCamera;
+            this.controls.object = this.camera;
             this.controls.target.set(coordinates.centerX, centerY, centerZ);
             this.controls.update();
         }
 
-        this.updateProjectionMatrix();
-    }
-
-    private createPerspectiveCamera(coordinates: CoordinateSystem): THREE.PerspectiveCamera {
-        const mapSize = Math.max(
-            coordinates.maxX - coordinates.minX,
-            coordinates.maxY - coordinates.minY,
-        );
-        const far = Math.max(mapSize * 4, 10000);
-        const camera = new THREE.PerspectiveCamera(
-            75,
-            this.renderer.domElement.width / this.renderer.domElement.height,
-            0.1,
-            far,
-        );
-
-        // Coordinate system should be: y increases downward, x increases rightward
-        //camera.up.set(0, -1, 0);
-
-        // Position will be set by setCameraMode
-        return camera;
+        this.camera.updateProjectionMatrix();
     }
 
     private createOrthographicCamera(coordinates: CoordinateSystem): THREE.OrthographicCamera {
@@ -149,8 +105,8 @@ export class CameraManager {
         return camera;
     }
 
-    getCamera(): THREE.Camera {
-        return this.currentCamera;
+    getCamera(): THREE.OrthographicCamera {
+        return this.camera;
     }
 
     updateControls(): void {
@@ -158,23 +114,18 @@ export class CameraManager {
     }
 
     updateProjectionMatrix(): void {
-        this.currentCamera.updateProjectionMatrix();
+        this.camera.updateProjectionMatrix();
     }
 
     handleResize(width: number, height: number): void {
         const aspect = width / height;
 
-        if (this.currentCamera === this.perspectiveCamera) {
-            this.perspectiveCamera.aspect = aspect;
-            this.perspectiveCamera.updateProjectionMatrix();
-        } else {
-            // Use stored base size to avoid accumulating errors
-            this.orthographicCamera.left = -this.baseOrthographicSize * aspect;
-            this.orthographicCamera.right = this.baseOrthographicSize * aspect;
-            this.orthographicCamera.top = this.baseOrthographicSize;
-            this.orthographicCamera.bottom = -this.baseOrthographicSize;
-            this.orthographicCamera.updateProjectionMatrix();
-        }
+        // Use stored base size to avoid accumulating errors
+        this.camera.left = -this.baseOrthographicSize * aspect;
+        this.camera.right = this.baseOrthographicSize * aspect;
+        this.camera.top = this.baseOrthographicSize;
+        this.camera.bottom = -this.baseOrthographicSize;
+        this.camera.updateProjectionMatrix();
     }
 
     updateCoordinates(coordinates: CoordinateSystem): void {
@@ -185,74 +136,42 @@ export class CameraManager {
         );
         const far = Math.max(mapSize * 4, 10000);
         const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
-
-        // Update perspective camera
-        this.perspectiveCamera.far = far;
-        this.perspectiveCamera.position.set(
-            coordinates.centerX,
-            coordinates.centerY,
-            mapSize * 0.8,
-        );
-        this.perspectiveCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-        this.perspectiveCamera.updateProjectionMatrix();
+        const centerY = coordinates.centerY * -1; // Invert Y for Y-down coordinate system
 
         // Update orthographic camera
         const aspect = this.renderer.domElement.width / this.renderer.domElement.height;
         const size =
             Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) *
             0.6;
-        this.orthographicCamera.left = -size * aspect;
-        this.orthographicCamera.right = size * aspect;
-        this.orthographicCamera.top = size;
-        this.orthographicCamera.bottom = -size;
-        this.orthographicCamera.far = far;
-        this.orthographicCamera.position.set(coordinates.centerX, coordinates.centerY, size);
-        this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-        this.orthographicCamera.updateProjectionMatrix();
+        this.camera.left = -size * aspect;
+        this.camera.right = size * aspect;
+        this.camera.top = size;
+        this.camera.bottom = -size;
+        this.camera.far = far;
+        this.camera.position.set(coordinates.centerX, centerY, size);
+        this.camera.lookAt(coordinates.centerX, centerY, centerZ);
+        this.camera.updateProjectionMatrix();
 
         // Update controls target to new center
-        this.controls.target.set(coordinates.centerX, coordinates.centerY, centerZ);
+        this.controls.target.set(coordinates.centerX, centerY, centerZ);
         this.controls.update();
     }
 
-    setMouseControls(viewMode: ViewMode): void {
-        if (viewMode === ViewMode.VIEW_2D) {
-            // 2D view: only allow panning and zooming, no rotation
-            this.controls.mouseButtons = {
-                LEFT: THREE.MOUSE.PAN,
-                MIDDLE: THREE.MOUSE.DOLLY,
-                RIGHT: -1, // Disable right-click rotation
-            };
-            this.controls.enableRotate = false;
-        } else {
-            // 3D view: allow all controls including rotation
-            this.controls.mouseButtons = {
-                LEFT: THREE.MOUSE.ROTATE,
-                MIDDLE: THREE.MOUSE.DOLLY,
-                RIGHT: THREE.MOUSE.PAN,
-            };
-            this.controls.enableRotate = true;
-        }
+    enableMouseControls(): void {
+        // Allow all controls including rotation
+        this.controls.mouseButtons = {
+            LEFT: THREE.MOUSE.PAN,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.ROTATE,
+        };
+        this.controls.enableRotate = true;
     }
 
     private handleZoomChange(): void {
         if (!this.onZoomChange) return;
 
-        let zoomFactor = 1;
-
-        if (this.currentCamera === this.orthographicCamera) {
-            // For orthographic camera, use the camera's zoom property
-            zoomFactor = this.orthographicCamera.zoom;
-        } else {
-            // For perspective camera, calculate zoom from distance to target
-            const currentDistance = this.perspectiveCamera.position.distanceTo(
-                this.controls.target,
-            );
-            zoomFactor = this.initialPerspectiveDistance / currentDistance;
-        }
-
-        // Clamp zoom factor to reasonable range
-        zoomFactor = Math.max(0.1, Math.min(10, zoomFactor));
+        // For orthographic camera, use the camera's zoom property
+        const zoomFactor = Math.max(0.1, Math.min(10, this.camera.zoom));
         this.onZoomChange(zoomFactor);
     }
 
@@ -266,11 +185,10 @@ export class CameraManager {
             coordinates.maxZ - coordinates.minZ,
         );
 
-        const camera = this.getCamera();
         const distance = maxSpan * 1.5;
-        camera.position.set(centerX, centerY, centerZ + distance);
-        camera.lookAt(centerX, centerY, centerZ);
-        (camera as THREE.PerspectiveCamera | THREE.OrthographicCamera).updateProjectionMatrix();
+        this.camera.position.set(centerX, centerY, centerZ + distance);
+        this.camera.lookAt(centerX, centerY, centerZ);
+        this.camera.updateProjectionMatrix();
     }
 }
 
@@ -283,7 +201,6 @@ export class SceneManager {
     private gridHelper?: THREE.GridHelper;
     private circleTexture?: THREE.Texture;
     private hiddenResourceTypes = new Set<string>();
-    private currentViewMode: ViewMode = ViewMode.VIEW_3D;
     private basePointSize: number = 7; // Base size before zoom scaling
     private currentZoomFactor: number = 1;
     private sizeAttenuation: boolean = false;
@@ -369,16 +286,16 @@ export class SceneManager {
         // Rotate grid to be on XY plane (camera looks down Z axis)
         this.gridHelper.rotation.x = Math.PI / 2;
 
-        // Position grid below the world's minimum Z
-        const gridZ = coordinates.minZ - 1000;
+        // Position grid at minZ - 100 (behind points and background)
+        const gridZ = coordinates.minZ - 100;
         const centerY = coordinates.centerY * -1; // Invert Y for Y-down coordinate system
         this.gridHelper.position.set(coordinates.centerX, centerY, gridZ);
 
-        // Grid is visible by default, will be controlled by view mode
+        // Grid is always visible
         this.scene.add(this.gridHelper);
     }
 
-    setViewMode(viewMode: ViewMode, cameraMode: CameraMode, coordinates: CoordinateSystem): void {
+    resetCamera(coordinates: CoordinateSystem): void {
         if (!this.cameraManager) {
             this.initializeWithCoordinates(coordinates);
         }
@@ -387,22 +304,17 @@ export class SceneManager {
             return;
         }
 
-        // Store current view mode
-        this.currentViewMode = viewMode;
+        this.cameraManager.setCameraMode(CameraMode.ORTHOGRAPHIC_TOP_DOWN, coordinates);
+        this.cameraManager.enableMouseControls();
 
-        this.cameraManager.setCameraMode(cameraMode, coordinates);
-        this.cameraManager.setMouseControls(viewMode);
-
-        // Show/hide grid based on view mode
-        // In 3D mode: always show grid
-        // In 2D mode: show grid only if there's no background image
+        // Grid is always visible (shown behind background or alone)
         if (this.gridHelper) {
-            this.gridHelper.visible = viewMode === '3d' || !this.backgroundPlane;
+            this.gridHelper.visible = true;
         }
 
-        // Show/hide background based on view mode
+        // Background is always visible if it exists
         if (this.backgroundPlane) {
-            this.backgroundPlane.visible = viewMode === '2d';
+            this.backgroundPlane.visible = true;
         }
     }
 
@@ -433,12 +345,13 @@ export class SceneManager {
                 });
 
                 this.backgroundPlane = new THREE.Mesh(geometry, material);
-                // Position slightly behind points at z=-100 to ensure visibility
-                this.backgroundPlane.position.set(coordinates.centerX, -coordinates.centerY, -100);
+                // Position at minZ - 100 (in front of grid, behind points)
+                const centerY = coordinates.centerY * -1; // Invert Y for Y-down coordinate system
+                this.backgroundPlane.position.set(coordinates.centerX, centerY, coordinates.minZ - 100);
                 // Set render order to ensure it renders first
                 this.backgroundPlane.renderOrder = -1;
-                // Set visibility based on current view mode
-                this.backgroundPlane.visible = this.currentViewMode === '2d';
+                // Always visible
+                this.backgroundPlane.visible = true;
                 this.scene.add(this.backgroundPlane);
             },
             undefined,
@@ -448,7 +361,7 @@ export class SceneManager {
         );
     }
 
-    updatePoints(points: WorldPoint[], viewMode: ViewMode): void {
+    updatePoints(points: WorldPoint[]): void {
         // Clear existing point systems
         this.pointSystems.forEach((system) => this.scene.remove(system));
         this.pointSystems = [];
@@ -457,29 +370,13 @@ export class SceneManager {
 
         // Group points by resource type for efficient rendering
         const pointsByResource = new Map<string, WorldPoint[]>();
-        const countByResource = new Map<string, number>();
         points.forEach((point) => {
             const resourceType = point.resourceType;
             if (!pointsByResource.has(resourceType)) {
                 pointsByResource.set(resourceType, []);
-                countByResource.set(resourceType, 0);
             }
             pointsByResource.get(resourceType)!.push(point);
-
-            var count = point.type === 'cluster' ? point.count : 1;
-            countByResource.set(resourceType, countByResource.get(resourceType)! + count);
         });
-
-        const zorderByResource = new Map<string, number>();
-        // Calculate render order for 2D view (abundant resources render behind)
-        if (viewMode === ViewMode.VIEW_2D) {
-            // Sort resources by count (most abundant first) and assign Z order, most abundant resource gets Z=100, next gets Z=200
-            Array.from(countByResource.entries())
-                .sort((a, b) => b[1] - a[1]) // Descending order, most abundant first
-                .forEach(([resourceType], index) => {
-                    zorderByResource.set(resourceType, (index + 1) * 100);
-                });
-        }
 
         // Create a THREE.Points system for each resource type
         for (const [resourceType, resourcePoints] of pointsByResource) {
@@ -491,12 +388,8 @@ export class SceneManager {
             resourcePoints.forEach((point, i) => {
                 positions[i * 3] = point.x;
                 positions[i * 3 + 1] = point.y * -1; // Invert Y for Y-down coordinate system
-                // Position based on view mode
-                // Use simple ordered Z-layering in 2d mode
-                positions[i * 3 + 2] =
-                    viewMode === ViewMode.VIEW_2D
-                        ? zorderByResource.get(point.resourceType) || 0
-                        : point.z;
+                // Always use natural Z coordinate
+                positions[i * 3 + 2] = point.z;
 
                 // Parse color from hex string
                 const color = new THREE.Color(point.colorHex);
@@ -622,20 +515,9 @@ export class SceneManager {
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
 
-        // For 2D view, intersect with the Z=0 plane
-        if (this.currentViewMode === ViewMode.VIEW_2D) {
-            const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-            const intersectionPoint = new THREE.Vector3();
-            if (raycaster.ray.intersectPlane(plane, intersectionPoint)) {
-                return { x: intersectionPoint.x, y: intersectionPoint.y * -1, z: intersectionPoint.z };
-            }
-        } else {
-            // For 3D view, project onto ground plane or use distance-based calculation
-            const target = this.cameraManager.getCamera().position.clone();
-            target.add(raycaster.ray.direction.clone().multiplyScalar(1000));
-            return { x: target.x, y: target.y * -1, z: target.z };
-        }
-
-        return null;
+        // Project onto ground plane or use distance-based calculation
+        const target = this.cameraManager.getCamera().position.clone();
+        target.add(raycaster.ray.direction.clone().multiplyScalar(1000));
+        return { x: target.x, y: target.y * -1, z: target.z };
     }
 }

@@ -24500,25 +24500,19 @@
   // src/rendering/SceneManager.ts
   var CameraManager = class {
     constructor(renderer, coordinates, onZoomChange) {
-      this.initialPerspectiveDistance = 1;
       this.baseOrthographicSize = 1;
       this.renderer = renderer;
       this.onZoomChange = onZoomChange;
-      this.perspectiveCamera = this.createPerspectiveCamera(coordinates);
-      this.orthographicCamera = this.createOrthographicCamera(coordinates);
-      this.currentCamera = this.orthographicCamera;
+      this.camera = this.createOrthographicCamera(coordinates);
       this.baseOrthographicSize = Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) * 0.6;
       this.setCameraMode("orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */, coordinates);
-      this.initialPerspectiveDistance = this.perspectiveCamera.position.distanceTo(
-        new Vector3(coordinates.centerX, coordinates.centerY, 0)
-      );
-      this.controls = new OrbitControls(this.currentCamera, this.renderer.domElement);
+      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.05;
       this.controls.mouseButtons = {
-        LEFT: MOUSE.PAN,
+        LEFT: MOUSE.ROTATE,
         MIDDLE: MOUSE.DOLLY,
-        RIGHT: MOUSE.ROTATE
+        RIGHT: MOUSE.PAN
       };
       this.controls.addEventListener("change", () => this.handleZoomChange());
     }
@@ -24529,46 +24523,18 @@
       );
       const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
       const centerY = coordinates.centerY * -1;
-      switch (cameraMode) {
-        case "perspective" /* PERSPECTIVE */:
-          this.currentCamera = this.perspectiveCamera;
-          this.perspectiveCamera.position.set(
-            coordinates.centerX,
-            centerY,
-            mapSize * 0.8
-          );
-          this.perspectiveCamera.lookAt(coordinates.centerX, centerY, centerZ);
-          break;
-        case "orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */:
-          this.currentCamera = this.orthographicCamera;
-          this.orthographicCamera.position.set(
-            coordinates.centerX,
-            centerY,
-            mapSize
-          );
-          this.orthographicCamera.lookAt(coordinates.centerX, centerY, centerZ);
-          break;
-      }
+      this.camera.position.set(
+        coordinates.centerX,
+        centerY,
+        mapSize
+      );
+      this.camera.lookAt(coordinates.centerX, centerY, centerZ);
       if (this.controls) {
-        this.controls.object = this.currentCamera;
+        this.controls.object = this.camera;
         this.controls.target.set(coordinates.centerX, centerY, centerZ);
         this.controls.update();
       }
-      this.updateProjectionMatrix();
-    }
-    createPerspectiveCamera(coordinates) {
-      const mapSize = Math.max(
-        coordinates.maxX - coordinates.minX,
-        coordinates.maxY - coordinates.minY
-      );
-      const far = Math.max(mapSize * 4, 1e4);
-      const camera = new PerspectiveCamera(
-        75,
-        this.renderer.domElement.width / this.renderer.domElement.height,
-        0.1,
-        far
-      );
-      return camera;
+      this.camera.updateProjectionMatrix();
     }
     createOrthographicCamera(coordinates) {
       const aspect2 = this.renderer.domElement.width / this.renderer.domElement.height;
@@ -24587,26 +24553,21 @@
       return camera;
     }
     getCamera() {
-      return this.currentCamera;
+      return this.camera;
     }
     updateControls() {
       this.controls.update();
     }
     updateProjectionMatrix() {
-      this.currentCamera.updateProjectionMatrix();
+      this.camera.updateProjectionMatrix();
     }
     handleResize(width, height) {
       const aspect2 = width / height;
-      if (this.currentCamera === this.perspectiveCamera) {
-        this.perspectiveCamera.aspect = aspect2;
-        this.perspectiveCamera.updateProjectionMatrix();
-      } else {
-        this.orthographicCamera.left = -this.baseOrthographicSize * aspect2;
-        this.orthographicCamera.right = this.baseOrthographicSize * aspect2;
-        this.orthographicCamera.top = this.baseOrthographicSize;
-        this.orthographicCamera.bottom = -this.baseOrthographicSize;
-        this.orthographicCamera.updateProjectionMatrix();
-      }
+      this.camera.left = -this.baseOrthographicSize * aspect2;
+      this.camera.right = this.baseOrthographicSize * aspect2;
+      this.camera.top = this.baseOrthographicSize;
+      this.camera.bottom = -this.baseOrthographicSize;
+      this.camera.updateProjectionMatrix();
     }
     updateCoordinates(coordinates) {
       const mapSize = Math.max(
@@ -24615,57 +24576,31 @@
       );
       const far = Math.max(mapSize * 4, 1e4);
       const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
-      this.perspectiveCamera.far = far;
-      this.perspectiveCamera.position.set(
-        coordinates.centerX,
-        coordinates.centerY,
-        mapSize * 0.8
-      );
-      this.perspectiveCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-      this.perspectiveCamera.updateProjectionMatrix();
+      const centerY = coordinates.centerY * -1;
       const aspect2 = this.renderer.domElement.width / this.renderer.domElement.height;
       const size = Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) * 0.6;
-      this.orthographicCamera.left = -size * aspect2;
-      this.orthographicCamera.right = size * aspect2;
-      this.orthographicCamera.top = size;
-      this.orthographicCamera.bottom = -size;
-      this.orthographicCamera.far = far;
-      this.orthographicCamera.position.set(coordinates.centerX, coordinates.centerY, size);
-      this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-      this.orthographicCamera.updateProjectionMatrix();
-      this.controls.target.set(coordinates.centerX, coordinates.centerY, centerZ);
+      this.camera.left = -size * aspect2;
+      this.camera.right = size * aspect2;
+      this.camera.top = size;
+      this.camera.bottom = -size;
+      this.camera.far = far;
+      this.camera.position.set(coordinates.centerX, centerY, size);
+      this.camera.lookAt(coordinates.centerX, centerY, centerZ);
+      this.camera.updateProjectionMatrix();
+      this.controls.target.set(coordinates.centerX, centerY, centerZ);
       this.controls.update();
     }
-    setMouseControls(viewMode) {
-      if (viewMode === "2d" /* VIEW_2D */) {
-        this.controls.mouseButtons = {
-          LEFT: MOUSE.PAN,
-          MIDDLE: MOUSE.DOLLY,
-          RIGHT: -1
-          // Disable right-click rotation
-        };
-        this.controls.enableRotate = false;
-      } else {
-        this.controls.mouseButtons = {
-          LEFT: MOUSE.ROTATE,
-          MIDDLE: MOUSE.DOLLY,
-          RIGHT: MOUSE.PAN
-        };
-        this.controls.enableRotate = true;
-      }
+    enableMouseControls() {
+      this.controls.mouseButtons = {
+        LEFT: MOUSE.PAN,
+        MIDDLE: MOUSE.DOLLY,
+        RIGHT: MOUSE.ROTATE
+      };
+      this.controls.enableRotate = true;
     }
     handleZoomChange() {
       if (!this.onZoomChange) return;
-      let zoomFactor = 1;
-      if (this.currentCamera === this.orthographicCamera) {
-        zoomFactor = this.orthographicCamera.zoom;
-      } else {
-        const currentDistance = this.perspectiveCamera.position.distanceTo(
-          this.controls.target
-        );
-        zoomFactor = this.initialPerspectiveDistance / currentDistance;
-      }
-      zoomFactor = Math.max(0.1, Math.min(10, zoomFactor));
+      const zoomFactor = Math.max(0.1, Math.min(10, this.camera.zoom));
       this.onZoomChange(zoomFactor);
     }
     positionCameraToMapBounds(coordinates) {
@@ -24677,18 +24612,16 @@
         coordinates.maxY - coordinates.minY,
         coordinates.maxZ - coordinates.minZ
       );
-      const camera = this.getCamera();
       const distance = maxSpan * 1.5;
-      camera.position.set(centerX, centerY, centerZ + distance);
-      camera.lookAt(centerX, centerY, centerZ);
-      camera.updateProjectionMatrix();
+      this.camera.position.set(centerX, centerY, centerZ + distance);
+      this.camera.lookAt(centerX, centerY, centerZ);
+      this.camera.updateProjectionMatrix();
     }
   };
   var SceneManager = class {
     constructor(canvas) {
       this.pointSystems = [];
       this.hiddenResourceTypes = /* @__PURE__ */ new Set();
-      this.currentViewMode = "3d" /* VIEW_3D */;
       this.basePointSize = 7;
       // Base size before zoom scaling
       this.currentZoomFactor = 1;
@@ -24744,26 +24677,25 @@
       const divisions = 20;
       this.gridHelper = new GridHelper(gridSize, divisions, 4473924, 2236962);
       this.gridHelper.rotation.x = Math.PI / 2;
-      const gridZ = coordinates.minZ - 1e3;
+      const gridZ = coordinates.minZ - 100;
       const centerY = coordinates.centerY * -1;
       this.gridHelper.position.set(coordinates.centerX, centerY, gridZ);
       this.scene.add(this.gridHelper);
     }
-    setViewMode(viewMode, cameraMode, coordinates) {
+    resetCamera(coordinates) {
       if (!this.cameraManager) {
         this.initializeWithCoordinates(coordinates);
       }
       if (!this.cameraManager) {
         return;
       }
-      this.currentViewMode = viewMode;
-      this.cameraManager.setCameraMode(cameraMode, coordinates);
-      this.cameraManager.setMouseControls(viewMode);
+      this.cameraManager.setCameraMode("orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */, coordinates);
+      this.cameraManager.enableMouseControls();
       if (this.gridHelper) {
-        this.gridHelper.visible = viewMode === "3d" || !this.backgroundPlane;
+        this.gridHelper.visible = true;
       }
       if (this.backgroundPlane) {
-        this.backgroundPlane.visible = viewMode === "2d";
+        this.backgroundPlane.visible = true;
       }
     }
     clearBackground() {
@@ -24790,9 +24722,10 @@
             depthTest: true
           });
           this.backgroundPlane = new Mesh(geometry, material);
-          this.backgroundPlane.position.set(coordinates.centerX, -coordinates.centerY, -100);
+          const centerY = coordinates.centerY * -1;
+          this.backgroundPlane.position.set(coordinates.centerX, centerY, coordinates.minZ - 100);
           this.backgroundPlane.renderOrder = -1;
-          this.backgroundPlane.visible = this.currentViewMode === "2d";
+          this.backgroundPlane.visible = true;
           this.scene.add(this.backgroundPlane);
         },
         void 0,
@@ -24801,28 +24734,18 @@
         }
       );
     }
-    updatePoints(points, viewMode) {
+    updatePoints(points) {
       this.pointSystems.forEach((system) => this.scene.remove(system));
       this.pointSystems = [];
       if (points.length === 0) return;
       const pointsByResource = /* @__PURE__ */ new Map();
-      const countByResource = /* @__PURE__ */ new Map();
       points.forEach((point) => {
         const resourceType = point.resourceType;
         if (!pointsByResource.has(resourceType)) {
           pointsByResource.set(resourceType, []);
-          countByResource.set(resourceType, 0);
         }
         pointsByResource.get(resourceType).push(point);
-        var count = point.type === "cluster" ? point.count : 1;
-        countByResource.set(resourceType, countByResource.get(resourceType) + count);
       });
-      const zorderByResource = /* @__PURE__ */ new Map();
-      if (viewMode === "2d" /* VIEW_2D */) {
-        Array.from(countByResource.entries()).sort((a, b) => b[1] - a[1]).forEach(([resourceType], index) => {
-          zorderByResource.set(resourceType, (index + 1) * 100);
-        });
-      }
       for (const [resourceType, resourcePoints] of pointsByResource) {
         if (resourcePoints.length === 0) continue;
         const positions = new Float32Array(resourcePoints.length * 3);
@@ -24830,7 +24753,7 @@
         resourcePoints.forEach((point, i) => {
           positions[i * 3] = point.x;
           positions[i * 3 + 1] = point.y * -1;
-          positions[i * 3 + 2] = viewMode === "2d" /* VIEW_2D */ ? zorderByResource.get(point.resourceType) || 0 : point.z;
+          positions[i * 3 + 2] = point.z;
           const color = new Color(point.colorHex);
           colors[i * 3] = color.r;
           colors[i * 3 + 1] = color.g;
@@ -24926,18 +24849,9 @@
       );
       const raycaster = new Raycaster();
       raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
-      if (this.currentViewMode === "2d" /* VIEW_2D */) {
-        const plane = new Plane(new Vector3(0, 0, 1), 0);
-        const intersectionPoint = new Vector3();
-        if (raycaster.ray.intersectPlane(plane, intersectionPoint)) {
-          return { x: intersectionPoint.x, y: intersectionPoint.y * -1, z: intersectionPoint.z };
-        }
-      } else {
-        const target = this.cameraManager.getCamera().position.clone();
-        target.add(raycaster.ray.direction.clone().multiplyScalar(1e3));
-        return { x: target.x, y: target.y * -1, z: target.z };
-      }
-      return null;
+      const target = this.cameraManager.getCamera().position.clone();
+      target.add(raycaster.ray.direction.clone().multiplyScalar(1e3));
+      return { x: target.x, y: target.y * -1, z: target.z };
     }
   };
 
@@ -24945,7 +24859,6 @@
   var ViewControlsManager = class {
     constructor(callbacks) {
       this.callbacks = callbacks;
-      this.viewModeSelectElement = document.querySelector("#view-mode");
       this.resetCameraBtnElement = document.querySelector(
         "#reset-camera-btn"
       );
@@ -24962,13 +24875,6 @@
       this.attachEventListeners();
     }
     attachEventListeners() {
-      const updateViewConfig = () => {
-        const config = {
-          viewMode: this.viewModeSelectElement.value
-        };
-        this.callbacks.onViewConfigChange(config);
-      };
-      this.viewModeSelectElement.addEventListener("change", updateViewConfig);
       if (this.resetCameraBtnElement && this.callbacks.onResetCamera) {
         this.resetCameraBtnElement.addEventListener("click", () => {
           if (this.callbacks.onResetCamera) {
@@ -24978,8 +24884,8 @@
       }
       const updateClusterConfig = () => {
         const config = {
-          enabled: this.clusterEnabledElement.checked,
-          radius: parseInt(this.clusterRadiusElement.value),
+          enabled: this.clusterEnabledElement?.checked ?? false,
+          radius: parseInt(this.clusterRadiusElement?.value ?? "5000"),
           minClusterSize: 3,
           // Fixed value
           maxLevels: 4
@@ -24987,15 +24893,23 @@
         };
         this.callbacks.onClusterConfigChange(config);
       };
-      this.clusterEnabledElement.addEventListener("change", updateClusterConfig);
-      this.clusterRadiusElement.addEventListener("input", () => {
-        this.clusterRadiusValueElement.textContent = this.clusterRadiusElement.value;
-        updateClusterConfig();
-      });
+      if (this.clusterEnabledElement) {
+        this.clusterEnabledElement.addEventListener("change", updateClusterConfig);
+      }
+      if (this.clusterRadiusElement) {
+        this.clusterRadiusElement.addEventListener("input", () => {
+          if (this.clusterRadiusValueElement) {
+            this.clusterRadiusValueElement.textContent = this.clusterRadiusElement.value;
+          }
+          updateClusterConfig();
+        });
+      }
       if (this.pointSizeElement) {
         this.pointSizeElement.addEventListener("input", () => {
           const size = parseInt(this.pointSizeElement.value);
-          this.pointSizeValueElement.textContent = size.toString();
+          if (this.pointSizeValueElement) {
+            this.pointSizeValueElement.textContent = size.toString();
+          }
           if (this.callbacks.onPointSizeChange) {
             this.callbacks.onPointSizeChange(size);
           }
@@ -25008,13 +24922,18 @@
           }
         });
       }
-      updateViewConfig();
       updateClusterConfig();
     }
     updateClusterConfig(config) {
-      this.clusterEnabledElement.checked = config.enabled;
-      this.clusterRadiusElement.value = config.radius.toString();
-      this.clusterRadiusValueElement.textContent = config.radius.toString();
+      if (this.clusterEnabledElement) {
+        this.clusterEnabledElement.checked = config.enabled;
+      }
+      if (this.clusterRadiusElement) {
+        this.clusterRadiusElement.value = config.radius.toString();
+      }
+      if (this.clusterRadiusValueElement) {
+        this.clusterRadiusValueElement.textContent = config.radius.toString();
+      }
     }
   };
   var HoverManager = class {
@@ -25134,16 +25053,12 @@
   // src/ui/Application.ts
   var Application = class {
     constructor() {
-      this.currentViewConfig = {
-        viewMode: "2d" /* VIEW_2D */
-      };
       this.currentMapData = null;
       const canvas = document.getElementById("canvas");
       this.sceneManager = new SceneManager(canvas);
       this.dataLoader = new DataLoader();
       this.world = new World();
       this.viewControls = new ViewControlsManager({
-        onViewConfigChange: (config) => this.handleViewConfigChange(config),
         onClusterConfigChange: (config) => this.handleClusterConfigChange(config),
         onPointSizeChange: (size) => this.handlePointSizeChange(size),
         onSizeAttenuationChange: (enabled) => this.handleSizeAttenuationChange(enabled),
@@ -25151,8 +25066,6 @@
         onResetCamera: () => this.handleResetCamera()
       });
       this.hoverManager = new HoverManager(canvas, {
-        onViewConfigChange: () => {
-        },
         onClusterConfigChange: () => {
         },
         onMouseMove: (x, y) => this.handleMouseMove(x, y),
@@ -25176,13 +25089,8 @@
           this.currentMapData.coordinates
         );
       }
-      this.applyViewConfiguration();
+      this.resetCamera();
       this.applyInitialClusterConfig();
-      this.updateRendering();
-    }
-    handleViewConfigChange(config) {
-      this.currentViewConfig = config;
-      this.applyViewConfiguration();
       this.updateRendering();
     }
     handleClusterConfigChange(config) {
@@ -25197,7 +25105,7 @@
     }
     handleResetCamera() {
       if (!this.currentMapData) return;
-      this.applyViewConfiguration();
+      this.resetCamera();
     }
     handlePointHover(pointId) {
       if (!pointId) {
@@ -25284,14 +25192,9 @@
             `;
       }
     }
-    applyViewConfiguration() {
+    resetCamera() {
       if (!this.currentMapData) return;
-      const cameraMode = this.currentViewConfig.viewMode === "2d" /* VIEW_2D */ ? "orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */ : "perspective" /* PERSPECTIVE */;
-      this.sceneManager.setViewMode(
-        this.currentViewConfig.viewMode,
-        cameraMode,
-        this.currentMapData.coordinates
-      );
+      this.sceneManager.resetCamera(this.currentMapData.coordinates);
     }
     applyInitialClusterConfig() {
       const clusterEnabledElement = document.querySelector(
@@ -25317,7 +25220,7 @@
     updateRendering() {
       if (!this.currentMapData) return;
       const points = this.world.getCurrentPoints();
-      this.sceneManager.updatePoints(points, this.currentViewConfig.viewMode);
+      this.sceneManager.updatePoints(points);
       this.updateResourcePanel(points);
     }
     updateResourcePanel(points) {
@@ -25365,14 +25268,6 @@
       animate();
     }
     // Public API for external control
-    getCurrentViewConfig() {
-      return { ...this.currentViewConfig };
-    }
-    setViewMode(viewMode) {
-      this.currentViewConfig.viewMode = viewMode;
-      this.applyViewConfiguration();
-      this.updateRendering();
-    }
     getAvailableMaps() {
       return this.dataLoader.getMapList();
     }
@@ -25437,9 +25332,6 @@
     }
     async switchToMap(mapKey) {
       return this.loadMap(mapKey);
-    }
-    setView(viewMode) {
-      this.app.setViewMode(viewMode);
     }
   };
   document.addEventListener("DOMContentLoaded", () => {
