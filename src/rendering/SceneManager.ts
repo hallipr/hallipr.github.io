@@ -43,6 +43,9 @@ export class CameraManager {
             Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) *
             0.6;
 
+        // Position cameras with default mode
+        this.setCameraMode(CameraMode.ORTHOGRAPHIC_TOP_DOWN, coordinates);
+
         this.initialPerspectiveDistance = this.perspectiveCamera.position.distanceTo(
             new THREE.Vector3(coordinates.centerX, coordinates.centerY, 0),
         );
@@ -61,6 +64,38 @@ export class CameraManager {
         this.controls.addEventListener('change', () => this.handleZoomChange());
     }
 
+    setCameraMode(cameraMode: CameraMode, coordinates: CoordinateSystem): void {
+        const mapSize = Math.max(
+            coordinates.maxX - coordinates.minX,
+            coordinates.maxY - coordinates.minY,
+        );
+        const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
+
+        switch (cameraMode) {
+            case CameraMode.PERSPECTIVE:
+                this.currentCamera = this.perspectiveCamera;
+                this.perspectiveCamera.position.set(
+                    coordinates.centerX,
+                    coordinates.centerY,
+                    mapSize * 0.8,
+                );
+                this.perspectiveCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+                break;
+
+            case CameraMode.ORTHOGRAPHIC_TOP_DOWN:
+                this.currentCamera = this.orthographicCamera;
+                this.orthographicCamera.position.set(
+                    coordinates.centerX,
+                    coordinates.centerY,
+                    mapSize,
+                );
+                this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
+                break;
+        }
+
+        this.updateProjectionMatrix();
+    }
+
     private createPerspectiveCamera(coordinates: CoordinateSystem): THREE.PerspectiveCamera {
         const mapSize = Math.max(
             coordinates.maxX - coordinates.minX,
@@ -74,14 +109,10 @@ export class CameraManager {
             far,
         );
 
-        // Use Y-down coordinate system to match original
-        camera.up.set(0, -1, 0);
+        // Coordinate system should be: y increases downward, x increases rightward
+        //camera.up.set(0, -1, 0);
 
-        // Position camera above the map and look at center
-        const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
-        camera.position.set(coordinates.centerX, coordinates.centerY, mapSize * 0.8);
-        camera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-
+        // Position will be set by setCameraMode
         return camera;
     }
 
@@ -102,61 +133,10 @@ export class CameraManager {
         );
 
         // Use Y-down coordinate system to match original
-        camera.up.set(0, -1, 0);
+        //camera.up.set(0, -1, 0);
 
-        // Position camera directly above the center for top-down 2D view
-        camera.position.set(coordinates.centerX, coordinates.centerY, size);
-        camera.lookAt(
-            coordinates.centerX,
-            coordinates.centerY,
-            (coordinates.minZ + coordinates.maxZ) / 2,
-        );
-
+        // Position will be set by setCameraMode
         return camera;
-    }
-
-    setCameraMode(mode: CameraMode, coordinates: CoordinateSystem): void {
-        const mapSize = Math.max(
-            coordinates.maxX - coordinates.minX,
-            coordinates.maxY - coordinates.minY,
-        );
-        const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
-
-        switch (mode) {
-            case CameraMode.PERSPECTIVE:
-                this.currentCamera = this.perspectiveCamera;
-                this.perspectiveCamera.position.set(
-                    coordinates.centerX,
-                    coordinates.centerY,
-                    mapSize * 0.8,
-                );
-                this.perspectiveCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-                break;
-
-            case CameraMode.ORTHOGRAPHIC_TOP_DOWN:
-                this.currentCamera = this.orthographicCamera;
-                this.orthographicCamera.position.set(
-                    coordinates.centerX,
-                    coordinates.centerY,
-                    mapSize,
-                );
-                this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-                this.orthographicCamera.up.set(0, -1, 0);
-                break;
-
-            case CameraMode.ORTHOGRAPHIC_ISOMETRIC:
-                this.currentCamera = this.orthographicCamera;
-                this.orthographicCamera.position.set(
-                    coordinates.centerX + mapSize * 0.5,
-                    coordinates.centerY + mapSize * 0.5,
-                    mapSize * 0.5,
-                );
-                this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-                this.orthographicCamera.up.set(0, -1, 0);
-                break;
-        }
-
-        this.updateProjectionMatrix();
     }
 
     getCamera(): THREE.Camera {
@@ -237,9 +217,9 @@ export class CameraManager {
         } else {
             // 3D view: allow all controls including rotation
             this.controls.mouseButtons = {
-                LEFT: THREE.MOUSE.PAN,
+                LEFT: THREE.MOUSE.ROTATE,
                 MIDDLE: THREE.MOUSE.DOLLY,
-                RIGHT: THREE.MOUSE.ROTATE,
+                RIGHT: THREE.MOUSE.PAN,
             };
             this.controls.enableRotate = true;
         }
@@ -437,13 +417,8 @@ export class SceneManager {
                 });
 
                 this.backgroundPlane = new THREE.Mesh(geometry, material);
-                // Position at the actual center of the coordinate range (not the center offset)
                 // Position slightly behind points at z=-100 to ensure visibility
-                const actualCenterX = (coordinates.minX + coordinates.maxX) / 2;
-                const actualCenterY = (coordinates.minY + coordinates.maxY) / 2;
-                this.backgroundPlane.position.set(actualCenterX, actualCenterY, -100);
-                // Rotate 180 degrees around Z axis to match Y-down coordinate system
-                this.backgroundPlane.rotation.z = Math.PI;
+                this.backgroundPlane.position.set(coordinates.centerX, coordinates.centerY, -100);
                 // Set render order to ensure it renders first
                 this.backgroundPlane.renderOrder = -1;
                 // Set visibility based on current view mode
@@ -499,7 +474,7 @@ export class SceneManager {
 
             resourcePoints.forEach((point, i) => {
                 positions[i * 3] = point.x;
-                positions[i * 3 + 1] = point.y;
+                positions[i * 3 + 1] = point.y * -1; // Invert Y for Y-down coordinate system
                 // Position based on view mode
                 // Use simple ordered Z-layering in 2d mode
                 positions[i * 3 + 2] =
@@ -529,6 +504,7 @@ export class SceneManager {
 
             const pointSystem = new THREE.Points(geometry, material);
             pointSystem.userData.resourceType = resourceType;
+            pointSystem.userData.resourcePoints = resourcePoints;
 
             // Check if this resource type should be visible
             pointSystem.visible = !this.hiddenResourceTypes.has(resourceType);
@@ -595,7 +571,7 @@ export class SceneManager {
     getIntersectedPoints(mouseX: number, mouseY: number): THREE.Intersection[] {
         const mouse = new THREE.Vector2(
             (mouseX / this.renderer.domElement.width) * 2 - 1,
-            -(mouseY / this.renderer.domElement.height) * 2 + 1,
+            (mouseY / this.renderer.domElement.height) * 2 + 1,
         );
 
         if (!this.cameraManager) {
@@ -608,7 +584,7 @@ export class SceneManager {
         raycaster.params.Points!.threshold = baseThreshold / Math.max(0.1, this.currentZoomFactor);
         raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
 
-        return raycaster.intersectObjects(this.pointSystems);
+        return raycaster.intersectObjects(this.pointSystems.filter((ps) => ps.visible));
     }
 
     getIntersectedPoint(mouseX: number, mouseY: number): THREE.Intersection | null {
@@ -635,42 +611,15 @@ export class SceneManager {
             const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
             const intersectionPoint = new THREE.Vector3();
             if (raycaster.ray.intersectPlane(plane, intersectionPoint)) {
-                return { x: intersectionPoint.x, y: intersectionPoint.y, z: intersectionPoint.z };
+                return { x: intersectionPoint.x, y: intersectionPoint.y * -1, z: intersectionPoint.z };
             }
         } else {
             // For 3D view, project onto ground plane or use distance-based calculation
             const target = this.cameraManager.getCamera().position.clone();
             target.add(raycaster.ray.direction.clone().multiplyScalar(1000));
-            return { x: target.x, y: target.y, z: target.z };
+            return { x: target.x, y: target.y * -1, z: target.z };
         }
 
         return null;
-    }
-
-    getNearbyPoints(mouseX: number, mouseY: number, radius: number): THREE.Intersection[] {
-        if (!this.cameraManager) return [];
-
-        // Get all intersected points within radius
-        const intersections = this.getIntersectedPoints(mouseX, mouseY);
-
-        // Filter and sort by Z-index (higher Z first)
-        return intersections
-            .filter((intersection) => {
-                // Calculate screen distance from mouse
-                const screenPos = new THREE.Vector3();
-                screenPos.copy(intersection.point);
-                screenPos.project(this.cameraManager!.getCamera());
-
-                const screenX = ((screenPos.x + 1) * this.renderer.domElement.width) / 2;
-                const screenY = ((-screenPos.y + 1) * this.renderer.domElement.height) / 2;
-
-                const distance = Math.sqrt(
-                    Math.pow(screenX - mouseX, 2) + Math.pow(screenY - mouseY, 2),
-                );
-
-                return distance <= radius;
-            })
-            .sort((a, b) => b.point.z - a.point.z) // Higher Z first
-            .slice(0, 10); // Limit to 10 items
     }
 }

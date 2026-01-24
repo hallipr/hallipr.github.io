@@ -66,9 +66,10 @@ export interface ResourceType {
 }
 
 export interface MapInfo {
+    key: string;
     name: string;
-    dataUrl: string;
     modName?: string;
+    dataUrl: string;
 }
 
 export interface MapResource {
@@ -77,13 +78,13 @@ export interface MapResource {
 }
 
 export class MapData {
-    mapName: string;
+    mapKey: string;
     coordinates: CoordinateSystem;
     resources: MapResource[];
     imageName?: string;
 
     constructor(data: any) {
-        this.mapName = data.mapName;
+        this.mapKey = data.mapKey;
         this.coordinates = new CoordinateSystem(
             data.coordinates.minX,
             data.coordinates.maxX,

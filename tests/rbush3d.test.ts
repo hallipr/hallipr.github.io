@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { RBush3D } from '../src/clustering/rbush3d.js';
 
 interface MapData {
-    mapName: string;
+    mapKey: string;
     coordinates: {
         worldSize: number;
         offsetX: number;

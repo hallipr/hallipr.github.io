@@ -44,8 +44,8 @@ class MainApplication {
             // Add map options
             maps.forEach((map) => {
                 const option = document.createElement('option');
-                option.value = map;
-                option.textContent = map;
+                option.value = map.key;
+                option.textContent = map.name;
                 select.appendChild(option);
             });
 
@@ -64,23 +64,23 @@ class MainApplication {
         // Try to load the first available map
         const maps = await this.app.getAvailableMaps();
         if (maps.length > 0) {
-            await this.loadMap(maps[0]);
+            await this.loadMap(maps[0].key);
 
             // Update the selector
             const select = document.getElementById('mapSelect') as HTMLSelectElement;
             if (select) {
-                select.value = maps[0];
+                select.value = maps[0].key;
             }
         }
     }
 
-    private async loadMap(mapName: string): Promise<void> {
-        console.log(`Loading map: ${mapName}`);
+    private async loadMap(mapKey: string): Promise<void> {
+        console.log(`Loading map: ${mapKey}`);
 
-        await this.app.loadMap(mapName);
+        await this.app.loadMap(mapKey);
 
         // Show success message or update UI as needed
-        console.log(`Successfully loaded ${mapName}`);
+        console.log(`Successfully loaded ${mapKey}`);
     }
 
     // Public API for debugging and external access
@@ -88,8 +88,8 @@ class MainApplication {
         return this.app;
     }
 
-    public async switchToMap(mapName: string): Promise<void> {
-        return this.loadMap(mapName);
+    public async switchToMap(mapKey: string): Promise<void> {
+        return this.loadMap(mapKey);
     }
 
     public setView(viewMode: ViewMode): void {

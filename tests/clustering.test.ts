@@ -5,7 +5,7 @@ import { cluster } from '../src/clustering/clustering.js';
 import { RBush3D } from '../src/clustering/RBush3D.js';
 
 interface MapData {
-    mapName: string;
+    mapKey: string;
     coordinates: {
         worldSize: number;
         offsetX: number;

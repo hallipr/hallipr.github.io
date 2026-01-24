@@ -2,7 +2,7 @@
 
 import type { ResourceTypeInfo } from '../ui/UIManager.js';
 import type { ViewConfig } from '../rendering/types.js';
-import type { ArkCoordinates, CoordinateSystem, MapData } from '../data/types.js';
+import type { ArkCoordinates, CoordinateSystem, MapData, MapInfo } from '../data/types.js';
 import type { ClusterConfig, WorldPoint } from '../world/World.js';
 import { ViewMode, CameraMode } from '../rendering/types.js';
 import { DataLoader } from '../data/DataLoader.js';
@@ -28,6 +28,7 @@ export class Application {
     private currentViewConfig: ViewConfig = {
         viewMode: ViewMode.VIEW_2D,
     };
+
     private currentMapData: MapData | null = null;
 
     constructor() {
@@ -67,12 +68,12 @@ export class Application {
         this.startRenderLoop();
     }
 
-    async loadMap(mapName: string): Promise<void> {
+    async loadMap(mapKey: string): Promise<void> {
         // Clear background immediately to avoid showing old map background
         this.sceneManager.clearBackground();
 
         // Load map data using the new API
-        this.currentMapData = await this.dataLoader.loadMapByName(mapName);
+        this.currentMapData = await this.dataLoader.loadMapByName(mapKey);
 
         // Initialize world with the map data
         this.world.setMapData(this.currentMapData, this.dataLoader.getResourceTypes());
@@ -152,15 +153,15 @@ export class Application {
             // Check for intersection with resource points using raycaster
             const intersection = this.sceneManager.getIntersectedPoint(mouseX, mouseY);
 
-            if (intersection && intersection.object.userData.resourceType) {
+            if (intersection && intersection.object.userData.resourceType && intersection.index != null) {
                 // Show hover info for the intersected point
-                const resourceType = intersection.object.userData.resourceType;
-                const point = intersection.point;
-
+                const resourceType = intersection.object.userData.resourceType as string;
+                const points = intersection.object.userData.resourcePoints as WorldPoint[]; 
+                const intersectedPoint = points[intersection.index];
                 // Calculate node's lat/long coordinates
-                const nodeArkCoords = coords.getArkCoordinates(point);
+                const nodeArkCoords = coords.getArkCoordinates(intersectedPoint);
 
-                this.showPointHover(resourceType, cursorArkCoords, nodeArkCoords, point);
+                this.showPointHover(resourceType, cursorArkCoords, nodeArkCoords, intersectedPoint);
             } else {
                 // Not hovering over a point, hide hover info and show cursor coordinates
                 this.hidePointHover();
@@ -359,7 +360,7 @@ export class Application {
         this.updateRendering();
     }
 
-    public getAvailableMaps(): Promise<string[]> {
+    public getAvailableMaps(): Promise<MapInfo[]> {
         return this.dataLoader.getMapList();
     }
 

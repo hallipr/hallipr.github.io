@@ -50,21 +50,21 @@ export class DataLoader {
         return this.indexData.maps;
     }
 
-    async getMapList(): Promise<string[]> {
+    async getMapList(): Promise<MapInfo[]> {
         if (!this.indexData) {
             await this.loadIndex();
         }
-        return this.getMaps().map((map) => map.name);
+        return this.getMaps();
     }
 
-    async loadMapByName(mapName: string): Promise<MapData> {
+    async loadMapByName(mapKey: string): Promise<MapData> {
         if (!this.indexData) {
             await this.loadIndex();
         }
 
-        const mapInfo = this.getMaps().find((map) => map.name === mapName);
+        const mapInfo = this.getMaps().find((map) => map.key === mapKey);
         if (!mapInfo) {
-            throw new Error(`Map ${mapName} not found`);
+            throw new Error(`Map ${mapKey} not found`);
         }
 
         return this.loadMapData(mapInfo.dataUrl);

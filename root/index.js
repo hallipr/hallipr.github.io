@@ -23,7 +23,7 @@
   };
   var MapData = class {
     constructor(data) {
-      this.mapName = data.mapName;
+      this.mapKey = data.mapKey;
       this.coordinates = new CoordinateSystem(
         data.coordinates.minX,
         data.coordinates.maxX,
@@ -84,15 +84,15 @@
       if (!this.indexData) {
         await this.loadIndex();
       }
-      return this.getMaps().map((map) => map.name);
+      return this.getMaps();
     }
-    async loadMapByName(mapName) {
+    async loadMapByName(mapKey) {
       if (!this.indexData) {
         await this.loadIndex();
       }
-      const mapInfo = this.getMaps().find((map) => map.name === mapName);
+      const mapInfo = this.getMaps().find((map) => map.key === mapKey);
       if (!mapInfo) {
-        throw new Error(`Map ${mapName} not found`);
+        throw new Error(`Map ${mapKey} not found`);
       }
       return this.loadMapData(mapInfo.dataUrl);
     }
@@ -397,8 +397,8 @@
     get coordinateSystem() {
       return this.ensureMapData().coordinates;
     }
-    get mapName() {
-      return this.ensureMapData().mapName;
+    get mapKey() {
+      return this.ensureMapData().mapKey;
     }
     get imageName() {
       return this.ensureMapData().imageName;
@@ -24508,6 +24508,7 @@
       this.orthographicCamera = this.createOrthographicCamera(coordinates);
       this.currentCamera = this.orthographicCamera;
       this.baseOrthographicSize = Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) * 0.6;
+      this.setCameraMode("orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */, coordinates);
       this.initialPerspectiveDistance = this.perspectiveCamera.position.distanceTo(
         new Vector3(coordinates.centerX, coordinates.centerY, 0)
       );
@@ -24521,54 +24522,13 @@
       };
       this.controls.addEventListener("change", () => this.handleZoomChange());
     }
-    createPerspectiveCamera(coordinates) {
-      const mapSize = Math.max(
-        coordinates.maxX - coordinates.minX,
-        coordinates.maxY - coordinates.minY
-      );
-      const far = Math.max(mapSize * 4, 1e4);
-      const camera = new PerspectiveCamera(
-        75,
-        this.renderer.domElement.width / this.renderer.domElement.height,
-        0.1,
-        far
-      );
-      camera.up.set(0, -1, 0);
-      const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
-      camera.position.set(coordinates.centerX, coordinates.centerY, mapSize * 0.8);
-      camera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-      return camera;
-    }
-    createOrthographicCamera(coordinates) {
-      const aspect2 = this.renderer.domElement.width / this.renderer.domElement.height;
-      const mapWidth = coordinates.maxX - coordinates.minX;
-      const mapHeight = coordinates.maxY - coordinates.minY;
-      const size = Math.max(mapWidth, mapHeight) * 0.6;
-      const far = Math.max(Math.max(mapWidth, mapHeight) * 4, 1e4);
-      const camera = new OrthographicCamera(
-        -size * aspect2,
-        size * aspect2,
-        size,
-        -size,
-        0.1,
-        far
-      );
-      camera.up.set(0, -1, 0);
-      camera.position.set(coordinates.centerX, coordinates.centerY, size);
-      camera.lookAt(
-        coordinates.centerX,
-        coordinates.centerY,
-        (coordinates.minZ + coordinates.maxZ) / 2
-      );
-      return camera;
-    }
-    setCameraMode(mode, coordinates) {
+    setCameraMode(cameraMode, coordinates) {
       const mapSize = Math.max(
         coordinates.maxX - coordinates.minX,
         coordinates.maxY - coordinates.minY
       );
       const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
-      switch (mode) {
+      switch (cameraMode) {
         case "perspective" /* PERSPECTIVE */:
           this.currentCamera = this.perspectiveCamera;
           this.perspectiveCamera.position.set(
@@ -24586,20 +24546,39 @@
             mapSize
           );
           this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-          this.orthographicCamera.up.set(0, -1, 0);
-          break;
-        case "orthographic-isometric" /* ORTHOGRAPHIC_ISOMETRIC */:
-          this.currentCamera = this.orthographicCamera;
-          this.orthographicCamera.position.set(
-            coordinates.centerX + mapSize * 0.5,
-            coordinates.centerY + mapSize * 0.5,
-            mapSize * 0.5
-          );
-          this.orthographicCamera.lookAt(coordinates.centerX, coordinates.centerY, centerZ);
-          this.orthographicCamera.up.set(0, -1, 0);
           break;
       }
       this.updateProjectionMatrix();
+    }
+    createPerspectiveCamera(coordinates) {
+      const mapSize = Math.max(
+        coordinates.maxX - coordinates.minX,
+        coordinates.maxY - coordinates.minY
+      );
+      const far = Math.max(mapSize * 4, 1e4);
+      const camera = new PerspectiveCamera(
+        75,
+        this.renderer.domElement.width / this.renderer.domElement.height,
+        0.1,
+        far
+      );
+      return camera;
+    }
+    createOrthographicCamera(coordinates) {
+      const aspect2 = this.renderer.domElement.width / this.renderer.domElement.height;
+      const mapWidth = coordinates.maxX - coordinates.minX;
+      const mapHeight = coordinates.maxY - coordinates.minY;
+      const size = Math.max(mapWidth, mapHeight) * 0.6;
+      const far = Math.max(Math.max(mapWidth, mapHeight) * 4, 1e4);
+      const camera = new OrthographicCamera(
+        -size * aspect2,
+        size * aspect2,
+        size,
+        -size,
+        0.1,
+        far
+      );
+      return camera;
     }
     getCamera() {
       return this.currentCamera;
@@ -24662,9 +24641,9 @@
         this.controls.enableRotate = false;
       } else {
         this.controls.mouseButtons = {
-          LEFT: MOUSE.PAN,
+          LEFT: MOUSE.ROTATE,
           MIDDLE: MOUSE.DOLLY,
-          RIGHT: MOUSE.ROTATE
+          RIGHT: MOUSE.PAN
         };
         this.controls.enableRotate = true;
       }
@@ -24803,10 +24782,7 @@
             depthTest: true
           });
           this.backgroundPlane = new Mesh(geometry, material);
-          const actualCenterX = (coordinates.minX + coordinates.maxX) / 2;
-          const actualCenterY = (coordinates.minY + coordinates.maxY) / 2;
-          this.backgroundPlane.position.set(actualCenterX, actualCenterY, -100);
-          this.backgroundPlane.rotation.z = Math.PI;
+          this.backgroundPlane.position.set(coordinates.centerX, coordinates.centerY, -100);
           this.backgroundPlane.renderOrder = -1;
           this.backgroundPlane.visible = this.currentViewMode === "2d";
           this.scene.add(this.backgroundPlane);
@@ -24845,7 +24821,7 @@
         const colors = new Float32Array(resourcePoints.length * 3);
         resourcePoints.forEach((point, i) => {
           positions[i * 3] = point.x;
-          positions[i * 3 + 1] = point.y;
+          positions[i * 3 + 1] = point.y * -1;
           positions[i * 3 + 2] = viewMode === "2d" /* VIEW_2D */ ? zorderByResource.get(point.resourceType) || 0 : point.z;
           const color = new Color(point.colorHex);
           colors[i * 3] = color.r;
@@ -24865,6 +24841,7 @@
         });
         const pointSystem = new Points(geometry, material);
         pointSystem.userData.resourceType = resourceType;
+        pointSystem.userData.resourcePoints = resourcePoints;
         pointSystem.visible = !this.hiddenResourceTypes.has(resourceType);
         this.scene.add(pointSystem);
         this.pointSystems.push(pointSystem);
@@ -24918,7 +24895,7 @@
     getIntersectedPoints(mouseX, mouseY) {
       const mouse = new Vector2(
         mouseX / this.renderer.domElement.width * 2 - 1,
-        -(mouseY / this.renderer.domElement.height) * 2 + 1
+        mouseY / this.renderer.domElement.height * 2 + 1
       );
       if (!this.cameraManager) {
         return [];
@@ -24927,7 +24904,7 @@
       const baseThreshold = 4e3;
       raycaster.params.Points.threshold = baseThreshold / Math.max(0.1, this.currentZoomFactor);
       raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
-      return raycaster.intersectObjects(this.pointSystems);
+      return raycaster.intersectObjects(this.pointSystems.filter((ps) => ps.visible));
     }
     getIntersectedPoint(mouseX, mouseY) {
       const intersections = this.getIntersectedPoints(mouseX, mouseY);
@@ -24945,29 +24922,14 @@
         const plane = new Plane(new Vector3(0, 0, 1), 0);
         const intersectionPoint = new Vector3();
         if (raycaster.ray.intersectPlane(plane, intersectionPoint)) {
-          return { x: intersectionPoint.x, y: intersectionPoint.y, z: intersectionPoint.z };
+          return { x: intersectionPoint.x, y: intersectionPoint.y * -1, z: intersectionPoint.z };
         }
       } else {
         const target = this.cameraManager.getCamera().position.clone();
         target.add(raycaster.ray.direction.clone().multiplyScalar(1e3));
-        return { x: target.x, y: target.y, z: target.z };
+        return { x: target.x, y: target.y * -1, z: target.z };
       }
       return null;
-    }
-    getNearbyPoints(mouseX, mouseY, radius) {
-      if (!this.cameraManager) return [];
-      const intersections = this.getIntersectedPoints(mouseX, mouseY);
-      return intersections.filter((intersection) => {
-        const screenPos = new Vector3();
-        screenPos.copy(intersection.point);
-        screenPos.project(this.cameraManager.getCamera());
-        const screenX = (screenPos.x + 1) * this.renderer.domElement.width / 2;
-        const screenY = (-screenPos.y + 1) * this.renderer.domElement.height / 2;
-        const distance = Math.sqrt(
-          Math.pow(screenX - mouseX, 2) + Math.pow(screenY - mouseY, 2)
-        );
-        return distance <= radius;
-      }).sort((a, b) => b.point.z - a.point.z).slice(0, 10);
     }
   };
 
@@ -25195,9 +25157,9 @@
       this.setupResizeHandler(canvas);
       this.startRenderLoop();
     }
-    async loadMap(mapName) {
+    async loadMap(mapKey) {
       this.sceneManager.clearBackground();
-      this.currentMapData = await this.dataLoader.loadMapByName(mapName);
+      this.currentMapData = await this.dataLoader.loadMapByName(mapKey);
       this.world.setMapData(this.currentMapData, this.dataLoader.getResourceTypes());
       this.sceneManager.initializeWithCoordinates(this.currentMapData.coordinates);
       if (this.currentMapData.imageName) {
@@ -25247,11 +25209,12 @@
         const cursorArkCoords = coords.getArkCoordinates(worldCoords);
         this.updateDebugPanel({ x: mouseX, y: mouseY }, worldCoords, coords);
         const intersection = this.sceneManager.getIntersectedPoint(mouseX, mouseY);
-        if (intersection && intersection.object.userData.resourceType) {
+        if (intersection && intersection.object.userData.resourceType && intersection.index != null) {
           const resourceType = intersection.object.userData.resourceType;
-          const point = intersection.point;
-          const nodeArkCoords = coords.getArkCoordinates(point);
-          this.showPointHover(resourceType, cursorArkCoords, nodeArkCoords, point);
+          const points = intersection.object.userData.resourcePoints;
+          const intersectedPoint = points[intersection.index];
+          const nodeArkCoords = coords.getArkCoordinates(intersectedPoint);
+          this.showPointHover(resourceType, cursorArkCoords, nodeArkCoords, intersectedPoint);
         } else {
           this.hidePointHover();
           this.updateCoordinateDisplay(cursorArkCoords);
@@ -25431,8 +25394,8 @@
         select.innerHTML = '<option value="">-- Choose a map --</option>';
         maps.forEach((map) => {
           const option = document.createElement("option");
-          option.value = map;
-          option.textContent = map;
+          option.value = map.key;
+          option.textContent = map.name;
           select.appendChild(option);
         });
         select.addEventListener("change", (event) => {
@@ -25448,24 +25411,24 @@
     async loadInitialMap() {
       const maps = await this.app.getAvailableMaps();
       if (maps.length > 0) {
-        await this.loadMap(maps[0]);
+        await this.loadMap(maps[0].key);
         const select = document.getElementById("mapSelect");
         if (select) {
-          select.value = maps[0];
+          select.value = maps[0].key;
         }
       }
     }
-    async loadMap(mapName) {
-      console.log(`Loading map: ${mapName}`);
-      await this.app.loadMap(mapName);
-      console.log(`Successfully loaded ${mapName}`);
+    async loadMap(mapKey) {
+      console.log(`Loading map: ${mapKey}`);
+      await this.app.loadMap(mapKey);
+      console.log(`Successfully loaded ${mapKey}`);
     }
     // Public API for debugging and external access
     getApplication() {
       return this.app;
     }
-    async switchToMap(mapName) {
-      return this.loadMap(mapName);
+    async switchToMap(mapKey) {
+      return this.loadMap(mapKey);
     }
     setView(viewMode) {
       this.app.setViewMode(viewMode);

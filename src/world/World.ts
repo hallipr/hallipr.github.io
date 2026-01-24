@@ -98,8 +98,8 @@ export class World {
         return this.ensureMapData().coordinates;
     }
 
-    get mapName(): string {
-        return this.ensureMapData().mapName;
+    get mapKey(): string {
+        return this.ensureMapData().mapKey;
     }
 
     get imageName(): string | undefined {

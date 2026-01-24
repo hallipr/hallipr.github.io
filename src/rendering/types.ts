@@ -7,7 +7,6 @@ export enum ViewMode {
 
 export enum CameraMode {
     ORTHOGRAPHIC_TOP_DOWN = 'orthographic-topdown',
-    ORTHOGRAPHIC_ISOMETRIC = 'orthographic-isometric',
     PERSPECTIVE = 'perspective',
 }
 
