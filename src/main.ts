@@ -17,6 +17,7 @@ class MainApplication {
 
         this.app = new Application();
         this.setupUI();
+        this.setupDebugToggle();
         this.loadInitialMap();
     }
 
@@ -69,6 +70,49 @@ class MainApplication {
             const select = document.getElementById('mapSelect') as HTMLSelectElement;
             if (select) {
                 select.value = maps[0].key;
+            }
+        }
+    }
+
+    private setupDebugToggle(): void {
+        const debugToggle = document.getElementById('debug-toggle') as HTMLInputElement;
+        const debugPanel = document.getElementById('debug-panel') as HTMLElement;
+
+        if (!debugToggle || !debugPanel) {
+            console.error('Debug toggle or panel element not found');
+            return;
+        }
+
+        debugToggle.addEventListener('change', () => {
+            const isDebugEnabled = debugToggle.checked;
+            
+            // Toggle debug panel visibility
+            debugPanel.style.display = isDebugEnabled ? 'block' : 'none';
+            
+            // Toggle debug resource type visibility
+            this.toggleDebugResourceType(isDebugEnabled);
+        });
+    }
+
+    private toggleDebugResourceType(visible: boolean): void {
+        // Find the debug resource type checkbox in the resource panel
+        const resourceTable = document.getElementById('resourceTypeTableBody');
+        if (!resourceTable) return;
+
+        // Look for the debug resource type row
+        const rows = resourceTable.querySelectorAll('tr');
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const resourceName = row.querySelector('td:nth-child(2)');
+            if (resourceName && resourceName.textContent === 'Debug') {
+                const checkbox = row.querySelector('input[type="checkbox"]') as HTMLInputElement;
+                if (checkbox) {
+                    checkbox.checked = visible;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+                // Also toggle row visibility
+                (row as HTMLElement).style.display = visible ? '' : 'none';
+                break;
             }
         }
     }

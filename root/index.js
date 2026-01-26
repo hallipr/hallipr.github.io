@@ -25292,6 +25292,7 @@
     constructor() {
       this.app = new Application();
       this.setupUI();
+      this.setupDebugToggle();
       this.loadInitialMap();
     }
     setupUI() {
@@ -25329,6 +25330,37 @@
         const select = document.getElementById("mapSelect");
         if (select) {
           select.value = maps[0].key;
+        }
+      }
+    }
+    setupDebugToggle() {
+      const debugToggle = document.getElementById("debug-toggle");
+      const debugPanel = document.getElementById("debug-panel");
+      if (!debugToggle || !debugPanel) {
+        console.error("Debug toggle or panel element not found");
+        return;
+      }
+      debugToggle.addEventListener("change", () => {
+        const isDebugEnabled = debugToggle.checked;
+        debugPanel.style.display = isDebugEnabled ? "block" : "none";
+        this.toggleDebugResourceType(isDebugEnabled);
+      });
+    }
+    toggleDebugResourceType(visible) {
+      const resourceTable = document.getElementById("resourceTypeTableBody");
+      if (!resourceTable) return;
+      const rows = resourceTable.querySelectorAll("tr");
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const resourceName = row.querySelector("td:nth-child(2)");
+        if (resourceName && resourceName.textContent === "Debug") {
+          const checkbox = row.querySelector('input[type="checkbox"]');
+          if (checkbox) {
+            checkbox.checked = visible;
+            checkbox.dispatchEvent(new Event("change"));
+          }
+          row.style.display = visible ? "" : "none";
+          break;
         }
       }
     }
