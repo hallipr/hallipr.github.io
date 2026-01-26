@@ -515,9 +515,29 @@ export class SceneManager {
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
 
-        // Project onto ground plane or use distance-based calculation
-        const target = this.cameraManager.getCamera().position.clone();
-        target.add(raycaster.ray.direction.clone().multiplyScalar(1000));
-        return { x: target.x, y: target.y * -1, z: target.z };
+        // Define ground plane at z=0 (or average ground level)
+        const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+        
+        // Intersect ray with ground plane
+        const intersection = new THREE.Vector3();
+        const intersectPoint = raycaster.ray.intersectPlane(groundPlane, intersection);
+        
+        if (intersectPoint) {
+            return { x: intersectPoint.x, y: intersectPoint.y * -1, z: intersectPoint.z };
+        }
+        
+        // Fallback: if no intersection (shouldn't happen with orthographic camera), 
+        // project to z=0 manually
+        const camera = this.cameraManager.getCamera();
+        const direction = raycaster.ray.direction;
+        
+        if (Math.abs(direction.z) > 0.001) {
+            // Calculate t value where z = 0
+            const t = (0 - camera.position.z) / direction.z;
+            const worldPos = camera.position.clone().add(direction.clone().multiplyScalar(t));
+            return { x: worldPos.x, y: worldPos.y * -1, z: 0 };
+        }
+        
+        return null;
     }
 }

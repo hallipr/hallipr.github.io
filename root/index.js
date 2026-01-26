@@ -24849,9 +24849,20 @@
       );
       const raycaster = new Raycaster();
       raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
-      const target = this.cameraManager.getCamera().position.clone();
-      target.add(raycaster.ray.direction.clone().multiplyScalar(1e3));
-      return { x: target.x, y: target.y * -1, z: target.z };
+      const groundPlane = new Plane(new Vector3(0, 0, 1), 0);
+      const intersection = new Vector3();
+      const intersectPoint = raycaster.ray.intersectPlane(groundPlane, intersection);
+      if (intersectPoint) {
+        return { x: intersectPoint.x, y: intersectPoint.y * -1, z: intersectPoint.z };
+      }
+      const camera = this.cameraManager.getCamera();
+      const direction = raycaster.ray.direction;
+      if (Math.abs(direction.z) > 1e-3) {
+        const t = (0 - camera.position.z) / direction.z;
+        const worldPos = camera.position.clone().add(direction.clone().multiplyScalar(t));
+        return { x: worldPos.x, y: worldPos.y * -1, z: 0 };
+      }
+      return null;
     }
   };
 
