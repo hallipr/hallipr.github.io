@@ -1,74 +1,128 @@
 {
   "maps": [
     {
-      "key": "Aberration_WP",
-      "name": "Aberration",
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/Aberration_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
       "modName": "",
       "dataUrl": "game/Aberration_WP.json"
     },
     {
-      "key": "Astraeos_WP",
-      "name": "Astraeos",
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/Astraeos_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
       "modName": "",
       "dataUrl": "game/Astraeos_WP.json"
     },
     {
-      "key": "Extinction_WP",
-      "name": "Extinction",
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/Extinction_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
       "modName": "",
       "dataUrl": "game/Extinction_WP.json"
     },
     {
-      "key": "LostColony_WP",
-      "name": "Lost Colony",
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/LostColony_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
       "modName": "",
       "dataUrl": "game/LostColony_WP.json"
     },
     {
-      "key": "Ragnarok_WP",
-      "name": "Ragnarok",
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/Ragnarok_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
       "modName": "",
       "dataUrl": "game/Ragnarok_WP.json"
     },
     {
-      "key": "ScorchedEarth_WP",
-      "name": "Scorched Earth",
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/ScorchedEarth_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
       "modName": "",
       "dataUrl": "game/ScorchedEarth_WP.json"
     },
     {
-      "key": "TheCenter_WP",
-      "name": "The Center",
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/TheCenter_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
       "modName": "",
       "dataUrl": "game/TheCenter_WP.json"
     },
     {
-      "key": "TheIsland_WP",
-      "name": "The Island",
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/TheIsland_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
       "modName": "",
       "dataUrl": "game/TheIsland_WP.json"
     },
     {
-      "key": "Valguero_WP",
-      "name": "Valguero",
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/Valguero_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
       "modName": "",
       "dataUrl": "game/Valguero_WP.json"
     },
     {
-      "key": "Forglar_WP",
-      "name": "Forglar",
+      "key": null,
+      "name": null,
       "modName": "Forglar Part I (MAP)",
       "dataUrl": "mods/forglar-premium/Forglar_WP.json"
     },
     {
-      "key": "Svartalfheim_WP",
-      "name": "Svartalfheim",
+      "key": null,
+      "name": null,
       "modName": "Svartalfheim Premium [PC & Crossplay]",
       "dataUrl": "mods/svartalfheim-premium/Svartalfheim_WP.json"
     },
     {
-      "key": "ASurviveTheNight",
-      "name": "Survive The Night",
+      "key": null,
+      "name": null,
       "modName": "Survive The Night",
       "dataUrl": "mods/survive-the-night/ASurviveTheNight.json"
     }
