@@ -4,7 +4,19 @@
       "key": null,
       "name": null,
       "modName": "",
+      "dataUrl": "game/Aberration_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
       "dataUrl": "game/Aberration_WP.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/Astraeos_WP_spawns_wiki.json"
     },
     {
       "key": null,
@@ -16,7 +28,19 @@
       "key": null,
       "name": null,
       "modName": "",
+      "dataUrl": "game/Extinction_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
       "dataUrl": "game/Extinction_WP.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/LostColony_WP_spawns_wiki.json"
     },
     {
       "key": null,
@@ -28,7 +52,19 @@
       "key": null,
       "name": null,
       "modName": "",
+      "dataUrl": "game/Ragnarok_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
       "dataUrl": "game/Ragnarok_WP.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/ScorchedEarth_WP_spawns_wiki.json"
     },
     {
       "key": null,
@@ -40,13 +76,31 @@
       "key": null,
       "name": null,
       "modName": "",
+      "dataUrl": "game/TheCenter_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
       "dataUrl": "game/TheCenter_WP.json"
     },
     {
       "key": null,
       "name": null,
       "modName": "",
+      "dataUrl": "game/TheIsland_WP_spawns_wiki.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
       "dataUrl": "game/TheIsland_WP.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
+      "dataUrl": "game/Valguero_WP_spawns_wiki.json"
     },
     {
       "key": null,
