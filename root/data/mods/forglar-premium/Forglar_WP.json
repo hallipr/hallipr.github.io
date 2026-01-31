@@ -32485,6 +32485,44 @@
         }
       ]
     },
+    "DinoSpawnEntries_Desmodus_LC_C": {
+      "minDesiredNumberOfNPC": 6,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 2433.8726,
+              "Y": 3709.3901,
+              "Z": -57.091774
+            },
+            "Max": {
+              "X": 2436.539,
+              "Y": 3712.0566,
+              "Z": -54.42511
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 1787.5894,
+              "Y": 2535.4026,
+              "Z": -96.02101
+            },
+            "Max": {
+              "X": 1790.2561,
+              "Y": 2538.069,
+              "Z": -93.35434
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntries_SwampWater_C": {
       "minDesiredNumberOfNPC": 12,
       "neverSpawnInWater": false,
@@ -36436,21 +36474,6 @@
           "weight": 1.0,
           "box": {
             "Min": {
-              "X": 440104.0,
-              "Y": 221301.6,
-              "Z": -29195.525
-            },
-            "Max": {
-              "X": 467060.75,
-              "Y": 247450.66,
-              "Z": 24217.928
-            }
-          }
-        },
-        {
-          "weight": 1.0,
-          "box": {
-            "Min": {
               "X": 343292.0,
               "Y": 357738.94,
               "Z": -29195.525
@@ -36948,6 +36971,44 @@
               "X": 11343.237,
               "Y": -3370.4253,
               "Z": 586.8574
+            }
+          }
+        }
+      ]
+    },
+    "DinoSpawnEntries_Mountain_LC_C": {
+      "minDesiredNumberOfNPC": 16,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 420545.8,
+              "Y": 330839.03,
+              "Z": -32261.084
+            },
+            "Max": {
+              "X": 447502.56,
+              "Y": 356988.1,
+              "Z": 21152.37
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 440104.0,
+              "Y": 221301.6,
+              "Z": -29195.525
+            },
+            "Max": {
+              "X": 467060.75,
+              "Y": 247450.66,
+              "Z": 24217.928
             }
           }
         }
@@ -39990,6 +40051,29 @@
         }
       ]
     },
+    "DinoSpawnEntries_SnowDragon_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 2676.1155,
+              "Y": 18352.428,
+              "Z": -2043.3344
+            },
+            "Max": {
+              "X": 2686.6575,
+              "Y": 18362.97,
+              "Z": -2035.8514
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntriesCaveLava_C": {
       "minDesiredNumberOfNPC": 5,
       "neverSpawnInWater": false,
@@ -42390,6 +42474,29 @@
               "X": 54506.785,
               "Y": 372256.25,
               "Z": 234012.2
+            }
+          }
+        }
+      ]
+    },
+    "DinoSpawnEntries_ElderClaw_LC_C": {
+      "minDesiredNumberOfNPC": 2,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -932.0146,
+              "Y": 1280.0219,
+              "Z": -16.316498
+            },
+            "Max": {
+              "X": -931.47675,
+              "Y": 1281.0573,
+              "Z": -15.281045
             }
           }
         }
