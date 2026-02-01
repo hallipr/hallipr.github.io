@@ -1,0 +1,21 @@
+{
+  "mapKey": null,
+  "mapName": null,
+  "modName": "Svartalfheim Premium [PC & Crossplay]",
+  "modSlug": "svartalfheim-premium",
+  "imageName": ".webp",
+  "coordinates": {
+    "centerX": null,
+    "centerY": null,
+    "scaleX": null,
+    "scaleY": null,
+    "minX": null,
+    "maxX": null,
+    "minY": null,
+    "maxY": null,
+    "minZ": null,
+    "maxZ": null
+  },
+  "resources": [],
+  "spawns": {}
+}
