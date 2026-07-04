@@ -157371,6 +157371,44 @@
         }
       ]
     },
+    "DinoSpawnEntries_Draco_Umbra_C": {
+      "minDesiredNumberOfNPC": 2,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -42791.6,
+              "Y": -80748.61,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 269365.66,
+              "Y": 252701.95,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -414109.1,
+              "Y": -80748.61,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": -101951.78,
+              "Y": 252701.95,
+              "Z": 73222.94
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntries_Ocean_C": {
       "minDesiredNumberOfNPC": 12,
       "neverSpawnInWater": false,

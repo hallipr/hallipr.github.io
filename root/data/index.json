@@ -22,6 +22,12 @@
       "key": null,
       "name": null,
       "modName": "",
+      "dataUrl": "game/Genesis_WP.json"
+    },
+    {
+      "key": null,
+      "name": null,
+      "modName": "",
       "dataUrl": "game/LostColony_WP.json"
     },
     {
