@@ -38813,6 +38813,74 @@
         }
       ]
     },
+    "DinoSpawnEntries_Draco_Umbra_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -280832.8,
+              "Y": -303904.94,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": -12341.375,
+              "Y": -17098.812,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 16509.688,
+              "Y": 16414.031,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 285001.12,
+              "Y": 303220.16,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -280832.8,
+              "Y": 16414.031,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": -12341.375,
+              "Y": 303220.16,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 16509.688,
+              "Y": -303904.94,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 285001.12,
+              "Y": -17098.812,
+              "Z": 73222.94
+            }
+          }
+        }
+      ]
+    },
     "SE_DinoSpawnEntriesCanyons_C": {
       "minDesiredNumberOfNPC": 12,
       "neverSpawnInWater": false,
@@ -39437,7 +39505,7 @@
         }
       ]
     },
-    "DinoSpawnEntries_Draco_Umbra_C": {
+    "DinoSpawnEntries_Draco_Lumina_C": {
       "minDesiredNumberOfNPC": 1,
       "neverSpawnInWater": false,
       "forceUntameable": false,

@@ -116560,6 +116560,74 @@
         }
       ]
     },
+    "DinoSpawnEntries_Draco_Lumina_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 13938.4375,
+              "Y": 36179.125,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 282429.88,
+              "Y": 322985.25,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -281051.0,
+              "Y": -283971.2,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": -12559.5625,
+              "Y": 2834.9688,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -281051.0,
+              "Y": 36179.125,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": -12559.5625,
+              "Y": 322985.25,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 13938.4375,
+              "Y": -283971.2,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 282429.88,
+              "Y": 2834.9688,
+              "Z": 73222.94
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntriesBrood_C": {
       "minDesiredNumberOfNPC": 1,
       "neverSpawnInWater": false,

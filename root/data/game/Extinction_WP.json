@@ -57258,6 +57258,74 @@
         }
       ]
     },
+    "DinoSpawnEntries_Draco_Lumina_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -268478.94,
+              "Y": 46826.875,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 12.5,
+              "Y": 333633.0,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -268478.97,
+              "Y": -255320.56,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 12.46875,
+              "Y": 31485.555,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 12902.1875,
+              "Y": -255320.56,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 281393.62,
+              "Y": 31485.555,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 12902.1875,
+              "Y": 46826.875,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 281393.62,
+              "Y": 333633.0,
+              "Z": 73222.94
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntries_Wasteland_Sulfur_C": {
       "minDesiredNumberOfNPC": 13,
       "neverSpawnInWater": false,

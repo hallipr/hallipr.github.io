@@ -193920,6 +193920,74 @@
         }
       ]
     },
+    "DinoSpawnEntries_Draco_Lumina_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -255285.0,
+              "Y": -368814.75,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 56872.273,
+              "Y": -35364.188,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 116580.3,
+              "Y": -368814.75,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 428737.56,
+              "Y": -35364.188,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -255285.0,
+              "Y": 37359.53,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 56872.28,
+              "Y": 370810.12,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 116580.3,
+              "Y": 37359.53,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 428737.56,
+              "Y": 370810.12,
+              "Z": 73222.94
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntries_Ragnarok_SnowForest_C": {
       "minDesiredNumberOfNPC": 23,
       "neverSpawnInWater": false,

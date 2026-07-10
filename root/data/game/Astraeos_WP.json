@@ -198840,6 +198840,89 @@
         }
       ]
     },
+    "DinoSpawnEntries_Draco_Umbra_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -757729.25,
+              "Y": -761021.0,
+              "Z": -38659.48
+            },
+            "Max": {
+              "X": -445572.0,
+              "Y": -427570.47,
+              "Z": 128638.45
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 469262.62,
+              "Y": 444001.47,
+              "Z": -38659.48
+            },
+            "Max": {
+              "X": 781420.0,
+              "Y": 777452.0,
+              "Z": 128638.45
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -275500.56,
+              "Y": 444001.47,
+              "Z": -38659.48
+            },
+            "Max": {
+              "X": 36656.742,
+              "Y": 777452.0,
+              "Z": 128638.45
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 96881.09,
+              "Y": 444001.47,
+              "Z": -38659.48
+            },
+            "Max": {
+              "X": 409038.34,
+              "Y": 777452.0,
+              "Z": 128638.45
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 469262.62,
+              "Y": -761021.0,
+              "Z": -38659.48
+            },
+            "Max": {
+              "X": 781420.0,
+              "Y": -427570.47,
+              "Z": 128638.45
+            }
+          }
+        }
+      ]
+    },
     "AB_DinoSpawnEntries_RockDrake_C": {
       "minDesiredNumberOfNPC": 3,
       "neverSpawnInWater": false,
@@ -203526,7 +203609,7 @@
         }
       ]
     },
-    "DinoSpawnEntries_Draco_Umbra_C": {
+    "DinoSpawnEntries_Draco_Lumina_C": {
       "minDesiredNumberOfNPC": 1,
       "neverSpawnInWater": false,
       "forceUntameable": false,

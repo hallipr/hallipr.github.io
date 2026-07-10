@@ -213297,6 +213297,74 @@
         }
       ]
     },
+    "DinoSpawnEntries_Draco_Lumina_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -343605.72,
+              "Y": 34256.594,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": -31448.469,
+              "Y": 367707.16,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 31042.969,
+              "Y": 34256.594,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 343200.25,
+              "Y": 367707.16,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -343605.72,
+              "Y": -372162.34,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": -31448.469,
+              "Y": -38711.75,
+              "Z": 73222.94
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 31042.969,
+              "Y": -372162.34,
+              "Z": -94074.984
+            },
+            "Max": {
+              "X": 343200.25,
+              "Y": -38711.75,
+              "Z": 73222.94
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntries_Lake_1_LC_C": {
       "minDesiredNumberOfNPC": 10,
       "neverSpawnInWater": false,
