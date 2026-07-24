@@ -117823,6 +117823,44 @@
         }
       ]
     },
+    "Gen1_Volcano_Magmasaur_DinoSpawnEntries_C": {
+      "minDesiredNumberOfNPC": 6,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -195446.38,
+              "Y": -149241.89,
+              "Z": -59207.406
+            },
+            "Max": {
+              "X": -173081.9,
+              "Y": -116942.92,
+              "Z": -51780.92
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -177625.1,
+              "Y": -144750.22,
+              "Z": -46321.01
+            },
+            "Max": {
+              "X": -171725.4,
+              "Y": -136229.84,
+              "Z": -43105.48
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntriesGigant_C": {
       "minDesiredNumberOfNPC": 2,
       "neverSpawnInWater": false,
@@ -118483,44 +118521,6 @@
               "X": 203253.19,
               "Y": 193677.73,
               "Z": -34070.4
-            }
-          }
-        }
-      ]
-    },
-    "Gen1_Volcano_Magmasaur_DinoSpawnEntries_C": {
-      "minDesiredNumberOfNPC": 2,
-      "neverSpawnInWater": false,
-      "forceUntameable": false,
-      "entries": [],
-      "locations": [
-        {
-          "weight": 1.0,
-          "box": {
-            "Min": {
-              "X": -177625.1,
-              "Y": -144750.22,
-              "Z": -46321.01
-            },
-            "Max": {
-              "X": -171725.4,
-              "Y": -136229.84,
-              "Z": -43105.48
-            }
-          }
-        },
-        {
-          "weight": 1.0,
-          "box": {
-            "Min": {
-              "X": -195446.38,
-              "Y": -149241.89,
-              "Z": -59207.406
-            },
-            "Max": {
-              "X": -173081.9,
-              "Y": -116942.92,
-              "Z": -51780.92
             }
           }
         }
