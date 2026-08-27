@@ -61987,6 +61987,29 @@
         }
       ]
     },
+    "DinoSpawnEntriesConcavenator_C": {
+      "minDesiredNumberOfNPC": 12,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 169203.84,
+              "Y": 171463.47,
+              "Z": -75949.445
+            },
+            "Max": {
+              "X": 269203.84,
+              "Y": 271463.47,
+              "Z": 24050.547
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntries_Wasteland_City_Buffer_2_C": {
       "minDesiredNumberOfNPC": 10,
       "neverSpawnInWater": false,

@@ -214244,6 +214244,44 @@
         }
       ]
     },
+    "DinoSpawnEntriesConcavenator_C": {
+      "minDesiredNumberOfNPC": 8,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 289548.25,
+              "Y": 234809.1,
+              "Z": -52950.734
+            },
+            "Max": {
+              "X": 449548.25,
+              "Y": 394809.1,
+              "Z": 47049.266
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 289548.25,
+              "Y": 34936.72,
+              "Z": -52950.734
+            },
+            "Max": {
+              "X": 449548.25,
+              "Y": 194936.72,
+              "Z": 47049.266
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntriesTitano_C": {
       "minDesiredNumberOfNPC": 1,
       "neverSpawnInWater": false,
