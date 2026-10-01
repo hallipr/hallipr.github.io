@@ -214725,6 +214725,29 @@
         }
       ]
     },
+    "DinoSpawnEntries_Cerberus_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 121188.38,
+              "Y": -276851.6,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": 262071.62,
+              "Y": -135968.38,
+              "Z": 49999.996
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntries_Valley_LC_C": {
       "minDesiredNumberOfNPC": 10,
       "neverSpawnInWater": false,
@@ -214743,6 +214766,29 @@
               "X": -305215.84,
               "Y": 100380.87,
               "Z": 111550.0
+            }
+          }
+        }
+      ]
+    },
+    "DinoSpawnEntries_Gargantar_C": {
+      "minDesiredNumberOfNPC": 3,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 169090.02,
+              "Y": -242750.0,
+              "Z": -31960.0
+            },
+            "Max": {
+              "X": 229090.02,
+              "Y": -182750.0,
+              "Z": 68040.0
             }
           }
         }

@@ -117075,6 +117075,44 @@
         }
       ]
     },
+    "DinoSpawnEntries_Gargantar_C": {
+      "minDesiredNumberOfNPC": 2,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -334940.0,
+              "Y": -98880.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": -274940.0,
+              "Y": -38880.0,
+              "Z": 49999.996
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -334940.0,
+              "Y": -7460.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": -274940.0,
+              "Y": 52540.0,
+              "Z": 49999.996
+            }
+          }
+        }
+      ]
+    },
     "Valguero_DinoSpawnEntries_MiltonSpot_C": {
       "minDesiredNumberOfNPC": 4,
       "neverSpawnInWater": false,
@@ -117434,6 +117472,29 @@
               "X": -24977.523,
               "Y": 213885.95,
               "Z": 58321.0
+            }
+          }
+        }
+      ]
+    },
+    "DinoSpawnEntries_Cerberus_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -336469.97,
+              "Y": -121889.984,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": -236469.97,
+              "Y": -21889.996,
+              "Z": 49999.996
             }
           }
         }

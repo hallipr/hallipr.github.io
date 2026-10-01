@@ -216846,6 +216846,89 @@
         }
       ]
     },
+    "DinoSpawnEntries_Gargantar_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 174730.0,
+              "Y": 112470.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": 234730.0,
+              "Y": 172470.0,
+              "Z": 49999.996
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 264930.0,
+              "Y": 112470.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": 324930.0,
+              "Y": 172470.0,
+              "Z": 49999.996
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 174730.0,
+              "Y": 202960.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": 234730.0,
+              "Y": 262960.0,
+              "Z": 49999.996
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 84510.0,
+              "Y": 112470.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": 144510.0,
+              "Y": 172470.0,
+              "Z": 49999.996
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 84510.0,
+              "Y": 202960.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": 144510.0,
+              "Y": 262960.0,
+              "Z": 49999.996
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntriesCaveWater_Generic_C": {
       "minDesiredNumberOfNPC": 16,
       "neverSpawnInWater": false,
@@ -218681,6 +218764,29 @@
               "X": 147229.31,
               "Y": 194515.36,
               "Z": 27940.129
+            }
+          }
+        }
+      ]
+    },
+    "DinoSpawnEntries_Cerberus_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": 74270.0,
+              "Y": 100800.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": 294270.0,
+              "Y": 320800.0,
+              "Z": 49999.996
             }
           }
         }

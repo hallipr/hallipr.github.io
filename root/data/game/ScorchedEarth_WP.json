@@ -39890,6 +39890,74 @@
         }
       ]
     },
+    "DinoSpawnEntries_Gargantar_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -275340.0,
+              "Y": -192970.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": -245340.0,
+              "Y": -132970.0,
+              "Z": 49999.996
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -286810.0,
+              "Y": -107560.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": -256810.0,
+              "Y": -47560.0,
+              "Z": 49999.996
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -272170.0,
+              "Y": -15710.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": -242170.0,
+              "Y": 44290.0,
+              "Z": 49999.996
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -258910.0,
+              "Y": 74650.0,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": -228910.0,
+              "Y": 134650.0,
+              "Z": 49999.996
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntries_BurrowBuck_Only_C": {
       "minDesiredNumberOfNPC": 4,
       "neverSpawnInWater": false,
@@ -40827,6 +40895,29 @@
               "X": 293822.56,
               "Y": 277256.1,
               "Z": 28505.646
+            }
+          }
+        }
+      ]
+    },
+    "DinoSpawnEntries_Cerberus_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -194370.0,
+              "Y": -58950.004,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": -144370.0,
+              "Y": 81050.0,
+              "Z": 49999.996
             }
           }
         }

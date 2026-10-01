@@ -49547,6 +49547,59 @@
         }
       ]
     },
+    "DinoSpawnEntries_Gargantar_C": {
+      "minDesiredNumberOfNPC": 2,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -268770.0,
+              "Y": 268820.0,
+              "Z": -76510.0
+            },
+            "Max": {
+              "X": -208770.0,
+              "Y": 298820.0,
+              "Z": 23490.0
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -89310.0,
+              "Y": 224670.0,
+              "Z": -76510.0
+            },
+            "Max": {
+              "X": -29310.0,
+              "Y": 254670.0,
+              "Z": 23490.0
+            }
+          }
+        },
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -179050.0,
+              "Y": 243960.0,
+              "Z": -76510.0
+            },
+            "Max": {
+              "X": -119049.99,
+              "Y": 273960.0,
+              "Z": 23490.0
+            }
+          }
+        }
+      ]
+    },
     "DinoSpawnEntries_Wasteland_NorthCraterForest_C": {
       "minDesiredNumberOfNPC": 12,
       "neverSpawnInWater": false,
@@ -62482,6 +62535,29 @@
               "X": -44000.0,
               "Y": 211.14844,
               "Z": 14028.988
+            }
+          }
+        }
+      ]
+    },
+    "DinoSpawnEntries_Cerberus_C": {
+      "minDesiredNumberOfNPC": 1,
+      "neverSpawnInWater": false,
+      "forceUntameable": false,
+      "entries": [],
+      "locations": [
+        {
+          "weight": 1.0,
+          "box": {
+            "Min": {
+              "X": -5690.039,
+              "Y": -250859.95,
+              "Z": -49999.996
+            },
+            "Max": {
+              "X": 44310.023,
+              "Y": -130859.984,
+              "Z": 49999.996
             }
           }
         }
