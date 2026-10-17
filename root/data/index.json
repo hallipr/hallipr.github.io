@@ -59,24 +59,6 @@
       "name": null,
       "modName": "",
       "dataUrl": "game/Valguero_WP.json"
-    },
-    {
-      "key": null,
-      "name": null,
-      "modName": "Forglar Part I (MAP)",
-      "dataUrl": "mods/forglar-premium/Forglar_WP.json"
-    },
-    {
-      "key": null,
-      "name": null,
-      "modName": "Svartalfheim Premium [PC & Crossplay]",
-      "dataUrl": "mods/svartalfheim-premium/Svartalfheim_WP.json"
-    },
-    {
-      "key": null,
-      "name": null,
-      "modName": "Survive The Night",
-      "dataUrl": "mods/survive-the-night/ASurviveTheNight.json"
     }
   ],
   "resourceTypes": [
