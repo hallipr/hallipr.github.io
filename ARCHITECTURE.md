@@ -42,6 +42,13 @@ src/
 | `/`                   | New layered architecture           |
 | `/index-old.html`     | Legacy implementation              |
 | `/index-layered.html` | Alternative new architecture entry |
+| `/terrain-demo.html`  | Standalone interactive Island terrain demo |
+
+The terrain demo is a self-contained static page with its map texture, Three.js,
+and pre-sampled 129 x 129 height grid embedded. It uses approximately 54-meter
+spacing, excludes obelisks, and does not load or modify resource-map data.
+It is published directly from `root/terrain-demo.html`; no build or terrain
+re-probe is required to serve it.
 
 ## Architecture Benefits
 

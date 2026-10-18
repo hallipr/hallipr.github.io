@@ -1,64 +1,88 @@
 {
   "maps": [
     {
-      "key": null,
-      "name": null,
+      "key": "Aberration_WP",
+      "name": "Aberration",
       "modName": "",
       "dataUrl": "game/Aberration_WP.json"
     },
     {
-      "key": null,
-      "name": null,
+      "key": "Astraeos_WP",
+      "name": "Astraeos",
       "modName": "",
       "dataUrl": "game/Astraeos_WP.json"
     },
     {
-      "key": null,
-      "name": null,
+      "key": "Extinction_WP",
+      "name": "Extinction",
       "modName": "",
       "dataUrl": "game/Extinction_WP.json"
     },
     {
-      "key": null,
-      "name": null,
+      "key": "Genesis_WP_Main",
+      "name": "Genesis (Main)",
       "modName": "",
-      "dataUrl": "game/Genesis_WP.json"
+      "dataUrl": "game/Genesis_WP_Main.json"
     },
     {
-      "key": null,
-      "name": null,
+      "key": "Genesis_WP_Ocean",
+      "name": "Genesis (Ocean)",
+      "modName": "",
+      "dataUrl": "game/Genesis_WP_Ocean.json"
+    },
+    {
+      "key": "LostColony_WP",
+      "name": "Lost Colony",
       "modName": "",
       "dataUrl": "game/LostColony_WP.json"
     },
     {
-      "key": null,
-      "name": null,
+      "key": "Ragnarok_WP",
+      "name": "Ragnarok",
       "modName": "",
       "dataUrl": "game/Ragnarok_WP.json"
     },
     {
-      "key": null,
-      "name": null,
+      "key": "ScorchedEarth_WP",
+      "name": "Scorched Earth",
       "modName": "",
       "dataUrl": "game/ScorchedEarth_WP.json"
     },
     {
-      "key": null,
-      "name": null,
+      "key": "TheCenter_WP",
+      "name": "The Center",
       "modName": "",
       "dataUrl": "game/TheCenter_WP.json"
     },
     {
-      "key": null,
-      "name": null,
+      "key": "TheIsland_WP",
+      "name": "The Island",
       "modName": "",
       "dataUrl": "game/TheIsland_WP.json"
     },
     {
-      "key": null,
-      "name": null,
+      "key": "Valguero_WP",
+      "name": "Valguero",
       "modName": "",
       "dataUrl": "game/Valguero_WP.json"
+    },
+    {
+      "key": "Forglar_WP",
+      "name": "Forglar",
+      "modName": "Forglar Part I (MAP)",
+      "dataUrl": "mods/forglar-premium/Forglar_WP.json"
+    },
+    {
+      "key": "Svartalfheim_WP",
+      "name": "Svartalfheim",
+      "modName": "Svartalfheim Premium [PC & Crossplay]",
+      "dataUrl": "mods/svartalfheim-premium/Svartalfheim_WP.json"
+    },
+    {
+      "key": "ASurviveTheNight",
+      "name": "Survive The Night",
+      "modName": "Survive The Night",
+      "dataUrl": "mods/survive-the-night/ASurviveTheNight.json"
     }
   ],
   "resourceTypes": [
