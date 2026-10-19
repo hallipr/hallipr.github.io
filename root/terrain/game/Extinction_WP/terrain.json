@@ -1,0 +1,393 @@
+{
+  "version": 1,
+  "samplerVersion": 3,
+  "mapKey": "Extinction_WP",
+  "heightFormat": "float32-le",
+  "heightUnits": "centimeters",
+  "rowOrder": "increasing-world-y",
+  "originX": -342900,
+  "originY": -342900,
+  "spacing": 500,
+  "columns": 1373,
+  "rows": 1373,
+  "maxX": 343100,
+  "maxY": 343100,
+  "tileCells": 256,
+  "waterLevelCm": null,
+  "minZ": -135265.2151796288,
+  "maxZ": 127544.40384933571,
+  "coveredSamples": 1885129,
+  "totalSamples": 1885129,
+  "coverage": 1,
+  "minHeight": null,
+  "maxHeight": null,
+  "warnings": [
+    "Sphere/capsule collision shapes are not sampled: /Game/Extinction/Environment/Ruins/City/Buildings/Human/Detail/cyberOverhang_A.cyberOverhang_A",
+    "Sphere/capsule collision shapes are not sampled: /Game/Extinction/Environment/Ruins/City/Buildings/Human/Detail/cyberOverhang_A_Flipped.cyberOverhang_A_Flipped",
+    "Simple convex has no indexed faces: /Game/Extinction/Environment/Ruins/City/Buildings/Human/Deco/SM_EXT_HU_DECO_Balcony_E.SM_EXT_HU_DECO_Balcony_E",
+    "Spline deformation is not sampled by this probe: /Game/Maps/Extinction/Extinction_WP/_Generated_/CN71PVXEVCJWMAPX0IH8ZUNQL.Extinction_WP:PersistentLevel.River_Spline_7.NODE_AddSplineMeshComponent-0",
+    "Missing level streaming object for E5MT89R2DAP28YIAPW002Y0MF; cell not sampled."
+  ],
+  "tiles": [
+    {
+      "column": 0,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -121348.7074256451,
+      "maxZ": 72809.56729507979
+    },
+    {
+      "column": 256,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -29764.607421875,
+      "maxZ": 55881.29765312243
+    },
+    {
+      "column": 512,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -18986.309215074867,
+      "maxZ": 116203.61391223285
+    },
+    {
+      "column": 768,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -15349.0791015625,
+      "maxZ": 112919.92961974417
+    },
+    {
+      "column": 1024,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": 5660.19287109375,
+      "maxZ": 89229.390625
+    },
+    {
+      "column": 1280,
+      "row": 0,
+      "columns": 93,
+      "rows": 257,
+      "url": "0-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": 18583.5859375,
+      "maxZ": 73094.3075851774
+    },
+    {
+      "column": 0,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -135265.2151796288,
+      "maxZ": 48853.569509605404
+    },
+    {
+      "column": 256,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -43835.62019126806,
+      "maxZ": 42856.81911293403
+    },
+    {
+      "column": 512,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -21445.205078125,
+      "maxZ": 27182.40533473779
+    },
+    {
+      "column": 768,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -21643.4921875,
+      "maxZ": 37310.83813930428
+    },
+    {
+      "column": 1024,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -16607.848396299367,
+      "maxZ": 41762.401703660245
+    },
+    {
+      "column": 1280,
+      "row": 256,
+      "columns": 93,
+      "rows": 257,
+      "url": "256-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": 3694.362060546875,
+      "maxZ": 68355.70075417009
+    },
+    {
+      "column": 0,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -30974.015625,
+      "maxZ": 7413.638510178364
+    },
+    {
+      "column": 256,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -38629.8671875,
+      "maxZ": 43654.140957808566
+    },
+    {
+      "column": 512,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -45500.6484375,
+      "maxZ": 127544.40384933571
+    },
+    {
+      "column": 768,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 37940.42810918993
+    },
+    {
+      "column": 1024,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980.14401365611,
+      "maxZ": 48422.97267938737
+    },
+    {
+      "column": 1280,
+      "row": 512,
+      "columns": 93,
+      "rows": 257,
+      "url": "512-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": -12695.5224609375,
+      "maxZ": 75098.0027876479
+    },
+    {
+      "column": 0,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -34346.125,
+      "maxZ": 18206.923548293747
+    },
+    {
+      "column": 256,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -39159.8671875,
+      "maxZ": 25548.674047462235
+    },
+    {
+      "column": 512,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -45264.37109375,
+      "maxZ": 55268.84447610028
+    },
+    {
+      "column": 768,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -45631.22156061838,
+      "maxZ": 34942.544800665935
+    },
+    {
+      "column": 1024,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -31262.24609375,
+      "maxZ": 16172.549562904725
+    },
+    {
+      "column": 1280,
+      "row": 768,
+      "columns": 93,
+      "rows": 257,
+      "url": "768-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": -25814.41796875,
+      "maxZ": 35473.93543165037
+    },
+    {
+      "column": 0,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 28269.09902562027
+    },
+    {
+      "column": 256,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -79816.28155407001,
+      "maxZ": -9675.264235793671
+    },
+    {
+      "column": 512,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -88816.55445779873,
+      "maxZ": -12840.420102379434
+    },
+    {
+      "column": 768,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -43690.62890625,
+      "maxZ": -20355.942756584616
+    },
+    {
+      "column": 1024,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 24643.376953125
+    },
+    {
+      "column": 1280,
+      "row": 1024,
+      "columns": 93,
+      "rows": 257,
+      "url": "1024-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": -32505.34765625,
+      "maxZ": -15866.64244261491
+    },
+    {
+      "column": 0,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-0.f32",
+      "coveredSamples": 23901,
+      "minZ": -100990.34474122868,
+      "maxZ": -13511.49644961898
+    },
+    {
+      "column": 256,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-256.f32",
+      "coveredSamples": 23901,
+      "minZ": -121428.28844645213,
+      "maxZ": -39217.25995488993
+    },
+    {
+      "column": 512,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-512.f32",
+      "coveredSamples": 23901,
+      "minZ": -131548.55418157962,
+      "maxZ": -32575.608782707033
+    },
+    {
+      "column": 768,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-768.f32",
+      "coveredSamples": 23901,
+      "minZ": -88342.6603280072,
+      "maxZ": -20241.98218368593
+    },
+    {
+      "column": 1024,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-1024.f32",
+      "coveredSamples": 23901,
+      "minZ": -40927.625,
+      "maxZ": -11902.456724556507
+    },
+    {
+      "column": 1280,
+      "row": 1280,
+      "columns": 93,
+      "rows": 93,
+      "url": "1280-1280.f32",
+      "coveredSamples": 8649,
+      "minZ": -26946.439453125,
+      "maxZ": -14575.119976264465
+    }
+  ]
+}

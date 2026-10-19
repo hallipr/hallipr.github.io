@@ -1,0 +1,61 @@
+{
+  "maps": [
+    {
+      "url": "game/Aberration_WP/terrain.json",
+      "mapKey": "Aberration_WP"
+    },
+    {
+      "url": "game/Astraeos_WP/terrain.json",
+      "mapKey": "Astraeos_WP"
+    },
+    {
+      "url": "game/Extinction_WP/terrain.json",
+      "mapKey": "Extinction_WP"
+    },
+    {
+      "url": "game/Genesis_WP_Main/terrain.json",
+      "mapKey": "Genesis_WP_Main"
+    },
+    {
+      "url": "game/Genesis_WP_Ocean/terrain.json",
+      "mapKey": "Genesis_WP_Ocean"
+    },
+    {
+      "url": "game/LostColony_WP/terrain.json",
+      "mapKey": "LostColony_WP"
+    },
+    {
+      "url": "game/Ragnarok_WP/terrain.json",
+      "mapKey": "Ragnarok_WP"
+    },
+    {
+      "url": "game/ScorchedEarth_WP/terrain.json",
+      "mapKey": "ScorchedEarth_WP"
+    },
+    {
+      "url": "game/TheCenter_WP/terrain.json",
+      "mapKey": "TheCenter_WP"
+    },
+    {
+      "url": "game/TheIsland_WP/terrain.json",
+      "mapKey": "TheIsland_WP"
+    },
+    {
+      "url": "game/Valguero_WP/terrain.json",
+      "mapKey": "Valguero_WP"
+    },
+    {
+      "url": "mods/forglar-premium/Forglar_WP/terrain.json",
+      "mapKey": "Forglar_WP"
+    },
+    {
+      "url": "mods/svartalfheim-premium/Svartalfheim_WP/terrain.json",
+      "mapKey": "Svartalfheim_WP"
+    },
+    {
+      "url": "mods/survive-the-night/ASurviveTheNight/terrain.json",
+      "mapKey": "ASurviveTheNight"
+    }
+  ],
+  "version": 1
+}

@@ -1,584 +1,5 @@
 "use strict";
 (() => {
-  // src/data/types.ts
-  var CoordinateSystem = class {
-    constructor(minX, maxX, minY, maxY, minZ, maxZ, centerX, centerY, scaleX, scaleY) {
-      this.minX = minX;
-      this.maxX = maxX;
-      this.minY = minY;
-      this.maxY = maxY;
-      this.minZ = minZ;
-      this.maxZ = maxZ;
-      this.centerX = centerX;
-      this.centerY = centerY;
-      this.scaleX = scaleX;
-      this.scaleY = scaleY;
-    }
-    getArkCoordinates(worldCoords) {
-      const lat = (worldCoords.y - this.centerY) / this.scaleY + 50;
-      const long = (worldCoords.x - this.centerX) / this.scaleX + 50;
-      const z = worldCoords.z;
-      return { lat, long, z };
-    }
-  };
-  var MapData = class {
-    constructor(data) {
-      this.mapKey = data.mapKey;
-      this.coordinates = new CoordinateSystem(
-        data.coordinates.minX,
-        data.coordinates.maxX,
-        data.coordinates.minY,
-        data.coordinates.maxY,
-        data.coordinates.minZ,
-        data.coordinates.maxZ,
-        data.coordinates.centerX,
-        data.coordinates.centerY,
-        data.coordinates.scaleX,
-        data.coordinates.scaleY
-      );
-      this.resources = data.resources;
-      this.imageName = data.imageName;
-    }
-  };
-
-  // src/data/DataLoader.ts
-  var DataLoader = class {
-    constructor() {
-      this.indexData = null;
-    }
-    async loadIndex() {
-      const response = await fetch("./data/index.json");
-      if (!response.ok) {
-        throw new Error(`Failed to load index.json: ${response.status} ${response.statusText}`);
-      }
-      this.indexData = await response.json();
-      if (!this.indexData) {
-        throw new Error("Index data is null or undefined");
-      }
-      return this.indexData;
-    }
-    async loadMapData(dataUrl) {
-      const normalizedUrl = dataUrl.startsWith("http") || dataUrl.startsWith("/") ? dataUrl : `./data/${dataUrl.replace(/^\.\//, "")}`;
-      const response = await fetch(normalizedUrl);
-      if (!response.ok) {
-        throw new Error(
-          `Failed to load map data from ${normalizedUrl}: ${response.status} ${response.statusText}`
-        );
-      }
-      const data = await response.json();
-      return new MapData(data);
-    }
-    getResourceTypes() {
-      if (!this.indexData) {
-        throw new Error("Index data not loaded. Call loadIndex() first.");
-      }
-      return this.indexData.resourceTypes;
-    }
-    getMaps() {
-      if (!this.indexData) {
-        throw new Error("Index data not loaded. Call loadIndex() first.");
-      }
-      return this.indexData.maps;
-    }
-    async getMapList() {
-      if (!this.indexData) {
-        await this.loadIndex();
-      }
-      return this.getMaps();
-    }
-    async loadMapByName(mapKey) {
-      if (!this.indexData) {
-        await this.loadIndex();
-      }
-      const mapInfo = this.getMaps().find((map) => map.key === mapKey);
-      if (!mapInfo) {
-        throw new Error(`Map ${mapKey} not found`);
-      }
-      return this.loadMapData(mapInfo.dataUrl);
-    }
-  };
-
-  // src/clustering/rbush3d.ts
-  var compareMinX = (a, b) => {
-    return ("x" in a ? a.x : a.minX) - ("x" in b ? b.x : b.minX);
-  };
-  var compareMinY = (a, b) => {
-    return ("y" in a ? a.y : a.minY) - ("y" in b ? b.y : b.minY);
-  };
-  var compareMinZ = (a, b) => {
-    return ("z" in a ? a.z : a.minZ) - ("z" in b ? b.z : b.minZ);
-  };
-  function extend(a, b) {
-    if ("x" in b) {
-      a.minX = Math.min(a.minX, b.x);
-      a.minY = Math.min(a.minY, b.y);
-      a.minZ = Math.min(a.minZ, b.z);
-      a.maxX = Math.max(a.maxX, b.x);
-      a.maxY = Math.max(a.maxY, b.y);
-      a.maxZ = Math.max(a.maxZ, b.z);
-    } else {
-      a.minX = Math.min(a.minX, b.minX);
-      a.minY = Math.min(a.minY, b.minY);
-      a.minZ = Math.min(a.minZ, b.minZ);
-      a.maxX = Math.max(a.maxX, b.maxX);
-      a.maxY = Math.max(a.maxY, b.maxY);
-      a.maxZ = Math.max(a.maxZ, b.maxZ);
-    }
-  }
-  function calcBBox(node) {
-    node.minX = Infinity;
-    node.minY = Infinity;
-    node.minZ = Infinity;
-    node.maxX = -Infinity;
-    node.maxY = -Infinity;
-    node.maxZ = -Infinity;
-    for (const child of node.children) {
-      extend(node, child);
-    }
-  }
-  function createNode(children) {
-    const node = {
-      children,
-      height: 1,
-      leaf: true,
-      minX: Infinity,
-      minY: Infinity,
-      minZ: Infinity,
-      maxX: -Infinity,
-      maxY: -Infinity,
-      maxZ: -Infinity
-    };
-    if (children.length === 0) {
-      return node;
-    }
-    calcBBox(node);
-    return node;
-  }
-  function intersects(a, b) {
-    return b.minX <= a.maxX && b.minY <= a.maxY && b.minZ <= a.maxZ && b.maxX >= a.minX && b.maxY >= a.minY && b.maxZ >= a.minZ;
-  }
-  var RBush3D = class {
-    constructor(points, maxEntries = 9) {
-      this.maxEntries = Math.max(4, maxEntries);
-      this.points = points.slice().sort((a, b) => a.index - b.index);
-      this.data = this.buildFromPoints(points);
-      this.length = points.length;
-    }
-    buildFromPoints(points) {
-      if (!points || points.length === 0) {
-        return createNode([]);
-      }
-      if (points.length <= this.maxEntries) {
-        return createNode(points.slice());
-      }
-      return this.build(points.slice(), 0, points.length - 1, 0);
-    }
-    search(bbox) {
-      const result = [];
-      if (!intersects(bbox, this.data)) return result;
-      const nodesToSearch = [];
-      let node = this.data;
-      while (node) {
-        const children = node.children;
-        const isLeaf = node.leaf;
-        for (let i = 0; i < children.length; i++) {
-          const child = children[i];
-          if (isLeaf) {
-            const point = child;
-            if (point.x >= bbox.minX && point.x <= bbox.maxX && point.y >= bbox.minY && point.y <= bbox.maxY && point.z >= bbox.minZ && point.z <= bbox.maxZ) {
-              result.push(point);
-            }
-          } else {
-            const childNode = child;
-            if (intersects(bbox, childNode)) {
-              nodesToSearch.push(childNode);
-            }
-          }
-        }
-        node = nodesToSearch.pop();
-      }
-      return result;
-    }
-    // Search for items within a spherical radius
-    searchRadius(x, y, z, radius) {
-      const bbox = {
-        minX: x - radius,
-        minY: y - radius,
-        minZ: z - radius,
-        maxX: x + radius,
-        maxY: y + radius,
-        maxZ: z + radius
-      };
-      const candidates = this.search(bbox);
-      const result = [];
-      const radiusSquared = radius * radius;
-      for (const point of candidates) {
-        const dx = x - point.x;
-        const dy = y - point.y;
-        const dz = z - point.z;
-        const distSquared = dx * dx + dy * dy + dz * dz;
-        if (distSquared <= radiusSquared) {
-          result.push(point);
-        }
-      }
-      return result;
-    }
-    build(items, left, right, height) {
-      const N = right - left + 1;
-      let M = this.maxEntries;
-      if (N <= M) {
-        const children = new Array(N);
-        for (let i = 0; i < N; i++) {
-          children[i] = items[left + i];
-        }
-        return createNode(children);
-      }
-      if (!height) {
-        height = Math.ceil(Math.log(N) / Math.log(M));
-        M = Math.ceil(N / Math.pow(M, height - 1));
-      }
-      const node = createNode([]);
-      node.leaf = false;
-      node.height = height;
-      const N3 = Math.ceil(N / M);
-      const N2 = N3 * Math.ceil(Math.sqrt(M));
-      this.multiSelect(items, left, right, N2, compareMinX);
-      for (let i = left; i <= right; i += N2) {
-        const right2 = Math.min(i + N2 - 1, right);
-        this.multiSelect(items, i, right2, N3, compareMinY);
-        for (let j = i; j <= right2; j += N3) {
-          const right3 = Math.min(j + N3 - 1, right2);
-          this.multiSelect(items, j, right3, 1, compareMinZ);
-          node.children.push(this.build(items, j, right3, height - 1));
-        }
-      }
-      calcBBox(node);
-      return node;
-    }
-    multiSelect(arr, left, right, n, compare) {
-      const stack = [left, right];
-      while (stack.length) {
-        right = stack.pop();
-        left = stack.pop();
-        if (right - left <= n) continue;
-        const mid = left + Math.ceil((right - left) / n / 2) * n;
-        this.quickselect(arr, mid, left, right, compare);
-        stack.push(left, mid, mid, right);
-      }
-    }
-    quickselect(arr, k, left, right, compare) {
-      while (right > left) {
-        if (right - left > 600) {
-          const n = right - left + 1;
-          const m = k - left + 1;
-          const z = Math.log(n);
-          const s = 0.5 * Math.exp(2 * z / 3);
-          const sd = 0.5 * Math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
-          const newLeft = Math.max(left, Math.floor(k - m * s / n + sd));
-          const newRight = Math.min(right, Math.floor(k + (n - m) * s / n + sd));
-          this.quickselect(arr, k, newLeft, newRight, compare);
-        }
-        const t = arr[k];
-        let i = left;
-        let j = right;
-        this.swap(arr, left, k);
-        if (compare(arr[right], t) > 0) this.swap(arr, left, right);
-        while (i < j) {
-          this.swap(arr, i, j);
-          i++;
-          j--;
-          while (compare(arr[i], t) < 0) i++;
-          while (compare(arr[j], t) > 0) j--;
-        }
-        if (compare(arr[left], t) === 0) this.swap(arr, left, j);
-        else {
-          j++;
-          this.swap(arr, j, right);
-        }
-        if (j <= k) left = j + 1;
-        if (k <= j) right = j - 1;
-      }
-    }
-    swap(arr, i, j) {
-      const tmp2 = arr[i];
-      arr[i] = arr[j];
-      arr[j] = tmp2;
-    }
-  };
-
-  // src/clustering/clustering.ts
-  function cluster(spatialIndex, epsilon, minPoints) {
-    const n = spatialIndex.length;
-    const labels = new Array(n).fill(-1);
-    let clusterId = 0;
-    for (let i = 0; i < n; i++) {
-      if (labels[i] !== -1) continue;
-      const neighbors = getNeighbors(spatialIndex, i, epsilon);
-      if (neighbors.length < minPoints) {
-        labels[i] = -1;
-        continue;
-      }
-      clusterId++;
-      expandCluster(i, neighbors, clusterId, labels, spatialIndex, epsilon, minPoints);
-    }
-    return labels.map((clusterId2, pointIndex) => ({
-      clusterId: clusterId2,
-      pointIndex
-    }));
-  }
-  function expandCluster(pointIndex, neighbors, clusterId, labels, spatialIndex, epsilon, minPoints) {
-    labels[pointIndex] = clusterId;
-    const queue = [...neighbors];
-    while (queue.length > 0) {
-      const currentIndex = queue.shift();
-      if (labels[currentIndex] === -1) {
-        labels[currentIndex] = clusterId;
-      }
-      if (labels[currentIndex] !== -1) continue;
-      labels[currentIndex] = clusterId;
-      const currentNeighbors = getNeighbors(spatialIndex, currentIndex, epsilon);
-      if (currentNeighbors.length >= minPoints) {
-        queue.push(...currentNeighbors);
-      }
-    }
-  }
-  function getNeighbors(spatialIndex, pointIndex, epsilon) {
-    const point = spatialIndex.points[pointIndex];
-    const candidates = spatialIndex.searchRadius(point.x, point.y, point.z, epsilon);
-    const neighbors = [];
-    for (const candidate of candidates) {
-      if (candidate.index === pointIndex) continue;
-      neighbors.push(candidate.index);
-    }
-    return neighbors;
-  }
-
-  // src/world/World.ts
-  var World = class {
-    constructor(settings) {
-      this.mapData = null;
-      this.resourceTypes = /* @__PURE__ */ new Map();
-      this.spatialIndices = /* @__PURE__ */ new Map();
-      this.cachedPoints = /* @__PURE__ */ new Map();
-      this.allPointsCache = null;
-      // Public configuration - changing this triggers reclustering
-      this.clusterConfigState = {
-        enabled: true,
-        radius: 5e3,
-        minClusterSize: 3,
-        maxLevels: 4
-      };
-      if (settings) {
-        this.setMapData(settings.mapData, settings.resourceTypes);
-      }
-    }
-    setMapData(mapData, resourceTypes) {
-      this.mapData = mapData;
-      this.resourceTypes = new Map(
-        resourceTypes.map((type) => [
-          type.name,
-          { color: type.color, colorHex: type.colorHex }
-        ])
-      );
-      this.initializeSpatialIndices();
-      this.updateClustering();
-    }
-    get clusterConfig() {
-      return { ...this.clusterConfigState };
-    }
-    set clusterConfig(config) {
-      this.clusterConfigState = { ...config };
-      this.updateClustering();
-    }
-    updateClusterConfig(config) {
-      this.clusterConfigState = { ...this.clusterConfigState, ...config };
-      this.updateClustering();
-    }
-    get coordinateSystem() {
-      return this.ensureMapData().coordinates;
-    }
-    get mapKey() {
-      return this.ensureMapData().mapKey;
-    }
-    get imageName() {
-      return this.ensureMapData().imageName;
-    }
-    // Get all points from all resource types
-    get points() {
-      if (!this.mapData) return [];
-      if (this.allPointsCache === null) {
-        this.allPointsCache = Array.from(this.cachedPoints.values()).flat();
-      }
-      return this.allPointsCache;
-    }
-    // Get points grouped by resource type
-    get pointsByResource() {
-      const result = {};
-      for (const [resourceType, points] of this.cachedPoints) {
-        result[resourceType] = points;
-      }
-      return result;
-    }
-    // Get points for a specific resource type
-    getPointsForResource(resourceType) {
-      return this.cachedPoints.get(resourceType) || [];
-    }
-    // Search for points within a radius (useful for hover detection)
-    searchRadius(x, y, z, radius, resourceType) {
-      const results = [];
-      if (!this.mapData) {
-        return results;
-      }
-      if (resourceType) {
-        const spatialIndex = this.spatialIndices.get(resourceType);
-        if (spatialIndex) {
-          const nearby = spatialIndex.searchRadius(x, y, z, radius);
-          results.push(...this.convertToWorldPoints(nearby, resourceType));
-        }
-      } else {
-        for (const [resType, spatialIndex] of this.spatialIndices) {
-          const nearby = spatialIndex.searchRadius(x, y, z, radius);
-          results.push(...this.convertToWorldPoints(nearby, resType));
-        }
-      }
-      return results;
-    }
-    // Get all resource types available in this world
-    get availableResourceTypes() {
-      return Array.from(this.resourceTypes.keys());
-    }
-    initializeSpatialIndices() {
-      if (!this.mapData) return;
-      this.spatialIndices.clear();
-      this.cachedPoints.clear();
-      this.allPointsCache = null;
-      for (const resource of this.mapData.resources) {
-        const points = resource.points.map((point, index) => ({
-          x: point[0],
-          y: point[1],
-          z: point[2],
-          index
-        }));
-        const spatialIndex = new RBush3D(points);
-        this.spatialIndices.set(resource.resourceType, spatialIndex);
-      }
-    }
-    updateClustering() {
-      if (!this.mapData) return;
-      this.cachedPoints.clear();
-      this.allPointsCache = null;
-      for (const [resourceType, spatialIndex] of this.spatialIndices) {
-        if (this.clusterConfigState.enabled) {
-          const worldPoints = this.createClusteredPoints(spatialIndex, resourceType);
-          this.cachedPoints.set(resourceType, worldPoints);
-        } else {
-          const worldPoints = this.convertToWorldPoints(spatialIndex.points, resourceType);
-          this.cachedPoints.set(resourceType, worldPoints);
-        }
-      }
-      this.onPointsChanged?.();
-    }
-    convertToWorldPoints(points, resourceType) {
-      const resourceInfo = this.resourceTypes.get(resourceType);
-      if (!resourceInfo) return [];
-      return points.map(
-        (point) => ({
-          x: point.x,
-          y: point.y,
-          z: point.z,
-          type: "node",
-          resourceType,
-          color: resourceInfo.color,
-          colorHex: resourceInfo.colorHex,
-          index: point.index
-        })
-      );
-    }
-    createClusteredPoints(spatialIndex, resourceType) {
-      const resourceInfo = this.resourceTypes.get(resourceType);
-      if (!resourceInfo) return [];
-      const results = cluster(
-        spatialIndex,
-        this.clusterConfigState.radius,
-        this.clusterConfigState.minClusterSize
-      );
-      const clusters = /* @__PURE__ */ new Map();
-      const noiseIndices = [];
-      for (const result of results) {
-        if (result.clusterId === -1) {
-          noiseIndices.push(result.pointIndex);
-          continue;
-        }
-        if (!clusters.has(result.clusterId)) {
-          clusters.set(result.clusterId, []);
-        }
-        clusters.get(result.clusterId).push(result.pointIndex);
-      }
-      const worldPoints = [];
-      const points = spatialIndex.points;
-      for (const indices of clusters.values()) {
-        const center = indices.reduce(
-          (acc, index) => {
-            const point = points[index];
-            acc.x += point.x;
-            acc.y += point.y;
-            acc.z += point.z;
-            return acc;
-          },
-          { x: 0, y: 0, z: 0 }
-        );
-        center.x /= indices.length;
-        center.y /= indices.length;
-        center.z /= indices.length;
-        worldPoints.push({
-          x: center.x,
-          y: center.y,
-          z: center.z,
-          type: "cluster",
-          resourceType,
-          count: indices.length,
-          color: resourceInfo.color,
-          colorHex: resourceInfo.colorHex,
-          indices: indices.map((index) => points[index].index),
-          radius: this.clusterConfigState.radius
-        });
-      }
-      for (const index of noiseIndices) {
-        const point = points[index];
-        worldPoints.push({
-          x: point.x,
-          y: point.y,
-          z: point.z,
-          type: "node",
-          resourceType,
-          color: resourceInfo.color,
-          colorHex: resourceInfo.colorHex,
-          index: point.index
-        });
-      }
-      return worldPoints;
-    }
-    getPointInfo(_pointId) {
-      return null;
-    }
-    getCurrentPoints() {
-      return this.points;
-    }
-    ensureMapData() {
-      if (!this.mapData) {
-        throw new Error("Map data not set. Call setMapData() first.");
-      }
-      return this.mapData;
-    }
-    getResourceTypes() {
-      return Array.from(this.resourceTypes.entries()).map(([name, { color, colorHex }]) => ({
-        name,
-        color,
-        colorHex
-      }));
-    }
-  };
-
   // node_modules/three/build/three.module.js
   var REVISION = "128";
   var MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
@@ -787,6 +208,7 @@
   for (let i = 0; i < 256; i++) {
     _lut[i] = (i < 16 ? "0" : "") + i.toString(16);
   }
+  var _seed = 1234567;
   var DEG2RAD = Math.PI / 180;
   var RAD2DEG = 180 / Math.PI;
   function generateUUID() {
@@ -797,24 +219,131 @@
     const uuid = _lut[d0 & 255] + _lut[d0 >> 8 & 255] + _lut[d0 >> 16 & 255] + _lut[d0 >> 24 & 255] + "-" + _lut[d1 & 255] + _lut[d1 >> 8 & 255] + "-" + _lut[d1 >> 16 & 15 | 64] + _lut[d1 >> 24 & 255] + "-" + _lut[d2 & 63 | 128] + _lut[d2 >> 8 & 255] + "-" + _lut[d2 >> 16 & 255] + _lut[d2 >> 24 & 255] + _lut[d3 & 255] + _lut[d3 >> 8 & 255] + _lut[d3 >> 16 & 255] + _lut[d3 >> 24 & 255];
     return uuid.toUpperCase();
   }
-  function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
+  function clamp(value2, min, max) {
+    return Math.max(min, Math.min(max, value2));
   }
   function euclideanModulo(n, m) {
     return (n % m + m) % m;
   }
+  function mapLinear(x, a1, a2, b1, b2) {
+    return b1 + (x - a1) * (b2 - b1) / (a2 - a1);
+  }
+  function inverseLerp(x, y, value2) {
+    if (x !== y) {
+      return (value2 - x) / (y - x);
+    } else {
+      return 0;
+    }
+  }
   function lerp(x, y, t) {
     return (1 - t) * x + t * y;
   }
-  function isPowerOfTwo(value) {
-    return (value & value - 1) === 0 && value !== 0;
+  function damp(x, y, lambda, dt) {
+    return lerp(x, y, 1 - Math.exp(-lambda * dt));
   }
-  function ceilPowerOfTwo(value) {
-    return Math.pow(2, Math.ceil(Math.log(value) / Math.LN2));
+  function pingpong(x, length = 1) {
+    return length - Math.abs(euclideanModulo(x, length * 2) - length);
   }
-  function floorPowerOfTwo(value) {
-    return Math.pow(2, Math.floor(Math.log(value) / Math.LN2));
+  function smoothstep(x, min, max) {
+    if (x <= min) return 0;
+    if (x >= max) return 1;
+    x = (x - min) / (max - min);
+    return x * x * (3 - 2 * x);
   }
+  function smootherstep(x, min, max) {
+    if (x <= min) return 0;
+    if (x >= max) return 1;
+    x = (x - min) / (max - min);
+    return x * x * x * (x * (x * 6 - 15) + 10);
+  }
+  function randInt(low, high) {
+    return low + Math.floor(Math.random() * (high - low + 1));
+  }
+  function randFloat(low, high) {
+    return low + Math.random() * (high - low);
+  }
+  function randFloatSpread(range) {
+    return range * (0.5 - Math.random());
+  }
+  function seededRandom(s) {
+    if (s !== void 0) _seed = s % 2147483647;
+    _seed = _seed * 16807 % 2147483647;
+    return (_seed - 1) / 2147483646;
+  }
+  function degToRad(degrees) {
+    return degrees * DEG2RAD;
+  }
+  function radToDeg(radians) {
+    return radians * RAD2DEG;
+  }
+  function isPowerOfTwo(value2) {
+    return (value2 & value2 - 1) === 0 && value2 !== 0;
+  }
+  function ceilPowerOfTwo(value2) {
+    return Math.pow(2, Math.ceil(Math.log(value2) / Math.LN2));
+  }
+  function floorPowerOfTwo(value2) {
+    return Math.pow(2, Math.floor(Math.log(value2) / Math.LN2));
+  }
+  function setQuaternionFromProperEuler(q, a, b, c, order) {
+    const cos = Math.cos;
+    const sin = Math.sin;
+    const c2 = cos(b / 2);
+    const s2 = sin(b / 2);
+    const c13 = cos((a + c) / 2);
+    const s13 = sin((a + c) / 2);
+    const c1_3 = cos((a - c) / 2);
+    const s1_3 = sin((a - c) / 2);
+    const c3_1 = cos((c - a) / 2);
+    const s3_1 = sin((c - a) / 2);
+    switch (order) {
+      case "XYX":
+        q.set(c2 * s13, s2 * c1_3, s2 * s1_3, c2 * c13);
+        break;
+      case "YZY":
+        q.set(s2 * s1_3, c2 * s13, s2 * c1_3, c2 * c13);
+        break;
+      case "ZXZ":
+        q.set(s2 * c1_3, s2 * s1_3, c2 * s13, c2 * c13);
+        break;
+      case "XZX":
+        q.set(c2 * s13, s2 * s3_1, s2 * c3_1, c2 * c13);
+        break;
+      case "YXY":
+        q.set(s2 * c3_1, c2 * s13, s2 * s3_1, c2 * c13);
+        break;
+      case "ZYZ":
+        q.set(s2 * s3_1, s2 * c3_1, c2 * s13, c2 * c13);
+        break;
+      default:
+        console.warn("THREE.MathUtils: .setQuaternionFromProperEuler() encountered an unknown order: " + order);
+    }
+  }
+  var MathUtils = /* @__PURE__ */ Object.freeze({
+    __proto__: null,
+    DEG2RAD,
+    RAD2DEG,
+    generateUUID,
+    clamp,
+    euclideanModulo,
+    mapLinear,
+    inverseLerp,
+    lerp,
+    damp,
+    pingpong,
+    smoothstep,
+    smootherstep,
+    randInt,
+    randFloat,
+    randFloatSpread,
+    seededRandom,
+    degToRad,
+    radToDeg,
+    isPowerOfTwo,
+    ceilPowerOfTwo,
+    floorPowerOfTwo,
+    setQuaternionFromProperEuler
+  });
   var Vector2 = class {
     constructor(x = 0, y = 0) {
       this.x = x;
@@ -823,14 +352,14 @@
     get width() {
       return this.x;
     }
-    set width(value) {
-      this.x = value;
+    set width(value2) {
+      this.x = value2;
     }
     get height() {
       return this.y;
     }
-    set height(value) {
-      this.y = value;
+    set height(value2) {
+      this.y = value2;
     }
     set(x, y) {
       this.x = x;
@@ -850,13 +379,13 @@
       this.y = y;
       return this;
     }
-    setComponent(index, value) {
+    setComponent(index, value2) {
       switch (index) {
         case 0:
-          this.x = value;
+          this.x = value2;
           break;
         case 1:
-          this.y = value;
+          this.y = value2;
           break;
         default:
           throw new Error("index is out of range: " + index);
@@ -1531,8 +1060,8 @@
       }
       return uv;
     }
-    set needsUpdate(value) {
-      if (value === true) this.version++;
+    set needsUpdate(value2) {
+      if (value2 === true) this.version++;
     }
   };
   Texture.DEFAULT_IMAGE = void 0;
@@ -1565,14 +1094,14 @@
     get width() {
       return this.z;
     }
-    set width(value) {
-      this.z = value;
+    set width(value2) {
+      this.z = value2;
     }
     get height() {
       return this.w;
     }
-    set height(value) {
-      this.w = value;
+    set height(value2) {
+      this.w = value2;
     }
     set(x, y, z, w) {
       this.x = x;
@@ -1604,19 +1133,19 @@
       this.w = w;
       return this;
     }
-    setComponent(index, value) {
+    setComponent(index, value2) {
       switch (index) {
         case 0:
-          this.x = value;
+          this.x = value2;
           break;
         case 1:
-          this.y = value;
+          this.y = value2;
           break;
         case 2:
-          this.z = value;
+          this.z = value2;
           break;
         case 3:
-          this.w = value;
+          this.w = value2;
           break;
         default:
           throw new Error("index is out of range: " + index);
@@ -2081,29 +1610,29 @@
     get x() {
       return this._x;
     }
-    set x(value) {
-      this._x = value;
+    set x(value2) {
+      this._x = value2;
       this._onChangeCallback();
     }
     get y() {
       return this._y;
     }
-    set y(value) {
-      this._y = value;
+    set y(value2) {
+      this._y = value2;
       this._onChangeCallback();
     }
     get z() {
       return this._z;
     }
-    set z(value) {
-      this._z = value;
+    set z(value2) {
+      this._z = value2;
       this._onChangeCallback();
     }
     get w() {
       return this._w;
     }
-    set w(value) {
-      this._w = value;
+    set w(value2) {
+      this._w = value2;
       this._onChangeCallback();
     }
     set(x, y, z, w) {
@@ -2421,16 +1950,16 @@
       this.z = z;
       return this;
     }
-    setComponent(index, value) {
+    setComponent(index, value2) {
       switch (index) {
         case 0:
-          this.x = value;
+          this.x = value2;
           break;
         case 1:
-          this.y = value;
+          this.y = value2;
           break;
         case 2:
-          this.z = value;
+          this.z = value2;
           break;
         default:
           throw new Error("index is out of range: " + index);
@@ -4245,29 +3774,29 @@
     get x() {
       return this._x;
     }
-    set x(value) {
-      this._x = value;
+    set x(value2) {
+      this._x = value2;
       this._onChangeCallback();
     }
     get y() {
       return this._y;
     }
-    set y(value) {
-      this._y = value;
+    set y(value2) {
+      this._y = value2;
       this._onChangeCallback();
     }
     get z() {
       return this._z;
     }
-    set z(value) {
-      this._z = value;
+    set z(value2) {
+      this._z = value2;
       this._onChangeCallback();
     }
     get order() {
       return this._order;
     }
-    set order(value) {
-      this._order = value;
+    set order(value2) {
+      this._order = value2;
       this._onChangeCallback();
     }
     set(x, y, z, order) {
@@ -4661,11 +4190,11 @@
     getObjectByName(name) {
       return this.getObjectByProperty("name", name);
     }
-    getObjectByProperty(name, value) {
-      if (this[name] === value) return this;
+    getObjectByProperty(name, value2) {
+      if (this[name] === value2) return this;
       for (let i = 0, l = this.children.length; i < l; i++) {
         const child = this.children[i];
-        const object = child.getObjectByProperty(name, value);
+        const object = child.getObjectByProperty(name, value2);
         if (object !== void 0) {
           return object;
         }
@@ -5496,8 +5025,8 @@
     }
   });
   Object.defineProperty(Material.prototype, "needsUpdate", {
-    set: function(value) {
-      if (value === true) this.version++;
+    set: function(value2) {
+      if (value2 === true) this.version++;
     }
   });
   var _colorKeywords = {
@@ -5673,13 +5202,13 @@
       }
       return this.setRGB(r, g, b);
     }
-    set(value) {
-      if (value && value.isColor) {
-        this.copy(value);
-      } else if (typeof value === "number") {
-        this.setHex(value);
-      } else if (typeof value === "string") {
-        this.setStyle(value);
+    set(value2) {
+      if (value2 && value2.isColor) {
+        this.copy(value2);
+      } else if (typeof value2 === "number") {
+        this.setHex(value2);
+      } else if (typeof value2 === "string") {
+        this.setStyle(value2);
       }
       return this;
     }
@@ -6046,11 +5575,11 @@
       this.onUploadCallback = function() {
       };
     }
-    set needsUpdate(value) {
-      if (value === true) this.version++;
+    set needsUpdate(value2) {
+      if (value2 === true) this.version++;
     }
-    setUsage(value) {
-      this.usage = value;
+    setUsage(value2) {
+      this.usage = value2;
       return this;
     }
     copy(source) {
@@ -6180,8 +5709,8 @@
       }
       return this;
     }
-    set(value, offset = 0) {
-      this.array.set(value, offset);
+    set(value2, offset = 0) {
+      this.array.set(value2, offset);
       return this;
     }
     getX(index) {
@@ -7262,45 +6791,45 @@
       data.uniforms = {};
       for (const name in this.uniforms) {
         const uniform = this.uniforms[name];
-        const value = uniform.value;
-        if (value && value.isTexture) {
+        const value2 = uniform.value;
+        if (value2 && value2.isTexture) {
           data.uniforms[name] = {
             type: "t",
-            value: value.toJSON(meta).uuid
+            value: value2.toJSON(meta).uuid
           };
-        } else if (value && value.isColor) {
+        } else if (value2 && value2.isColor) {
           data.uniforms[name] = {
             type: "c",
-            value: value.getHex()
+            value: value2.getHex()
           };
-        } else if (value && value.isVector2) {
+        } else if (value2 && value2.isVector2) {
           data.uniforms[name] = {
             type: "v2",
-            value: value.toArray()
+            value: value2.toArray()
           };
-        } else if (value && value.isVector3) {
+        } else if (value2 && value2.isVector3) {
           data.uniforms[name] = {
             type: "v3",
-            value: value.toArray()
+            value: value2.toArray()
           };
-        } else if (value && value.isVector4) {
+        } else if (value2 && value2.isVector4) {
           data.uniforms[name] = {
             type: "v4",
-            value: value.toArray()
+            value: value2.toArray()
           };
-        } else if (value && value.isMatrix3) {
+        } else if (value2 && value2.isMatrix3) {
           data.uniforms[name] = {
             type: "m3",
-            value: value.toArray()
+            value: value2.toArray()
           };
-        } else if (value && value.isMatrix4) {
+        } else if (value2 && value2.isMatrix4) {
           data.uniforms[name] = {
             type: "m4",
-            value: value.toArray()
+            value: value2.toArray()
           };
         } else {
           data.uniforms[name] = {
-            value
+            value: value2
           };
         }
       }
@@ -7589,8 +7118,8 @@
     get images() {
       return this.image;
     }
-    set images(value) {
-      this.image = value;
+    set images(value2) {
+      this.image = value2;
     }
   };
   CubeTexture.prototype.isCubeTexture = true;
@@ -7816,8 +7345,8 @@
       setAnimationLoop: function(callback) {
         animationLoop = callback;
       },
-      setContext: function(value) {
-        context = value;
+      setContext: function(value2) {
+        context = value2;
       }
     };
   }
@@ -8967,20 +8496,20 @@
             gl.bindBuffer(34962, buffer);
             gl.vertexAttribPointer(programAttribute, 3, type, false, 12, 0);
           } else if (materialDefaultAttributeValues !== void 0) {
-            const value = materialDefaultAttributeValues[name];
-            if (value !== void 0) {
-              switch (value.length) {
+            const value2 = materialDefaultAttributeValues[name];
+            if (value2 !== void 0) {
+              switch (value2.length) {
                 case 2:
-                  gl.vertexAttrib2fv(programAttribute, value);
+                  gl.vertexAttrib2fv(programAttribute, value2);
                   break;
                 case 3:
-                  gl.vertexAttrib3fv(programAttribute, value);
+                  gl.vertexAttrib3fv(programAttribute, value2);
                   break;
                 case 4:
-                  gl.vertexAttrib4fv(programAttribute, value);
+                  gl.vertexAttrib4fv(programAttribute, value2);
                   break;
                 default:
-                  gl.vertexAttrib1fv(programAttribute, value);
+                  gl.vertexAttrib1fv(programAttribute, value2);
               }
             }
           }
@@ -8988,7 +8517,7 @@
       }
       disableUnusedAttributes();
     }
-    function dispose() {
+    function dispose2() {
       reset();
       for (const geometryId in bindingStates) {
         const programMap = bindingStates[geometryId];
@@ -9043,7 +8572,7 @@
       setup,
       reset,
       resetDefaultState,
-      dispose,
+      dispose: dispose2,
       releaseStatesOfGeometry,
       releaseStatesOfProgram,
       initAttributes,
@@ -9054,8 +8583,8 @@
   function WebGLBufferRenderer(gl, extensions, info, capabilities) {
     const isWebGL2 = capabilities.isWebGL2;
     let mode;
-    function setMode(value) {
-      mode = value;
+    function setMode(value2) {
+      mode = value2;
     }
     function render(start, count) {
       gl.drawArrays(mode, start, count);
@@ -9271,12 +8800,12 @@
         cubemap.dispose();
       }
     }
-    function dispose() {
+    function dispose2() {
       cubemaps = /* @__PURE__ */ new WeakMap();
     }
     return {
       get,
-      dispose
+      dispose: dispose2
     };
   }
   function WebGLExtensions(gl) {
@@ -9431,13 +8960,13 @@
   function WebGLIndexedBufferRenderer(gl, extensions, info, capabilities) {
     const isWebGL2 = capabilities.isWebGL2;
     let mode;
-    function setMode(value) {
-      mode = value;
+    function setMode(value2) {
+      mode = value2;
     }
     let type, bytesPerElement;
-    function setIndex(value) {
-      type = value.type;
-      bytesPerElement = value.bytesPerElement;
+    function setIndex(value2) {
+      type = value2.type;
+      bytesPerElement = value2.bytesPerElement;
     }
     function render(start, count) {
       gl.drawElements(mode, count, type, start * bytesPerElement);
@@ -9562,16 +9091,16 @@
       for (let i = 0; i < 8; i++) {
         const influence = workInfluences[i];
         const index = influence[0];
-        const value = influence[1];
-        if (index !== Number.MAX_SAFE_INTEGER && value) {
+        const value2 = influence[1];
+        if (index !== Number.MAX_SAFE_INTEGER && value2) {
           if (morphTargets && geometry.getAttribute("morphTarget" + i) !== morphTargets[index]) {
             geometry.setAttribute("morphTarget" + i, morphTargets[index]);
           }
           if (morphNormals && geometry.getAttribute("morphNormal" + i) !== morphNormals[index]) {
             geometry.setAttribute("morphNormal" + i, morphNormals[index]);
           }
-          morphInfluences[i] = value;
-          morphInfluencesSum += value;
+          morphInfluences[i] = value2;
+          morphInfluencesSum += value2;
         } else {
           if (morphTargets && geometry.hasAttribute("morphTarget" + i) === true) {
             geometry.deleteAttribute("morphTarget" + i);
@@ -9611,7 +9140,7 @@
       }
       return buffergeometry;
     }
-    function dispose() {
+    function dispose2() {
       updateMap = /* @__PURE__ */ new WeakMap();
     }
     function onInstancedMeshDispose(event) {
@@ -9622,7 +9151,7 @@
     }
     return {
       update,
-      dispose
+      dispose: dispose2
     };
   }
   var DataTexture2DArray = class extends Texture {
@@ -10135,11 +9664,11 @@
     this.seq = [];
     this.map = {};
   }
-  StructuredUniform.prototype.setValue = function(gl, value, textures) {
+  StructuredUniform.prototype.setValue = function(gl, value2, textures) {
     const seq = this.seq;
     for (let i = 0, n = seq.length; i !== n; ++i) {
       const u = seq[i];
-      u.setValue(gl, value[u.id], textures);
+      u.setValue(gl, value2[u.id], textures);
     }
   };
   var RePathPart = /(\w+)(\])?(\[|\.)?/g;
@@ -10178,9 +9707,9 @@
       parseUniform(info, addr, this);
     }
   }
-  WebGLUniforms.prototype.setValue = function(gl, name, value, textures) {
+  WebGLUniforms.prototype.setValue = function(gl, name, value2, textures) {
     const u = this.map[name];
-    if (u !== void 0) u.setValue(gl, value, textures);
+    if (u !== void 0) u.setValue(gl, value2, textures);
   };
   WebGLUniforms.prototype.setOptional = function(gl, object, name) {
     const v = object[name];
@@ -10290,9 +9819,9 @@
   function generateDefines(defines) {
     const chunks = [];
     for (const name in defines) {
-      const value = defines[name];
-      if (value === false) continue;
-      chunks.push("#define " + name + " " + value);
+      const value2 = defines[name];
+      if (value2 === false) continue;
+      chunks.push("#define " + name + " " + value2);
     }
     return chunks.join("\n");
   }
@@ -11026,17 +10555,17 @@
     function remove(object) {
       properties.delete(object);
     }
-    function update(object, key, value) {
-      properties.get(object)[key] = value;
+    function update(object, key, value2) {
+      properties.get(object)[key] = value2;
     }
-    function dispose() {
+    function dispose2() {
       properties = /* @__PURE__ */ new WeakMap();
     }
     return {
       get,
       remove,
       update,
-      dispose
+      dispose: dispose2
     };
   }
   function painterSortStable(a, b) {
@@ -11157,12 +10686,12 @@
       }
       return list;
     }
-    function dispose() {
+    function dispose2() {
       lists = /* @__PURE__ */ new WeakMap();
     }
     return {
       get,
-      dispose
+      dispose: dispose2
     };
   }
   function UniformsCache() {
@@ -11559,12 +11088,12 @@
       }
       return renderState;
     }
-    function dispose() {
+    function dispose2() {
       renderStates = /* @__PURE__ */ new WeakMap();
     }
     return {
       get,
-      dispose
+      dispose: dispose2
     };
   }
   var MeshDepthMaterial = class extends Material {
@@ -13495,14 +13024,14 @@
         scope.isPresenting = false;
         scope.dispatchEvent({ type: "sessionend" });
       }
-      this.setFramebufferScaleFactor = function(value) {
-        framebufferScaleFactor = value;
+      this.setFramebufferScaleFactor = function(value2) {
+        framebufferScaleFactor = value2;
         if (scope.isPresenting === true) {
           console.warn("THREE.WebXRManager: Cannot change framebuffer scale while presenting.");
         }
       };
-      this.setReferenceSpaceType = function(value) {
-        referenceSpaceType = value;
+      this.setReferenceSpaceType = function(value2) {
+        referenceSpaceType = value2;
         if (scope.isPresenting === true) {
           console.warn("THREE.WebXRManager: Cannot change reference space type while presenting.");
         }
@@ -13513,8 +13042,8 @@
       this.getSession = function() {
         return session;
       };
-      this.setSession = async function(value) {
-        session = value;
+      this.setSession = async function(value2) {
+        session = value2;
         if (session !== null) {
           session.addEventListener("select", onSessionEvent);
           session.addEventListener("selectstart", onSessionEvent);
@@ -14206,9 +13735,9 @@
     this.getPixelRatio = function() {
       return _pixelRatio;
     };
-    this.setPixelRatio = function(value) {
-      if (value === void 0) return;
-      _pixelRatio = value;
+    this.setPixelRatio = function(value2) {
+      if (value2 === void 0) return;
+      _pixelRatio = value2;
       this.setSize(_width, _height, false);
     };
     this.getSize = function(target) {
@@ -14913,17 +14442,17 @@
       p_uniforms.setValue(_gl, "modelMatrix", object.matrixWorld);
       return program;
     }
-    function markUniformsLightsNeedsUpdate(uniforms, value) {
-      uniforms.ambientLightColor.needsUpdate = value;
-      uniforms.lightProbe.needsUpdate = value;
-      uniforms.directionalLights.needsUpdate = value;
-      uniforms.directionalLightShadows.needsUpdate = value;
-      uniforms.pointLights.needsUpdate = value;
-      uniforms.pointLightShadows.needsUpdate = value;
-      uniforms.spotLights.needsUpdate = value;
-      uniforms.spotLightShadows.needsUpdate = value;
-      uniforms.rectAreaLights.needsUpdate = value;
-      uniforms.hemisphereLights.needsUpdate = value;
+    function markUniformsLightsNeedsUpdate(uniforms, value2) {
+      uniforms.ambientLightColor.needsUpdate = value2;
+      uniforms.lightProbe.needsUpdate = value2;
+      uniforms.directionalLights.needsUpdate = value2;
+      uniforms.directionalLightShadows.needsUpdate = value2;
+      uniforms.pointLights.needsUpdate = value2;
+      uniforms.pointLightShadows.needsUpdate = value2;
+      uniforms.spotLights.needsUpdate = value2;
+      uniforms.spotLightShadows.needsUpdate = value2;
+      uniforms.rectAreaLights.needsUpdate = value2;
+      uniforms.hemisphereLights.needsUpdate = value2;
     }
     function materialNeedsLights(material) {
       return material.isMeshLambertMaterial || material.isMeshToonMaterial || material.isMeshPhongMaterial || material.isMeshStandardMaterial || material.isShadowMaterial || material.isShaderMaterial && material.lights === true;
@@ -15204,11 +14733,11 @@
       this.onUploadCallback = function() {
       };
     }
-    set needsUpdate(value) {
-      if (value === true) this.version++;
+    set needsUpdate(value2) {
+      if (value2 === true) this.version++;
     }
-    setUsage(value) {
-      this.usage = value;
+    setUsage(value2) {
+      this.usage = value2;
       return this;
     }
     copy(source) {
@@ -15226,8 +14755,8 @@
       }
       return this;
     }
-    set(value, offset = 0) {
-      this.array.set(value, offset);
+    set(value2, offset = 0) {
+      this.array.set(value2, offset);
       return this;
     }
     clone(data) {
@@ -15283,8 +14812,8 @@
     get array() {
       return this.data.array;
     }
-    set needsUpdate(value) {
-      this.data.needsUpdate = value;
+    set needsUpdate(value2) {
+      this.data.needsUpdate = value2;
     }
     applyMatrix4(m) {
       for (let i = 0, l = this.data.count; i < l; i++) {
@@ -16218,7 +15747,7 @@
     let p = start;
     do {
       const a = p.prev, b = p.next.next;
-      if (!equals(a, b) && intersects2(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a)) {
+      if (!equals(a, b) && intersects(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a)) {
         triangles.push(a.i / dim);
         triangles.push(p.i / dim);
         triangles.push(b.i / dim);
@@ -16402,7 +15931,7 @@
   function equals(p1, p2) {
     return p1.x === p2.x && p1.y === p2.y;
   }
-  function intersects2(p1, q1, p2, q2) {
+  function intersects(p1, q1, p2, q2) {
     const o1 = sign(area(p1, q1, p2));
     const o2 = sign(area(p1, q1, q2));
     const o3 = sign(area(p2, q2, p1));
@@ -16423,7 +15952,7 @@
   function intersectsPolygon(a, b) {
     let p = a;
     do {
-      if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i && intersects2(p, p.next, a, b)) return true;
+      if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i && intersects(p, p.next, a, b)) return true;
       p = p.next;
     } while (p !== a);
     return false;
@@ -17497,32 +17026,32 @@
         key = jsonKeys[i++];
       }
       if (key === void 0) return;
-      let value = key[valuePropertyName];
-      if (value === void 0) return;
-      if (Array.isArray(value)) {
+      let value2 = key[valuePropertyName];
+      if (value2 === void 0) return;
+      if (Array.isArray(value2)) {
         do {
-          value = key[valuePropertyName];
-          if (value !== void 0) {
+          value2 = key[valuePropertyName];
+          if (value2 !== void 0) {
             times.push(key.time);
-            values.push.apply(values, value);
+            values.push.apply(values, value2);
           }
           key = jsonKeys[i++];
         } while (key !== void 0);
-      } else if (value.toArray !== void 0) {
+      } else if (value2.toArray !== void 0) {
         do {
-          value = key[valuePropertyName];
-          if (value !== void 0) {
+          value2 = key[valuePropertyName];
+          if (value2 !== void 0) {
             times.push(key.time);
-            value.toArray(values, values.length);
+            value2.toArray(values, values.length);
           }
           key = jsonKeys[i++];
         } while (key !== void 0);
       } else {
         do {
-          value = key[valuePropertyName];
-          if (value !== void 0) {
+          value2 = key[valuePropertyName];
+          if (value2 !== void 0) {
             times.push(key.time);
-            values.push(value);
+            values.push(value2);
           }
           key = jsonKeys[i++];
         } while (key !== void 0);
@@ -17829,22 +17358,22 @@
     // and automatic invocation of .toJSON):
     static toJSON(track) {
       const trackType = track.constructor;
-      let json;
+      let json2;
       if (trackType.toJSON !== this.toJSON) {
-        json = trackType.toJSON(track);
+        json2 = trackType.toJSON(track);
       } else {
-        json = {
+        json2 = {
           "name": track.name,
           "times": AnimationUtils.convertArray(track.times, Array),
           "values": AnimationUtils.convertArray(track.values, Array)
         };
         const interpolation = track.getInterpolation();
         if (interpolation !== track.DefaultInterpolation) {
-          json.interpolation = interpolation;
+          json2.interpolation = interpolation;
         }
       }
-      json.type = track.ValueTypeName;
-      return json;
+      json2.type = track.ValueTypeName;
+      return json2;
     }
     InterpolantFactoryMethodDiscrete(result) {
       return new DiscreteInterpolant(this.times, this.values, this.getValueSize(), result);
@@ -17970,9 +17499,9 @@
       if (values !== void 0) {
         if (AnimationUtils.isTypedArray(values)) {
           for (let i = 0, n = values.length; i !== n; ++i) {
-            const value = values[i];
-            if (isNaN(value)) {
-              console.error("THREE.KeyframeTrack: Value is not a valid number.", this, i, value);
+            const value2 = values[i];
+            if (isNaN(value2)) {
+              console.error("THREE.KeyframeTrack: Value is not a valid number.", this, i, value2);
               valid = false;
               break;
             }
@@ -17994,8 +17523,8 @@
           if (!smoothInterpolation) {
             const offset = i * stride, offsetP = offset - stride, offsetN = offset + stride;
             for (let j = 0; j !== stride; ++j) {
-              const value = values[offset + j];
-              if (value !== values[offsetP + j] || value !== values[offsetN + j]) {
+              const value2 = values[offset + j];
+              if (value2 !== values[offsetP + j] || value2 !== values[offsetN + j]) {
                 keep = true;
                 break;
               }
@@ -18098,18 +17627,18 @@
         this.resetDuration();
       }
     }
-    static parse(json) {
-      const tracks = [], jsonTracks = json.tracks, frameTime = 1 / (json.fps || 1);
+    static parse(json2) {
+      const tracks = [], jsonTracks = json2.tracks, frameTime = 1 / (json2.fps || 1);
       for (let i = 0, n = jsonTracks.length; i !== n; ++i) {
         tracks.push(parseKeyframeTrack(jsonTracks[i]).scale(frameTime));
       }
-      const clip = new this(json.name, json.duration, tracks, json.blendMode);
-      clip.uuid = json.uuid;
+      const clip = new this(json2.name, json2.duration, tracks, json2.blendMode);
+      clip.uuid = json2.uuid;
       return clip;
     }
     static toJSON(clip) {
       const tracks = [], clipTracks = clip.tracks;
-      const json = {
+      const json2 = {
         "name": clip.name,
         "duration": clip.duration,
         "tracks": tracks,
@@ -18119,7 +17648,7 @@
       for (let i = 0, n = clipTracks.length; i !== n; ++i) {
         tracks.push(KeyframeTrack.toJSON(clipTracks[i]));
       }
-      return json;
+      return json2;
     }
     static CreateFromMorphTargetSequence(name, morphTargetSequence, fps, noLoop) {
       const numMorphTargets = morphTargetSequence.length;
@@ -18326,21 +17855,21 @@
     }
     throw new Error("THREE.KeyframeTrack: Unsupported typeName: " + typeName);
   }
-  function parseKeyframeTrack(json) {
-    if (json.type === void 0) {
+  function parseKeyframeTrack(json2) {
+    if (json2.type === void 0) {
       throw new Error("THREE.KeyframeTrack: track type undefined, can not parse");
     }
-    const trackType = getTrackTypeForValueTypeName(json.type);
-    if (json.times === void 0) {
+    const trackType = getTrackTypeForValueTypeName(json2.type);
+    if (json2.times === void 0) {
       const times = [], values = [];
-      AnimationUtils.flattenJSON(json.keys, times, values, "value");
-      json.times = times;
-      json.values = values;
+      AnimationUtils.flattenJSON(json2.keys, times, values, "value");
+      json2.times = times;
+      json2.values = values;
     }
     if (trackType.parse !== void 0) {
-      return trackType.parse(json);
+      return trackType.parse(json2);
     } else {
-      return new trackType(json.name, json.times, json.values, json.interpolation);
+      return new trackType(json2.name, json2.times, json2.values, json2.interpolation);
     }
   }
   var Cache = {
@@ -18457,8 +17986,8 @@
       this.crossOrigin = crossOrigin;
       return this;
     }
-    setWithCredentials(value) {
-      this.withCredentials = value;
+    setWithCredentials(value2) {
+      this.withCredentials = value2;
       return this;
     }
     setPath(path) {
@@ -18616,12 +18145,12 @@
       scope.manager.itemStart(url);
       return request;
     }
-    setResponseType(value) {
-      this.responseType = value;
+    setResponseType(value2) {
+      this.responseType = value2;
       return this;
     }
-    setMimeType(value) {
-      this.mimeType = value;
+    setMimeType(value2) {
+      this.mimeType = value2;
       return this;
     }
   };
@@ -18909,8 +18438,8 @@
       data.type = this.type;
       return data;
     }
-    fromJSON(json) {
-      this.arcLengthDivisions = json.arcLengthDivisions;
+    fromJSON(json2) {
+      this.arcLengthDivisions = json2.arcLengthDivisions;
       return this;
     }
   };
@@ -18985,16 +18514,16 @@
       data.aRotation = this.aRotation;
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.aX = json.aX;
-      this.aY = json.aY;
-      this.xRadius = json.xRadius;
-      this.yRadius = json.yRadius;
-      this.aStartAngle = json.aStartAngle;
-      this.aEndAngle = json.aEndAngle;
-      this.aClockwise = json.aClockwise;
-      this.aRotation = json.aRotation;
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.aX = json2.aX;
+      this.aY = json2.aY;
+      this.xRadius = json2.xRadius;
+      this.yRadius = json2.yRadius;
+      this.aStartAngle = json2.aStartAngle;
+      this.aEndAngle = json2.aEndAngle;
+      this.aClockwise = json2.aClockwise;
+      this.aRotation = json2.aRotation;
       return this;
     }
   };
@@ -19120,16 +18649,16 @@
       data.tension = this.tension;
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
+    fromJSON(json2) {
+      super.fromJSON(json2);
       this.points = [];
-      for (let i = 0, l = json.points.length; i < l; i++) {
-        const point = json.points[i];
+      for (let i = 0, l = json2.points.length; i < l; i++) {
+        const point = json2.points[i];
         this.points.push(new Vector3().fromArray(point));
       }
-      this.closed = json.closed;
-      this.curveType = json.curveType;
-      this.tension = json.tension;
+      this.closed = json2.closed;
+      this.curveType = json2.curveType;
+      this.tension = json2.tension;
       return this;
     }
   };
@@ -19205,12 +18734,12 @@
       data.v3 = this.v3.toArray();
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.v0.fromArray(json.v0);
-      this.v1.fromArray(json.v1);
-      this.v2.fromArray(json.v2);
-      this.v3.fromArray(json.v3);
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.v0.fromArray(json2.v0);
+      this.v1.fromArray(json2.v1);
+      this.v2.fromArray(json2.v2);
+      this.v3.fromArray(json2.v3);
       return this;
     }
   };
@@ -19250,12 +18779,12 @@
       data.v3 = this.v3.toArray();
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.v0.fromArray(json.v0);
-      this.v1.fromArray(json.v1);
-      this.v2.fromArray(json.v2);
-      this.v3.fromArray(json.v3);
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.v0.fromArray(json2.v0);
+      this.v1.fromArray(json2.v1);
+      this.v2.fromArray(json2.v2);
+      this.v3.fromArray(json2.v3);
       return this;
     }
   };
@@ -19298,10 +18827,10 @@
       data.v2 = this.v2.toArray();
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.v1.fromArray(json.v1);
-      this.v2.fromArray(json.v2);
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.v1.fromArray(json2.v1);
+      this.v2.fromArray(json2.v2);
       return this;
     }
   };
@@ -19340,10 +18869,10 @@
       data.v2 = this.v2.toArray();
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.v1.fromArray(json.v1);
-      this.v2.fromArray(json.v2);
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.v1.fromArray(json2.v1);
+      this.v2.fromArray(json2.v2);
       return this;
     }
   };
@@ -19378,11 +18907,11 @@
       data.v2 = this.v2.toArray();
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.v0.fromArray(json.v0);
-      this.v1.fromArray(json.v1);
-      this.v2.fromArray(json.v2);
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.v0.fromArray(json2.v0);
+      this.v1.fromArray(json2.v1);
+      this.v2.fromArray(json2.v2);
       return this;
     }
   };
@@ -19419,11 +18948,11 @@
       data.v2 = this.v2.toArray();
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.v0.fromArray(json.v0);
-      this.v1.fromArray(json.v1);
-      this.v2.fromArray(json.v2);
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.v0.fromArray(json2.v0);
+      this.v1.fromArray(json2.v1);
+      this.v2.fromArray(json2.v2);
       return this;
     }
   };
@@ -19468,11 +18997,11 @@
       }
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
+    fromJSON(json2) {
+      super.fromJSON(json2);
       this.points = [];
-      for (let i = 0, l = json.points.length; i < l; i++) {
-        const point = json.points[i];
+      for (let i = 0, l = json2.points.length; i < l; i++) {
+        const point = json2.points[i];
         this.points.push(new Vector2().fromArray(point));
       }
       return this;
@@ -19609,12 +19138,12 @@
       }
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.autoClose = json.autoClose;
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.autoClose = json2.autoClose;
       this.curves = [];
-      for (let i = 0, l = json.curves.length; i < l; i++) {
-        const curve = json.curves[i];
+      for (let i = 0, l = json2.curves.length; i < l; i++) {
+        const curve = json2.curves[i];
         this.curves.push(new Curves[curve.type]().fromJSON(curve));
       }
       return this;
@@ -19720,9 +19249,9 @@
       data.currentPoint = this.currentPoint.toArray();
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.currentPoint.fromArray(json.currentPoint);
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.currentPoint.fromArray(json2.currentPoint);
       return this;
     }
   };
@@ -19766,12 +19295,12 @@
       }
       return data;
     }
-    fromJSON(json) {
-      super.fromJSON(json);
-      this.uuid = json.uuid;
+    fromJSON(json2) {
+      super.fromJSON(json2);
+      this.uuid = json2.uuid;
       this.holes = [];
-      for (let i = 0, l = json.holes.length; i < l; i++) {
-        const hole = json.holes[i];
+      for (let i = 0, l = json2.holes.length; i < l; i++) {
+        const hole = json2.holes[i];
         this.holes.push(new Path().fromJSON(hole));
       }
       return this;
@@ -20343,9 +19872,9 @@
       this.sh.copy(source.sh);
       return this;
     }
-    fromJSON(json) {
-      this.intensity = json.intensity;
-      this.sh.fromArray(json.sh);
+    fromJSON(json2) {
+      this.intensity = json2.intensity;
+      this.sh.fromArray(json2.sh);
       return this;
     }
     toJSON(meta) {
@@ -20708,8 +20237,8 @@
       }
       return _context;
     },
-    setContext: function(value) {
-      _context = value;
+    setContext: function(value2) {
+      _context = value2;
     }
   };
   var AudioLoader = class extends Loader {
@@ -20898,19 +20427,19 @@
     getFilters() {
       return this.filters;
     }
-    setFilters(value) {
-      if (!value) value = [];
+    setFilters(value2) {
+      if (!value2) value2 = [];
       if (this._connected === true) {
         this.disconnect();
-        this.filters = value.slice();
+        this.filters = value2.slice();
         this.connect();
       } else {
-        this.filters = value.slice();
+        this.filters = value2.slice();
       }
       return this;
     }
-    setDetune(value) {
-      this.detune = value;
+    setDetune(value2) {
+      this.detune = value2;
       if (this.source.detune === void 0) return;
       if (this.isPlaying === true) {
         this.source.detune.setTargetAtTime(this.detune, this.context.currentTime, 0.01);
@@ -20926,12 +20455,12 @@
     setFilter(filter) {
       return this.setFilters(filter ? [filter] : []);
     }
-    setPlaybackRate(value) {
+    setPlaybackRate(value2) {
       if (this.hasPlaybackControl === false) {
         console.warn("THREE.Audio: this Audio has no playback control.");
         return;
       }
-      this.playbackRate = value;
+      this.playbackRate = value2;
       if (this.isPlaying === true) {
         this.source.playbackRate.setTargetAtTime(this.playbackRate, this.context.currentTime, 0.01);
       }
@@ -20950,30 +20479,30 @@
       }
       return this.loop;
     }
-    setLoop(value) {
+    setLoop(value2) {
       if (this.hasPlaybackControl === false) {
         console.warn("THREE.Audio: this Audio has no playback control.");
         return;
       }
-      this.loop = value;
+      this.loop = value2;
       if (this.isPlaying === true) {
         this.source.loop = this.loop;
       }
       return this;
     }
-    setLoopStart(value) {
-      this.loopStart = value;
+    setLoopStart(value2) {
+      this.loopStart = value2;
       return this;
     }
-    setLoopEnd(value) {
-      this.loopEnd = value;
+    setLoopEnd(value2) {
+      this.loopEnd = value2;
       return this;
     }
     getVolume() {
       return this.gain.gain.value;
     }
-    setVolume(value) {
-      this.gain.gain.setTargetAtTime(value, this.context.currentTime, 0.01);
+    setVolume(value2) {
+      this.gain.gain.setTargetAtTime(value2, this.context.currentTime, 0.01);
       return this;
     }
   };
@@ -20989,12 +20518,12 @@
       return this.data;
     }
     getAverageFrequency() {
-      let value = 0;
+      let value2 = 0;
       const data = this.getFrequencyData();
       for (let i = 0; i < data.length; i++) {
-        value += data[i];
+        value2 += data[i];
       }
-      return value / data.length;
+      return value2 / data.length;
     }
   };
   var PropertyMixer = class {
@@ -22390,12 +21919,12 @@
   };
   AnimationMixer.prototype._controlInterpolantsResultBuffer = new Float32Array(1);
   var Uniform = class _Uniform {
-    constructor(value) {
-      if (typeof value === "string") {
+    constructor(value2) {
+      if (typeof value2 === "string") {
         console.warn("THREE.Uniform: Type parameter is no longer needed.");
-        value = arguments[1];
+        value2 = arguments[1];
       }
-      this.value = value;
+      this.value = value2;
     }
     clone() {
       return new _Uniform(this.value.clone === void 0 ? this.value : this.value.clone());
@@ -22417,10 +21946,10 @@
       return ib;
     }
     toJSON(data) {
-      const json = super.toJSON(data);
-      json.isInstancedInterleavedBuffer = true;
-      json.meshPerAttribute = this.meshPerAttribute;
-      return json;
+      const json2 = super.toJSON(data);
+      json2.isInstancedInterleavedBuffer = true;
+      json2.meshPerAttribute = this.meshPerAttribute;
+      return json2;
     }
   };
   InstancedInterleavedBuffer.prototype.isInstancedInterleavedBuffer = true;
@@ -22433,8 +21962,8 @@
       this.count = count;
       this.version = 0;
     }
-    set needsUpdate(value) {
-      if (value === true) this.version++;
+    set needsUpdate(value2) {
+      if (value2 === true) this.version++;
     }
     setBuffer(buffer) {
       this.buffer = buffer;
@@ -23271,9 +22800,9 @@
         console.warn("THREE.Object3D: .eulerOrder is now .rotation.order.");
         return this.rotation.order;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Object3D: .eulerOrder is now .rotation.order.");
-        this.rotation.order = value;
+        this.rotation.order = value2;
       }
     },
     useQuaternion: {
@@ -23314,45 +22843,45 @@
       }
     },
     shadowCameraFov: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowCameraFov is now .shadow.camera.fov.");
-        this.shadow.camera.fov = value;
+        this.shadow.camera.fov = value2;
       }
     },
     shadowCameraLeft: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowCameraLeft is now .shadow.camera.left.");
-        this.shadow.camera.left = value;
+        this.shadow.camera.left = value2;
       }
     },
     shadowCameraRight: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowCameraRight is now .shadow.camera.right.");
-        this.shadow.camera.right = value;
+        this.shadow.camera.right = value2;
       }
     },
     shadowCameraTop: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowCameraTop is now .shadow.camera.top.");
-        this.shadow.camera.top = value;
+        this.shadow.camera.top = value2;
       }
     },
     shadowCameraBottom: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowCameraBottom is now .shadow.camera.bottom.");
-        this.shadow.camera.bottom = value;
+        this.shadow.camera.bottom = value2;
       }
     },
     shadowCameraNear: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowCameraNear is now .shadow.camera.near.");
-        this.shadow.camera.near = value;
+        this.shadow.camera.near = value2;
       }
     },
     shadowCameraFar: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowCameraFar is now .shadow.camera.far.");
-        this.shadow.camera.far = value;
+        this.shadow.camera.far = value2;
       }
     },
     shadowCameraVisible: {
@@ -23361,9 +22890,9 @@
       }
     },
     shadowBias: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowBias is now .shadow.bias.");
-        this.shadow.bias = value;
+        this.shadow.bias = value2;
       }
     },
     shadowDarkness: {
@@ -23372,15 +22901,15 @@
       }
     },
     shadowMapWidth: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowMapWidth is now .shadow.mapSize.width.");
-        this.shadow.mapSize.width = value;
+        this.shadow.mapSize.width = value2;
       }
     },
     shadowMapHeight: {
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.Light: .shadowMapHeight is now .shadow.mapSize.height.");
-        this.shadow.mapSize.height = value;
+        this.shadow.mapSize.height = value2;
       }
     }
   });
@@ -23402,9 +22931,9 @@
       }
     }
   });
-  BufferAttribute.prototype.setDynamic = function(value) {
+  BufferAttribute.prototype.setDynamic = function(value2) {
     console.warn("THREE.BufferAttribute: .setDynamic() has been deprecated. Use .setUsage() instead.");
-    this.setUsage(value === true ? DynamicDrawUsage : StaticDrawUsage);
+    this.setUsage(value2 === true ? DynamicDrawUsage : StaticDrawUsage);
     return this;
   };
   BufferAttribute.prototype.copyIndicesArray = function() {
@@ -23465,9 +22994,9 @@
       }
     }
   });
-  InterleavedBuffer.prototype.setDynamic = function(value) {
+  InterleavedBuffer.prototype.setDynamic = function(value2) {
     console.warn("THREE.InterleavedBuffer: .setDynamic() has been deprecated. Use .setUsage() instead.");
-    this.setUsage(value === true ? DynamicDrawUsage : StaticDrawUsage);
+    this.setUsage(value2 === true ? DynamicDrawUsage : StaticDrawUsage);
     return this;
   };
   InterleavedBuffer.prototype.setArray = function() {
@@ -23516,9 +23045,9 @@
       get: function() {
         console.error("THREE." + this.type + ": .shading has been removed. Use the boolean .flatShading instead.");
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE." + this.type + ": .shading has been removed. Use the boolean .flatShading instead.");
-        this.flatShading = value === FlatShading;
+        this.flatShading = value2 === FlatShading;
       }
     },
     stencilMask: {
@@ -23526,9 +23055,9 @@
         console.warn("THREE." + this.type + ": .stencilMask has been removed. Use .stencilFuncMask instead.");
         return this.stencilFuncMask;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE." + this.type + ": .stencilMask has been removed. Use .stencilFuncMask instead.");
-        this.stencilFuncMask = value;
+        this.stencilFuncMask = value2;
       }
     }
   });
@@ -23538,9 +23067,9 @@
         console.warn("THREE.ShaderMaterial: .derivatives has been moved to .extensions.derivatives.");
         return this.extensions.derivatives;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE. ShaderMaterial: .derivatives has been moved to .extensions.derivatives.");
-        this.extensions.derivatives = value;
+        this.extensions.derivatives = value2;
       }
     }
   });
@@ -23641,18 +23170,18 @@
       get: function() {
         return this.shadowMap.enabled;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderer: .shadowMapEnabled is now .shadowMap.enabled.");
-        this.shadowMap.enabled = value;
+        this.shadowMap.enabled = value2;
       }
     },
     shadowMapType: {
       get: function() {
         return this.shadowMap.type;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderer: .shadowMapType is now .shadowMap.type.");
-        this.shadowMap.type = value;
+        this.shadowMap.type = value2;
       }
     },
     shadowMapCullFace: {
@@ -23690,9 +23219,9 @@
         console.warn("THREE.WebGLRenderer: .gammaOutput has been removed. Set WebGLRenderer.outputEncoding instead.");
         return false;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderer: .gammaOutput has been removed. Set WebGLRenderer.outputEncoding instead.");
-        this.outputEncoding = value === true ? sRGBEncoding : LinearEncoding;
+        this.outputEncoding = value2 === true ? sRGBEncoding : LinearEncoding;
       }
     },
     toneMappingWhitePoint: {
@@ -23740,9 +23269,9 @@
         console.warn("THREE.WebGLRenderTarget: .wrapS is now .texture.wrapS.");
         return this.texture.wrapS;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .wrapS is now .texture.wrapS.");
-        this.texture.wrapS = value;
+        this.texture.wrapS = value2;
       }
     },
     wrapT: {
@@ -23750,9 +23279,9 @@
         console.warn("THREE.WebGLRenderTarget: .wrapT is now .texture.wrapT.");
         return this.texture.wrapT;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .wrapT is now .texture.wrapT.");
-        this.texture.wrapT = value;
+        this.texture.wrapT = value2;
       }
     },
     magFilter: {
@@ -23760,9 +23289,9 @@
         console.warn("THREE.WebGLRenderTarget: .magFilter is now .texture.magFilter.");
         return this.texture.magFilter;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .magFilter is now .texture.magFilter.");
-        this.texture.magFilter = value;
+        this.texture.magFilter = value2;
       }
     },
     minFilter: {
@@ -23770,9 +23299,9 @@
         console.warn("THREE.WebGLRenderTarget: .minFilter is now .texture.minFilter.");
         return this.texture.minFilter;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .minFilter is now .texture.minFilter.");
-        this.texture.minFilter = value;
+        this.texture.minFilter = value2;
       }
     },
     anisotropy: {
@@ -23780,9 +23309,9 @@
         console.warn("THREE.WebGLRenderTarget: .anisotropy is now .texture.anisotropy.");
         return this.texture.anisotropy;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .anisotropy is now .texture.anisotropy.");
-        this.texture.anisotropy = value;
+        this.texture.anisotropy = value2;
       }
     },
     offset: {
@@ -23790,9 +23319,9 @@
         console.warn("THREE.WebGLRenderTarget: .offset is now .texture.offset.");
         return this.texture.offset;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .offset is now .texture.offset.");
-        this.texture.offset = value;
+        this.texture.offset = value2;
       }
     },
     repeat: {
@@ -23800,9 +23329,9 @@
         console.warn("THREE.WebGLRenderTarget: .repeat is now .texture.repeat.");
         return this.texture.repeat;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .repeat is now .texture.repeat.");
-        this.texture.repeat = value;
+        this.texture.repeat = value2;
       }
     },
     format: {
@@ -23810,9 +23339,9 @@
         console.warn("THREE.WebGLRenderTarget: .format is now .texture.format.");
         return this.texture.format;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .format is now .texture.format.");
-        this.texture.format = value;
+        this.texture.format = value2;
       }
     },
     type: {
@@ -23820,9 +23349,9 @@
         console.warn("THREE.WebGLRenderTarget: .type is now .texture.type.");
         return this.texture.type;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .type is now .texture.type.");
-        this.texture.type = value;
+        this.texture.type = value2;
       }
     },
     generateMipmaps: {
@@ -23830,9 +23359,9 @@
         console.warn("THREE.WebGLRenderTarget: .generateMipmaps is now .texture.generateMipmaps.");
         return this.texture.generateMipmaps;
       },
-      set: function(value) {
+      set: function(value2) {
         console.warn("THREE.WebGLRenderTarget: .generateMipmaps is now .texture.generateMipmaps.");
-        this.texture.generateMipmaps = value;
+        this.texture.generateMipmaps = value2;
       }
     }
   });
@@ -24497,895 +24026,1587 @@
     }
   };
 
-  // src/rendering/SceneManager.ts
-  var CameraManager = class {
-    constructor(renderer, coordinates, onZoomChange) {
-      this.baseOrthographicSize = 1;
-      this.renderer = renderer;
-      this.onZoomChange = onZoomChange;
-      this.camera = this.createOrthographicCamera(coordinates);
-      this.baseOrthographicSize = Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) * 0.6;
-      this.setCameraMode("orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */, coordinates);
-      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-      this.controls.enableDamping = true;
-      this.controls.dampingFactor = 0.05;
-      this.controls.mouseButtons = {
-        LEFT: MOUSE.ROTATE,
-        MIDDLE: MOUSE.DOLLY,
-        RIGHT: MOUSE.PAN
-      };
-      this.controls.addEventListener("change", () => this.handleZoomChange());
+  // src/data/types.ts
+  var CoordinateSystem = class {
+    constructor(minX, maxX, minY, maxY, minZ, maxZ, centerX, centerY, scaleX, scaleY) {
+      this.minX = minX;
+      this.maxX = maxX;
+      this.minY = minY;
+      this.maxY = maxY;
+      this.minZ = minZ;
+      this.maxZ = maxZ;
+      this.centerX = centerX;
+      this.centerY = centerY;
+      this.scaleX = scaleX;
+      this.scaleY = scaleY;
     }
-    setCameraMode(cameraMode, coordinates) {
-      const mapSize = Math.max(
-        coordinates.maxX - coordinates.minX,
-        coordinates.maxY - coordinates.minY
-      );
-      const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
-      const centerY = coordinates.centerY * -1;
-      this.camera.position.set(
-        coordinates.centerX,
-        centerY,
-        mapSize
-      );
-      this.camera.lookAt(coordinates.centerX, centerY, centerZ);
-      if (this.controls) {
-        this.controls.object = this.camera;
-        this.controls.target.set(coordinates.centerX, centerY, centerZ);
-        this.controls.update();
-      }
-      this.camera.updateProjectionMatrix();
-    }
-    createOrthographicCamera(coordinates) {
-      const aspect2 = this.renderer.domElement.width / this.renderer.domElement.height;
-      const mapWidth = coordinates.maxX - coordinates.minX;
-      const mapHeight = coordinates.maxY - coordinates.minY;
-      const size = Math.max(mapWidth, mapHeight) * 0.6;
-      const far = Math.max(Math.max(mapWidth, mapHeight) * 4, 1e4);
-      const camera = new OrthographicCamera(
-        -size * aspect2,
-        size * aspect2,
-        size,
-        -size,
-        0.1,
-        far
-      );
-      return camera;
-    }
-    getCamera() {
-      return this.camera;
-    }
-    updateControls() {
-      this.controls.update();
-    }
-    updateProjectionMatrix() {
-      this.camera.updateProjectionMatrix();
-    }
-    handleResize(width, height) {
-      const aspect2 = width / height;
-      this.camera.left = -this.baseOrthographicSize * aspect2;
-      this.camera.right = this.baseOrthographicSize * aspect2;
-      this.camera.top = this.baseOrthographicSize;
-      this.camera.bottom = -this.baseOrthographicSize;
-      this.camera.updateProjectionMatrix();
-    }
-    updateCoordinates(coordinates) {
-      const mapSize = Math.max(
-        coordinates.maxX - coordinates.minX,
-        coordinates.maxY - coordinates.minY
-      );
-      const far = Math.max(mapSize * 4, 1e4);
-      const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
-      const centerY = coordinates.centerY * -1;
-      const aspect2 = this.renderer.domElement.width / this.renderer.domElement.height;
-      const size = Math.max(coordinates.maxX - coordinates.minX, coordinates.maxY - coordinates.minY) * 0.6;
-      this.camera.left = -size * aspect2;
-      this.camera.right = size * aspect2;
-      this.camera.top = size;
-      this.camera.bottom = -size;
-      this.camera.far = far;
-      this.camera.position.set(coordinates.centerX, centerY, size);
-      this.camera.lookAt(coordinates.centerX, centerY, centerZ);
-      this.camera.updateProjectionMatrix();
-      this.controls.target.set(coordinates.centerX, centerY, centerZ);
-      this.controls.update();
-    }
-    enableMouseControls() {
-      this.controls.mouseButtons = {
-        LEFT: MOUSE.PAN,
-        MIDDLE: MOUSE.DOLLY,
-        RIGHT: MOUSE.ROTATE
-      };
-      this.controls.enableRotate = true;
-    }
-    handleZoomChange() {
-      if (!this.onZoomChange) return;
-      const zoomFactor = Math.max(0.1, Math.min(10, this.camera.zoom));
-      this.onZoomChange(zoomFactor);
-    }
-    positionCameraToMapBounds(coordinates) {
-      const centerX = coordinates.centerX;
-      const centerY = coordinates.centerY;
-      const centerZ = (coordinates.minZ + coordinates.maxZ) / 2;
-      const maxSpan = Math.max(
-        coordinates.maxX - coordinates.minX,
-        coordinates.maxY - coordinates.minY,
-        coordinates.maxZ - coordinates.minZ
-      );
-      const distance = maxSpan * 1.5;
-      this.camera.position.set(centerX, centerY, centerZ + distance);
-      this.camera.lookAt(centerX, centerY, centerZ);
-      this.camera.updateProjectionMatrix();
+    getArkCoordinates(worldCoords) {
+      const lat = (worldCoords.y - this.centerY) / this.scaleY + 50;
+      const long = (worldCoords.x - this.centerX) / this.scaleX + 50;
+      const z = worldCoords.z;
+      return { lat, long, z };
     }
   };
-  var SceneManager = class {
-    constructor(canvas) {
-      this.pointSystems = [];
-      this.hiddenResourceTypes = /* @__PURE__ */ new Set();
-      this.basePointSize = 7;
-      // Base size before zoom scaling
-      this.currentZoomFactor = 1;
-      this.sizeAttenuation = false;
-      this.renderer = new WebGLRenderer({ canvas });
-      this.renderer.setSize(canvas.width, canvas.height);
-      this.renderer.setClearColor(2763306);
-      this.scene = new Scene();
-      this.scene.background = new Color(2763306);
-      this.cameraManager = void 0;
-      this.setupLights();
-      this.circleTexture = this.createCircleTexture();
-    }
-    get effectivePointSize() {
-      const zoomEffect = 1 + (this.currentZoomFactor - 1) * 0.5;
-      return this.basePointSize * zoomEffect;
-    }
-    createCircleTexture() {
-      const canvas = document.createElement("canvas");
-      canvas.width = 64;
-      canvas.height = 64;
-      const ctx = canvas.getContext("2d");
-      ctx.beginPath();
-      ctx.arc(32, 32, 32, 0, Math.PI * 2);
-      ctx.fillStyle = "white";
-      ctx.fill();
-      return new CanvasTexture(canvas);
-    }
-    initializeWithCoordinates(coordinates) {
-      if (!this.cameraManager) {
-        this.cameraManager = new CameraManager(this.renderer, coordinates, (zoomFactor) => {
-          this.handleZoomChange(zoomFactor);
-        });
-      } else {
-        this.cameraManager.updateCoordinates(coordinates);
-      }
-      this.setupGrid(coordinates);
-    }
-    setupLights() {
-      const ambientLight = new AmbientLight(4210752, 0.6);
-      this.scene.add(ambientLight);
-      const directionalLight = new DirectionalLight(16777215, 0.8);
-      directionalLight.position.set(100, 100, 100);
-      this.scene.add(directionalLight);
-    }
-    setupGrid(coordinates) {
-      if (this.gridHelper) {
-        this.scene.remove(this.gridHelper);
-      }
-      const sizeX = coordinates.maxX - coordinates.minX;
-      const sizeY = coordinates.maxY - coordinates.minY;
-      const gridSize = Math.max(sizeX, sizeY) * 1.1;
-      const divisions = 20;
-      this.gridHelper = new GridHelper(gridSize, divisions, 4473924, 2236962);
-      this.gridHelper.rotation.x = Math.PI / 2;
-      const gridZ = coordinates.minZ - 100;
-      const centerY = coordinates.centerY * -1;
-      this.gridHelper.position.set(coordinates.centerX, centerY, gridZ);
-      this.scene.add(this.gridHelper);
-    }
-    resetCamera(coordinates) {
-      if (!this.cameraManager) {
-        this.initializeWithCoordinates(coordinates);
-      }
-      if (!this.cameraManager) {
-        return;
-      }
-      this.cameraManager.setCameraMode("orthographic-topdown" /* ORTHOGRAPHIC_TOP_DOWN */, coordinates);
-      this.cameraManager.enableMouseControls();
-      if (this.gridHelper) {
-        this.gridHelper.visible = true;
-      }
-      if (this.backgroundPlane) {
-        this.backgroundPlane.visible = true;
-      }
-    }
-    clearBackground() {
-      if (this.backgroundPlane) {
-        this.scene.remove(this.backgroundPlane);
-        this.backgroundPlane = void 0;
-      }
-    }
-    addBackgroundImage(imageName, coordinates) {
-      this.clearBackground();
-      const loader = new TextureLoader();
-      loader.load(
-        `images/${imageName}`,
-        (texture) => {
-          const geometry = new PlaneGeometry(
-            coordinates.maxX - coordinates.minX,
-            coordinates.maxY - coordinates.minY
-          );
-          const material = new MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            depthWrite: false,
-            // Allow points to render on top
-            depthTest: true
-          });
-          this.backgroundPlane = new Mesh(geometry, material);
-          const centerY = coordinates.centerY * -1;
-          this.backgroundPlane.position.set(coordinates.centerX, centerY, coordinates.minZ - 100);
-          this.backgroundPlane.renderOrder = -1;
-          this.backgroundPlane.visible = true;
-          this.scene.add(this.backgroundPlane);
-        },
-        void 0,
-        (error) => {
-          console.warn(`Failed to load background image ${imageName}:`, error);
-        }
+  var MapData = class {
+    constructor(data) {
+      this.mapKey = data.mapKey;
+      this.coordinates = new CoordinateSystem(
+        data.coordinates.minX,
+        data.coordinates.maxX,
+        data.coordinates.minY,
+        data.coordinates.maxY,
+        data.coordinates.minZ,
+        data.coordinates.maxZ,
+        data.coordinates.centerX,
+        data.coordinates.centerY,
+        data.coordinates.scaleX,
+        data.coordinates.scaleY
       );
-    }
-    updatePoints(points) {
-      this.pointSystems.forEach((system) => this.scene.remove(system));
-      this.pointSystems = [];
-      if (points.length === 0) return;
-      const pointsByResource = /* @__PURE__ */ new Map();
-      points.forEach((point) => {
-        const resourceType = point.resourceType;
-        if (!pointsByResource.has(resourceType)) {
-          pointsByResource.set(resourceType, []);
-        }
-        pointsByResource.get(resourceType).push(point);
-      });
-      for (const [resourceType, resourcePoints] of pointsByResource) {
-        if (resourcePoints.length === 0) continue;
-        const positions = new Float32Array(resourcePoints.length * 3);
-        const colors = new Float32Array(resourcePoints.length * 3);
-        resourcePoints.forEach((point, i) => {
-          positions[i * 3] = point.x;
-          positions[i * 3 + 1] = point.y * -1;
-          positions[i * 3 + 2] = point.z;
-          const color = new Color(point.colorHex);
-          colors[i * 3] = color.r;
-          colors[i * 3 + 1] = color.g;
-          colors[i * 3 + 2] = color.b;
-        });
-        const geometry = new BufferGeometry();
-        geometry.setAttribute("position", new BufferAttribute(positions, 3));
-        geometry.setAttribute("color", new BufferAttribute(colors, 3));
-        const material = new PointsMaterial({
-          size: this.effectivePointSize,
-          vertexColors: true,
-          map: this.circleTexture,
-          transparent: true,
-          alphaTest: 0.5,
-          sizeAttenuation: this.sizeAttenuation
-        });
-        const pointSystem = new Points(geometry, material);
-        pointSystem.userData.resourceType = resourceType;
-        pointSystem.userData.resourcePoints = resourcePoints;
-        pointSystem.visible = !this.hiddenResourceTypes.has(resourceType);
-        this.scene.add(pointSystem);
-        this.pointSystems.push(pointSystem);
-      }
-    }
-    render() {
-      if (this.cameraManager) {
-        this.cameraManager.updateControls();
-        this.renderer.render(this.scene, this.cameraManager.getCamera());
-      }
-    }
-    setResourceVisible(resourceType, visible) {
-      if (visible) {
-        this.hiddenResourceTypes.delete(resourceType);
-      } else {
-        this.hiddenResourceTypes.add(resourceType);
-      }
-      this.pointSystems.forEach((system) => {
-        if (system.userData.resourceType === resourceType) {
-          system.visible = visible;
-        }
-      });
-    }
-    setPointSize(size) {
-      this.basePointSize = size;
-      this.updatePointMaterials();
-    }
-    handleZoomChange(zoomFactor) {
-      this.currentZoomFactor = zoomFactor;
-      this.updatePointMaterials();
-    }
-    setSizeAttenuation(enabled) {
-      this.sizeAttenuation = enabled;
-      this.updatePointMaterials();
-    }
-    updatePointMaterials() {
-      this.pointSystems.forEach((system) => {
-        if (system.material && "size" in system.material) {
-          system.material.size = this.effectivePointSize;
-          system.material.sizeAttenuation = this.sizeAttenuation;
-        }
-      });
-    }
-    handleResize(width, height) {
-      this.renderer.setSize(width, height);
-      if (this.cameraManager) {
-        this.cameraManager.handleResize(width, height);
-      }
-    }
-    // Raycasting for hover/click detection
-    getIntersectedPoints(mouseX, mouseY) {
-      const mouse = new Vector2(
-        mouseX / this.renderer.domElement.width * 2 - 1,
-        -(mouseY / this.renderer.domElement.height) * 2 + 1
-      );
-      if (!this.cameraManager) {
-        return [];
-      }
-      const raycaster = new Raycaster();
-      const baseThreshold = 4e3;
-      raycaster.params.Points.threshold = baseThreshold / Math.max(0.1, this.currentZoomFactor);
-      raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
-      return raycaster.intersectObjects(this.pointSystems.filter((ps) => ps.visible));
-    }
-    getIntersectedPoint(mouseX, mouseY) {
-      const intersections = this.getIntersectedPoints(mouseX, mouseY);
-      return intersections.length > 0 ? intersections[0] : null;
-    }
-    screenToWorldCoordinates(mouseX, mouseY) {
-      if (!this.cameraManager) return null;
-      const mouse = new Vector2(
-        mouseX / this.renderer.domElement.width * 2 - 1,
-        -(mouseY / this.renderer.domElement.height) * 2 + 1
-      );
-      const raycaster = new Raycaster();
-      raycaster.setFromCamera(mouse, this.cameraManager.getCamera());
-      const groundPlane = new Plane(new Vector3(0, 0, 1), 0);
-      const intersection = new Vector3();
-      const intersectPoint = raycaster.ray.intersectPlane(groundPlane, intersection);
-      if (intersectPoint) {
-        return { x: intersectPoint.x, y: intersectPoint.y * -1, z: intersectPoint.z };
-      }
-      const camera = this.cameraManager.getCamera();
-      const direction = raycaster.ray.direction;
-      if (Math.abs(direction.z) > 1e-3) {
-        const t = (0 - camera.position.z) / direction.z;
-        const worldPos = camera.position.clone().add(direction.clone().multiplyScalar(t));
-        return { x: worldPos.x, y: worldPos.y * -1, z: 0 };
-      }
-      return null;
+      this.resources = data.resources;
+      this.imageName = data.imageName;
     }
   };
 
-  // src/ui/UIManager.ts
-  var ViewControlsManager = class {
-    constructor(callbacks) {
-      this.callbacks = callbacks;
-      this.resetCameraBtnElement = document.querySelector(
-        "#reset-camera-btn"
-      );
-      this.clusterEnabledElement = document.querySelector("#cluster-enabled");
-      this.clusterRadiusElement = document.querySelector("#cluster-radius");
-      this.clusterRadiusValueElement = document.querySelector(
-        "#cluster-radius-value"
-      );
-      this.pointSizeElement = document.querySelector("#point-size-slider");
-      this.pointSizeValueElement = document.querySelector("#point-size-value");
-      this.sizeAttenuationElement = document.querySelector(
-        "#size-attenuation"
-      );
-      this.attachEventListeners();
-    }
-    attachEventListeners() {
-      if (this.resetCameraBtnElement && this.callbacks.onResetCamera) {
-        this.resetCameraBtnElement.addEventListener("click", () => {
-          if (this.callbacks.onResetCamera) {
-            this.callbacks.onResetCamera();
-          }
-        });
-      }
-      const updateClusterConfig = () => {
-        const config = {
-          enabled: this.clusterEnabledElement?.checked ?? false,
-          radius: parseInt(this.clusterRadiusElement?.value ?? "5000"),
-          minClusterSize: 3,
-          // Fixed value
-          maxLevels: 4
-          // Fixed value
-        };
-        this.callbacks.onClusterConfigChange(config);
-      };
-      if (this.clusterEnabledElement) {
-        this.clusterEnabledElement.addEventListener("change", updateClusterConfig);
-      }
-      if (this.clusterRadiusElement) {
-        this.clusterRadiusElement.addEventListener("input", () => {
-          if (this.clusterRadiusValueElement) {
-            this.clusterRadiusValueElement.textContent = this.clusterRadiusElement.value;
-          }
-          updateClusterConfig();
-        });
-      }
-      if (this.pointSizeElement) {
-        this.pointSizeElement.addEventListener("input", () => {
-          const size = parseInt(this.pointSizeElement.value);
-          if (this.pointSizeValueElement) {
-            this.pointSizeValueElement.textContent = size.toString();
-          }
-          if (this.callbacks.onPointSizeChange) {
-            this.callbacks.onPointSizeChange(size);
-          }
-        });
-      }
-      if (this.sizeAttenuationElement) {
-        this.sizeAttenuationElement.addEventListener("change", () => {
-          if (this.callbacks.onSizeAttenuationChange) {
-            this.callbacks.onSizeAttenuationChange(this.sizeAttenuationElement.checked);
-          }
-        });
-      }
-      updateClusterConfig();
-    }
-    updateClusterConfig(config) {
-      if (this.clusterEnabledElement) {
-        this.clusterEnabledElement.checked = config.enabled;
-      }
-      if (this.clusterRadiusElement) {
-        this.clusterRadiusElement.value = config.radius.toString();
-      }
-      if (this.clusterRadiusValueElement) {
-        this.clusterRadiusValueElement.textContent = config.radius.toString();
-      }
-    }
-  };
-  var HoverManager = class {
-    constructor(canvas, callbacks) {
-      this.canvas = canvas;
-      this.callbacks = callbacks;
-      this.attachEventListeners();
-    }
-    attachEventListeners() {
-      this.canvas.addEventListener("mousemove", (event) => {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        if (this.callbacks.onMouseMove) {
-          this.callbacks.onMouseMove(x, y);
-        }
-      });
-      this.canvas.addEventListener("mouseleave", () => {
-        if (this.callbacks.onHoverPoint) {
-          this.callbacks.onHoverPoint();
-        }
-        this.updateCoordinateDisplay(null, null);
-      });
-    }
-    updateCoordinateDisplay(lat, long) {
-      const latElement = document.getElementById("coord-lat");
-      const longElement = document.getElementById("coord-long");
-      if (latElement) {
-        latElement.textContent = lat !== null ? lat.toFixed(1) : "-";
-      }
-      if (longElement) {
-        longElement.textContent = long !== null ? long.toFixed(1) : "-";
-      }
-    }
-  };
-  var InfoPanelManager = class {
-    constructor(containerId) {
-      this.container = document.getElementById(containerId);
-      this.content = this.container.querySelector("#info-content");
-    }
-    showPointInfo(info) {
-      if (!this.content) return;
-      this.content.innerHTML = `
-            <strong>${info.type}</strong><br>
-            ${info.count ? `Count: ${info.count}<br>` : ""}
-            Position: (${info.position.x.toFixed(1)}, ${info.position.y.toFixed(1)}, ${info.position.z.toFixed(1)})
-        `;
-      this.container.style.display = "block";
-    }
-    hideInfo() {
-      this.container.style.display = "none";
-    }
-  };
-  var ResourcePanelManager = class {
-    constructor(onResourceToggle) {
-      this.visibleResources = /* @__PURE__ */ new Set();
-      this.tbody = document.getElementById("resourceTypeTableBody");
-      this.toggleAllCheckbox = document.getElementById("toggleAll");
-      this.onResourceToggle = onResourceToggle;
-      this.toggleAllCheckbox.addEventListener("change", () => {
-        const checkboxes = this.tbody.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach((cb) => {
-          cb.checked = this.toggleAllCheckbox.checked;
-          const resourceType = cb.dataset.resourceType;
-          if (cb.checked) {
-            this.visibleResources.add(resourceType);
-          } else {
-            this.visibleResources.delete(resourceType);
-          }
-          if (this.onResourceToggle) {
-            this.onResourceToggle(resourceType, cb.checked);
-          }
-        });
-      });
-    }
-    updateResourceTypes(resources) {
-      this.tbody.innerHTML = "";
-      this.visibleResources.clear();
-      resources.forEach((resource) => {
-        const row = document.createElement("tr");
-        const checkboxCell = document.createElement("td");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = true;
-        checkbox.dataset.resourceType = resource.name;
-        this.visibleResources.add(resource.name);
-        checkbox.addEventListener("change", () => {
-          if (checkbox.checked) {
-            this.visibleResources.add(resource.name);
-          } else {
-            this.visibleResources.delete(resource.name);
-          }
-          if (this.onResourceToggle) {
-            this.onResourceToggle(resource.name, checkbox.checked);
-          }
-        });
-        checkboxCell.appendChild(checkbox);
-        row.appendChild(checkboxCell);
-        const nameCell = document.createElement("td");
-        const swatch = document.createElement("span");
-        swatch.className = "color-swatch";
-        swatch.style.backgroundColor = resource.colorHex;
-        nameCell.appendChild(swatch);
-        nameCell.appendChild(document.createTextNode(resource.name));
-        row.appendChild(nameCell);
-        const countCell = document.createElement("td");
-        countCell.textContent = resource.count.toString();
-        row.appendChild(countCell);
-        const clusterCell = document.createElement("td");
-        clusterCell.textContent = resource.clusterCount.toString();
-        row.appendChild(clusterCell);
-        this.tbody.appendChild(row);
-      });
-    }
-  };
-
-  // src/ui/Application.ts
-  var Application = class {
+  // src/data/DataLoader.ts
+  var DataLoader = class {
     constructor() {
-      this.currentMapData = null;
-      const canvas = document.getElementById("canvas");
-      this.sceneManager = new SceneManager(canvas);
-      this.dataLoader = new DataLoader();
-      this.world = new World();
-      this.viewControls = new ViewControlsManager({
-        onClusterConfigChange: (config) => this.handleClusterConfigChange(config),
-        onPointSizeChange: (size) => this.handlePointSizeChange(size),
-        onSizeAttenuationChange: (enabled) => this.handleSizeAttenuationChange(enabled),
-        onHoverPoint: (pointId) => this.handlePointHover(pointId),
-        onResetCamera: () => this.handleResetCamera()
-      });
-      this.hoverManager = new HoverManager(canvas, {
-        onClusterConfigChange: () => {
-        },
-        onMouseMove: (x, y) => this.handleMouseMove(x, y),
-        onHoverPoint: (pointId) => this.handlePointHover(pointId)
-      });
-      this.infoPanelManager = new InfoPanelManager("info-panel");
-      this.resourcePanel = new ResourcePanelManager((resourceType, visible) => {
-        this.sceneManager.setResourceVisible(resourceType, visible);
-      });
-      this.setupResizeHandler(canvas);
-      this.startRenderLoop();
+      this.indexData = null;
     }
-    async loadMap(mapKey) {
-      this.sceneManager.clearBackground();
-      this.currentMapData = await this.dataLoader.loadMapByName(mapKey);
-      this.world.setMapData(this.currentMapData, this.dataLoader.getResourceTypes());
-      this.sceneManager.initializeWithCoordinates(this.currentMapData.coordinates);
-      if (this.currentMapData.imageName) {
-        this.sceneManager.addBackgroundImage(
-          this.currentMapData.imageName,
-          this.currentMapData.coordinates
+    async loadIndex() {
+      const response = await fetch("./data/index.json");
+      if (!response.ok) {
+        throw new Error(`Failed to load index.json: ${response.status} ${response.statusText}`);
+      }
+      this.indexData = await response.json();
+      if (!this.indexData) {
+        throw new Error("Index data is null or undefined");
+      }
+      return this.indexData;
+    }
+    async loadMapData(dataUrl) {
+      const normalizedUrl = dataUrl.startsWith("http") || dataUrl.startsWith("/") ? dataUrl : `./data/${dataUrl.replace(/^\.\//, "")}`;
+      const response = await fetch(normalizedUrl);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load map data from ${normalizedUrl}: ${response.status} ${response.statusText}`
         );
       }
-      this.resetCamera();
-      this.applyInitialClusterConfig();
-      this.updateRendering();
+      const data = await response.json();
+      return new MapData(data);
     }
-    handleClusterConfigChange(config) {
-      this.world.updateClusterConfig(config);
-      this.updateRendering();
-    }
-    handlePointSizeChange(size) {
-      this.sceneManager.setPointSize(size);
-    }
-    handleSizeAttenuationChange(enabled) {
-      this.sceneManager.setSizeAttenuation(enabled);
-    }
-    handleResetCamera() {
-      if (!this.currentMapData) return;
-      this.resetCamera();
-    }
-    handlePointHover(pointId) {
-      if (!pointId) {
-        this.infoPanelManager.hideInfo();
-        return;
+    getResourceTypes() {
+      if (!this.indexData) {
+        throw new Error("Index data not loaded. Call loadIndex() first.");
       }
-      const pointInfo = this.world.getPointInfo(pointId);
-      if (pointInfo) {
-        this.infoPanelManager.showPointInfo(pointInfo);
-      }
+      return this.indexData.resourceTypes;
     }
-    handleMouseMove(mouseX, mouseY) {
-      if (!this.currentMapData) return;
-      const worldCoords = this.sceneManager.screenToWorldCoordinates(mouseX, mouseY);
-      if (worldCoords) {
-        const coords = this.currentMapData.coordinates;
-        const cursorArkCoords = coords.getArkCoordinates(worldCoords);
-        this.updateDebugPanel({ x: mouseX, y: mouseY }, worldCoords, coords);
-        const intersection = this.sceneManager.getIntersectedPoint(mouseX, mouseY);
-        if (intersection && intersection.object.userData.resourceType && intersection.index != null) {
-          const resourceType = intersection.object.userData.resourceType;
-          const points = intersection.object.userData.resourcePoints;
-          const intersectedPoint = points[intersection.index];
-          const nodeArkCoords = coords.getArkCoordinates(intersectedPoint);
-          this.showPointHover(resourceType, cursorArkCoords, nodeArkCoords, intersectedPoint);
-        } else {
-          this.hidePointHover();
-          this.updateCoordinateDisplay(cursorArkCoords);
+    getMaps() {
+      if (!this.indexData) {
+        throw new Error("Index data not loaded. Call loadIndex() first.");
+      }
+      return this.indexData.maps;
+    }
+    async getMapList() {
+      if (!this.indexData) {
+        await this.loadIndex();
+      }
+      return this.getMaps();
+    }
+    async loadMapByName(mapKey) {
+      if (!this.indexData) {
+        await this.loadIndex();
+      }
+      const mapInfo = this.getMaps().find((map) => map.key === mapKey);
+      if (!mapInfo) {
+        throw new Error(`Map ${mapKey} not found`);
+      }
+      return this.loadMapData(mapInfo.dataUrl);
+    }
+  };
+
+  // src/map-image.ts
+  async function fetchMapImage(url, signal, request = fetch) {
+    signal.throwIfAborted();
+    const response = await request(url, { signal });
+    signal.throwIfAborted();
+    if (response.status === 404 || response.status === 410)
+      return { kind: "missing", status: response.status };
+    if (!response.ok) throw new Error(`Map image: HTTP ${response.status}`);
+    const blob = await response.blob();
+    signal.throwIfAborted();
+    return { kind: "image", blob };
+  }
+
+  // src/clustering/rbush3d.ts
+  var compareMinX = (a, b) => {
+    return ("x" in a ? a.x : a.minX) - ("x" in b ? b.x : b.minX);
+  };
+  var compareMinY = (a, b) => {
+    return ("y" in a ? a.y : a.minY) - ("y" in b ? b.y : b.minY);
+  };
+  var compareMinZ = (a, b) => {
+    return ("z" in a ? a.z : a.minZ) - ("z" in b ? b.z : b.minZ);
+  };
+  function extend(a, b) {
+    if ("x" in b) {
+      a.minX = Math.min(a.minX, b.x);
+      a.minY = Math.min(a.minY, b.y);
+      a.minZ = Math.min(a.minZ, b.z);
+      a.maxX = Math.max(a.maxX, b.x);
+      a.maxY = Math.max(a.maxY, b.y);
+      a.maxZ = Math.max(a.maxZ, b.z);
+    } else {
+      a.minX = Math.min(a.minX, b.minX);
+      a.minY = Math.min(a.minY, b.minY);
+      a.minZ = Math.min(a.minZ, b.minZ);
+      a.maxX = Math.max(a.maxX, b.maxX);
+      a.maxY = Math.max(a.maxY, b.maxY);
+      a.maxZ = Math.max(a.maxZ, b.maxZ);
+    }
+  }
+  function calcBBox(node) {
+    node.minX = Infinity;
+    node.minY = Infinity;
+    node.minZ = Infinity;
+    node.maxX = -Infinity;
+    node.maxY = -Infinity;
+    node.maxZ = -Infinity;
+    for (const child of node.children) {
+      extend(node, child);
+    }
+  }
+  function createNode(children) {
+    const node = {
+      children,
+      height: 1,
+      leaf: true,
+      minX: Infinity,
+      minY: Infinity,
+      minZ: Infinity,
+      maxX: -Infinity,
+      maxY: -Infinity,
+      maxZ: -Infinity
+    };
+    if (children.length === 0) {
+      return node;
+    }
+    calcBBox(node);
+    return node;
+  }
+  function intersects2(a, b) {
+    return b.minX <= a.maxX && b.minY <= a.maxY && b.minZ <= a.maxZ && b.maxX >= a.minX && b.maxY >= a.minY && b.maxZ >= a.minZ;
+  }
+  var RBush3D = class {
+    constructor(points, maxEntries = 9) {
+      this.maxEntries = Math.max(4, maxEntries);
+      this.points = points.slice().sort((a, b) => a.index - b.index);
+      this.data = this.buildFromPoints(points);
+      this.length = points.length;
+    }
+    buildFromPoints(points) {
+      if (!points || points.length === 0) {
+        return createNode([]);
+      }
+      if (points.length <= this.maxEntries) {
+        return createNode(points.slice());
+      }
+      return this.build(points.slice(), 0, points.length - 1, 0);
+    }
+    search(bbox) {
+      const result = [];
+      if (!intersects2(bbox, this.data)) return result;
+      const nodesToSearch = [];
+      let node = this.data;
+      while (node) {
+        const children = node.children;
+        const isLeaf = node.leaf;
+        for (let i = 0; i < children.length; i++) {
+          const child = children[i];
+          if (isLeaf) {
+            const point = child;
+            if (point.x >= bbox.minX && point.x <= bbox.maxX && point.y >= bbox.minY && point.y <= bbox.maxY && point.z >= bbox.minZ && point.z <= bbox.maxZ) {
+              result.push(point);
+            }
+          } else {
+            const childNode = child;
+            if (intersects2(bbox, childNode)) {
+              nodesToSearch.push(childNode);
+            }
+          }
+        }
+        node = nodesToSearch.pop();
+      }
+      return result;
+    }
+    // Search for items within a spherical radius
+    searchRadius(x, y, z, radius) {
+      const bbox = {
+        minX: x - radius,
+        minY: y - radius,
+        minZ: z - radius,
+        maxX: x + radius,
+        maxY: y + radius,
+        maxZ: z + radius
+      };
+      const candidates = this.search(bbox);
+      const result = [];
+      const radiusSquared = radius * radius;
+      for (const point of candidates) {
+        const dx = x - point.x;
+        const dy = y - point.y;
+        const dz = z - point.z;
+        const distSquared = dx * dx + dy * dy + dz * dz;
+        if (distSquared <= radiusSquared) {
+          result.push(point);
         }
       }
+      return result;
     }
-    updateCoordinateDisplay(arkCoords) {
-      const latElement = document.getElementById("coord-lat");
-      const longElement = document.getElementById("coord-long");
-      if (latElement) {
-        latElement.textContent = arkCoords.lat.toFixed(1);
-      }
-      if (longElement) {
-        longElement.textContent = arkCoords.long.toFixed(1);
-      }
-    }
-    updateDebugPanel(canvasCoords, worldCoords, coords) {
-      const debugCanvas = document.getElementById("debug-canvas");
-      const debugUnreal = document.getElementById("debug-unreal");
-      const debugArk = document.getElementById("debug-ark");
-      const debugSystem = document.getElementById("debug-system");
-      const arkCoords = coords.getArkCoordinates(worldCoords);
-      debugArk.innerHTML = `X: ${arkCoords.long.toFixed(1)}<br/>Y: ${arkCoords.lat.toFixed(1)}<br/>Z: ${arkCoords.z.toFixed(1)}`;
-      debugCanvas.innerHTML = `X: ${canvasCoords.x}<br/>Y: ${canvasCoords.y}`;
-      debugUnreal.innerHTML = `X: ${worldCoords.x.toFixed(0)}<br/>Y: ${worldCoords.y.toFixed(0)}<br/>Z: ${worldCoords.z.toFixed(0)}`;
-      debugSystem.innerHTML = `
-            <table>
-                <tr><td /><td>min</td><td>max</td><td>center</td><td>scale</td></tr>
-                <tr><td>X</td><td>${coords.minX.toFixed(0)}</td><td>${coords.maxX.toFixed(0)}</td><td>${coords.centerX.toFixed(0)}</td><td>${coords.scaleX.toFixed(2)}</td></tr>
-                <tr><td>Y</td><td>${coords.minY.toFixed(0)}</td><td>${coords.maxY.toFixed(0)}</td><td>${coords.centerY.toFixed(0)}</td><td>${coords.scaleY.toFixed(2)}</td></tr>
-                <tr><td>Z</td><td>${coords.minZ.toFixed(0)}</td><td>${coords.maxZ.toFixed(0)}</td><td>N/A</td><td>N/A</td></tr>
-            </table>
-        `;
-    }
-    showPointHover(resourceType, cursorArkCoords, nodeArkCoords, nodeCoordinates) {
-      const coordinatesEl = document.getElementById("coordinates");
-      if (coordinatesEl) {
-        coordinatesEl.innerHTML = `
-                <strong>Point Details:</strong><br>
-                Resource: <span style="color: #4fc3f7;">${resourceType}</span><br>
-                Node Lat: <span style="color: #4fc3f7;">${nodeArkCoords.lat.toFixed(1)}</span><br>
-                Node Long: <span style="color: #4fc3f7;">${nodeArkCoords.long.toFixed(1)}</span><br>
-                Node Z: <span style="color: #4fc3f7;">${nodeCoordinates.z.toFixed(1)}</span><br>
-                Node X (UE): <span style="color: #ffb74d;">${nodeCoordinates.x.toFixed(0)}</span><br>
-                Node Y (UE): <span style="color: #ffb74d;">${nodeCoordinates.y.toFixed(0)}</span><br>
-                <strong>Cursor Position:</strong><br>
-                Lat: <span id="coord-lat">${cursorArkCoords.lat.toFixed(1)}</span><br>
-                Long: <span id="coord-long">${cursorArkCoords.long.toFixed(1)}</span>
-            `;
-      }
-    }
-    hidePointHover() {
-      const coordinatesEl = document.getElementById("coordinates");
-      if (coordinatesEl) {
-        coordinatesEl.innerHTML = `
-                <strong>Cursor Position:</strong><br>
-                Lat: <span id="coord-lat">-</span><br>
-                Long: <span id="coord-long">-</span>
-            `;
-      }
-    }
-    resetCamera() {
-      if (!this.currentMapData) return;
-      this.sceneManager.resetCamera(this.currentMapData.coordinates);
-    }
-    applyInitialClusterConfig() {
-      const clusterEnabledElement = document.querySelector(
-        "#cluster-enabled"
-      );
-      const clusterRadiusElement = document.querySelector("#cluster-radius");
-      const minClusterSizeElement = document.querySelector(
-        "#min-cluster-size"
-      );
-      const maxClusterLevelElement = document.querySelector(
-        "#max-cluster-level"
-      );
-      if (clusterEnabledElement && clusterRadiusElement && minClusterSizeElement && maxClusterLevelElement) {
-        const config = {
-          enabled: clusterEnabledElement.checked,
-          radius: parseInt(clusterRadiusElement.value),
-          minClusterSize: parseInt(minClusterSizeElement.value),
-          maxLevels: parseInt(maxClusterLevelElement.value)
-        };
-        this.world.updateClusterConfig(config);
-      }
-    }
-    updateRendering() {
-      if (!this.currentMapData) return;
-      const points = this.world.getCurrentPoints();
-      this.sceneManager.updatePoints(points);
-      this.updateResourcePanel(points);
-    }
-    updateResourcePanel(points) {
-      const resourceStats = /* @__PURE__ */ new Map();
-      points.forEach((point) => {
-        const existing = resourceStats.get(point.resourceType) || { count: 0, clusterCount: 0 };
-        if (point.type === "cluster") {
-          existing.clusterCount++;
-          existing.count += point.count;
-        } else {
-          existing.count++;
+    build(items, left, right, height) {
+      const N = right - left + 1;
+      let M = this.maxEntries;
+      if (N <= M) {
+        const children = new Array(N);
+        for (let i = 0; i < N; i++) {
+          children[i] = items[left + i];
         }
-        resourceStats.set(point.resourceType, existing);
-      });
-      const resourceTypes = this.dataLoader.getResourceTypes();
-      const resourceInfo = resourceTypes.map((rt) => {
-        const stats = resourceStats.get(rt.name) || { count: 0, clusterCount: 0 };
-        return {
-          name: rt.name,
-          color: rt.color,
-          colorHex: rt.colorHex,
-          count: stats.count,
-          clusterCount: stats.clusterCount
-        };
-      }).filter((ri) => ri.count > 0);
-      this.resourcePanel.updateResourceTypes(resourceInfo);
+        return createNode(children);
+      }
+      if (!height) {
+        height = Math.ceil(Math.log(N) / Math.log(M));
+        M = Math.ceil(N / Math.pow(M, height - 1));
+      }
+      const node = createNode([]);
+      node.leaf = false;
+      node.height = height;
+      const N3 = Math.ceil(N / M);
+      const N2 = N3 * Math.ceil(Math.sqrt(M));
+      this.multiSelect(items, left, right, N2, compareMinX);
+      for (let i = left; i <= right; i += N2) {
+        const right2 = Math.min(i + N2 - 1, right);
+        this.multiSelect(items, i, right2, N3, compareMinY);
+        for (let j = i; j <= right2; j += N3) {
+          const right3 = Math.min(j + N3 - 1, right2);
+          this.multiSelect(items, j, right3, 1, compareMinZ);
+          node.children.push(this.build(items, j, right3, height - 1));
+        }
+      }
+      calcBBox(node);
+      return node;
     }
-    setupResizeHandler(canvas) {
-      const handleResize = () => {
-        const container = canvas.parentElement;
-        const width = container.clientWidth;
-        const height = container.clientHeight;
-        canvas.width = width;
-        canvas.height = height;
-        this.sceneManager.handleResize(width, height);
+    multiSelect(arr, left, right, n, compare) {
+      const stack = [left, right];
+      while (stack.length) {
+        right = stack.pop();
+        left = stack.pop();
+        if (right - left <= n) continue;
+        const mid = left + Math.ceil((right - left) / n / 2) * n;
+        this.quickselect(arr, mid, left, right, compare);
+        stack.push(left, mid, mid, right);
+      }
+    }
+    quickselect(arr, k, left, right, compare) {
+      while (right > left) {
+        if (right - left > 600) {
+          const n = right - left + 1;
+          const m = k - left + 1;
+          const z = Math.log(n);
+          const s = 0.5 * Math.exp(2 * z / 3);
+          const sd = 0.5 * Math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
+          const newLeft = Math.max(left, Math.floor(k - m * s / n + sd));
+          const newRight = Math.min(right, Math.floor(k + (n - m) * s / n + sd));
+          this.quickselect(arr, k, newLeft, newRight, compare);
+        }
+        const t = arr[k];
+        let i = left;
+        let j = right;
+        this.swap(arr, left, k);
+        if (compare(arr[right], t) > 0) this.swap(arr, left, right);
+        while (i < j) {
+          this.swap(arr, i, j);
+          i++;
+          j--;
+          while (compare(arr[i], t) < 0) i++;
+          while (compare(arr[j], t) > 0) j--;
+        }
+        if (compare(arr[left], t) === 0) this.swap(arr, left, j);
+        else {
+          j++;
+          this.swap(arr, j, right);
+        }
+        if (j <= k) left = j + 1;
+        if (k <= j) right = j - 1;
+      }
+    }
+    swap(arr, i, j) {
+      const tmp2 = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp2;
+    }
+  };
+
+  // src/clustering/clustering.ts
+  function cluster(spatialIndex, epsilon, minPoints) {
+    const n = spatialIndex.length;
+    const labels = new Array(n).fill(-1);
+    let clusterId = 0;
+    for (let i = 0; i < n; i++) {
+      if (labels[i] !== -1) continue;
+      const neighbors = getNeighbors(spatialIndex, i, epsilon);
+      if (neighbors.length < minPoints) {
+        labels[i] = -1;
+        continue;
+      }
+      clusterId++;
+      expandCluster(i, neighbors, clusterId, labels, spatialIndex, epsilon, minPoints);
+    }
+    return labels.map((clusterId2, pointIndex) => ({
+      clusterId: clusterId2,
+      pointIndex
+    }));
+  }
+  function expandCluster(pointIndex, neighbors, clusterId, labels, spatialIndex, epsilon, minPoints) {
+    labels[pointIndex] = clusterId;
+    const queue = [...neighbors];
+    while (queue.length > 0) {
+      const currentIndex = queue.shift();
+      if (labels[currentIndex] === -1) {
+        labels[currentIndex] = clusterId;
+      }
+      if (labels[currentIndex] !== -1) continue;
+      labels[currentIndex] = clusterId;
+      const currentNeighbors = getNeighbors(spatialIndex, currentIndex, epsilon);
+      if (currentNeighbors.length >= minPoints) {
+        queue.push(...currentNeighbors);
+      }
+    }
+  }
+  function getNeighbors(spatialIndex, pointIndex, epsilon) {
+    const point = spatialIndex.points[pointIndex];
+    const candidates = spatialIndex.searchRadius(point.x, point.y, point.z, epsilon);
+    const neighbors = [];
+    for (const candidate of candidates) {
+      if (candidate.index === pointIndex) continue;
+      neighbors.push(candidate.index);
+    }
+    return neighbors;
+  }
+
+  // src/world/World.ts
+  var World = class {
+    constructor(settings) {
+      this.mapData = null;
+      this.resourceTypes = /* @__PURE__ */ new Map();
+      this.spatialIndices = /* @__PURE__ */ new Map();
+      this.cachedPoints = /* @__PURE__ */ new Map();
+      this.allPointsCache = null;
+      // Public configuration - changing this triggers reclustering
+      this.clusterConfigState = {
+        enabled: true,
+        radius: 5e3,
+        minClusterSize: 3,
+        maxLevels: 4
       };
-      window.addEventListener("resize", handleResize);
-      handleResize();
+      if (settings) {
+        this.setMapData(settings.mapData, settings.resourceTypes);
+      }
     }
-    startRenderLoop() {
-      const animate = () => {
-        this.sceneManager.render();
-        requestAnimationFrame(animate);
-      };
-      animate();
+    setMapData(mapData, resourceTypes) {
+      this.mapData = mapData;
+      this.resourceTypes = new Map(
+        resourceTypes.map((type) => [
+          type.name,
+          { color: type.color, colorHex: type.colorHex }
+        ])
+      );
+      this.initializeSpatialIndices();
+      this.updateClustering();
     }
-    // Public API for external control
-    getAvailableMaps() {
-      return this.dataLoader.getMapList();
+    get clusterConfig() {
+      return { ...this.clusterConfigState };
+    }
+    set clusterConfig(config) {
+      this.clusterConfigState = { ...config };
+      this.updateClustering();
+    }
+    updateClusterConfig(config) {
+      this.clusterConfigState = { ...this.clusterConfigState, ...config };
+      this.updateClustering();
+    }
+    get coordinateSystem() {
+      return this.ensureMapData().coordinates;
+    }
+    get mapKey() {
+      return this.ensureMapData().mapKey;
+    }
+    get imageName() {
+      return this.ensureMapData().imageName;
+    }
+    // Get all points from all resource types
+    get points() {
+      if (!this.mapData) return [];
+      if (this.allPointsCache === null) {
+        this.allPointsCache = Array.from(this.cachedPoints.values()).flat();
+      }
+      return this.allPointsCache;
+    }
+    // Get points grouped by resource type
+    get pointsByResource() {
+      const result = {};
+      for (const [resourceType, points] of this.cachedPoints) {
+        result[resourceType] = points;
+      }
+      return result;
+    }
+    // Get points for a specific resource type
+    getPointsForResource(resourceType) {
+      return this.cachedPoints.get(resourceType) || [];
+    }
+    // Search for points within a radius (useful for hover detection)
+    searchRadius(x, y, z, radius, resourceType) {
+      const results = [];
+      if (!this.mapData) {
+        return results;
+      }
+      if (resourceType) {
+        const spatialIndex = this.spatialIndices.get(resourceType);
+        if (spatialIndex) {
+          const nearby = spatialIndex.searchRadius(x, y, z, radius);
+          results.push(...this.convertToWorldPoints(nearby, resourceType));
+        }
+      } else {
+        for (const [resType, spatialIndex] of this.spatialIndices) {
+          const nearby = spatialIndex.searchRadius(x, y, z, radius);
+          results.push(...this.convertToWorldPoints(nearby, resType));
+        }
+      }
+      return results;
+    }
+    // Get all resource types available in this world
+    get availableResourceTypes() {
+      return Array.from(this.resourceTypes.keys());
+    }
+    initializeSpatialIndices() {
+      if (!this.mapData) return;
+      this.spatialIndices.clear();
+      this.cachedPoints.clear();
+      this.allPointsCache = null;
+      for (const resource of this.mapData.resources) {
+        const points = resource.points.map((point, index) => ({
+          x: point[0],
+          y: point[1],
+          z: point[2],
+          index
+        }));
+        const spatialIndex = new RBush3D(points);
+        this.spatialIndices.set(resource.resourceType, spatialIndex);
+      }
+    }
+    updateClustering() {
+      if (!this.mapData) return;
+      this.cachedPoints.clear();
+      this.allPointsCache = null;
+      for (const [resourceType, spatialIndex] of this.spatialIndices) {
+        if (this.clusterConfigState.enabled) {
+          const worldPoints = this.createClusteredPoints(spatialIndex, resourceType);
+          this.cachedPoints.set(resourceType, worldPoints);
+        } else {
+          const worldPoints = this.convertToWorldPoints(spatialIndex.points, resourceType);
+          this.cachedPoints.set(resourceType, worldPoints);
+        }
+      }
+      this.onPointsChanged?.();
+    }
+    convertToWorldPoints(points, resourceType) {
+      const resourceInfo = this.resourceTypes.get(resourceType);
+      if (!resourceInfo) return [];
+      return points.map(
+        (point) => ({
+          x: point.x,
+          y: point.y,
+          z: point.z,
+          type: "node",
+          resourceType,
+          color: resourceInfo.color,
+          colorHex: resourceInfo.colorHex,
+          index: point.index
+        })
+      );
+    }
+    createClusteredPoints(spatialIndex, resourceType) {
+      const resourceInfo = this.resourceTypes.get(resourceType);
+      if (!resourceInfo) return [];
+      const results = cluster(
+        spatialIndex,
+        this.clusterConfigState.radius,
+        this.clusterConfigState.minClusterSize
+      );
+      const clusters = /* @__PURE__ */ new Map();
+      const noiseIndices = [];
+      for (const result of results) {
+        if (result.clusterId === -1) {
+          noiseIndices.push(result.pointIndex);
+          continue;
+        }
+        if (!clusters.has(result.clusterId)) {
+          clusters.set(result.clusterId, []);
+        }
+        clusters.get(result.clusterId).push(result.pointIndex);
+      }
+      const worldPoints = [];
+      const points = spatialIndex.points;
+      for (const indices of clusters.values()) {
+        const center = indices.reduce(
+          (acc, index) => {
+            const point = points[index];
+            acc.x += point.x;
+            acc.y += point.y;
+            acc.z += point.z;
+            return acc;
+          },
+          { x: 0, y: 0, z: 0 }
+        );
+        center.x /= indices.length;
+        center.y /= indices.length;
+        center.z /= indices.length;
+        worldPoints.push({
+          x: center.x,
+          y: center.y,
+          z: center.z,
+          type: "cluster",
+          resourceType,
+          count: indices.length,
+          color: resourceInfo.color,
+          colorHex: resourceInfo.colorHex,
+          indices: indices.map((index) => points[index].index),
+          radius: this.clusterConfigState.radius
+        });
+      }
+      for (const index of noiseIndices) {
+        const point = points[index];
+        worldPoints.push({
+          x: point.x,
+          y: point.y,
+          z: point.z,
+          type: "node",
+          resourceType,
+          color: resourceInfo.color,
+          colorHex: resourceInfo.colorHex,
+          index: point.index
+        });
+      }
+      return worldPoints;
+    }
+    getPointInfo(_pointId) {
+      return null;
+    }
+    getCurrentPoints() {
+      return this.points;
+    }
+    ensureMapData() {
+      if (!this.mapData) {
+        throw new Error("Map data not set. Call setMapData() first.");
+      }
+      return this.mapData;
+    }
+    getResourceTypes() {
+      return Array.from(this.resourceTypes.entries()).map(([name, { color, colorHex }]) => ({
+        name,
+        color,
+        colorHex
+      }));
+    }
+  };
+
+  // src/despike.ts
+  function createDespiker(manifest, originals, thresholdMeters) {
+    if (!Number.isFinite(thresholdMeters) || thresholdMeters <= 0)
+      throw new Error("The spike threshold must be a positive number of meters.");
+    const cells = manifest.tileCells;
+    const tileColumns = Math.ceil((manifest.columns - 1) / cells);
+    const lastColumn = Math.floor((manifest.columns - 2) / cells) * cells;
+    const lastRow = Math.floor((manifest.rows - 2) / cells) * cells;
+    const indexed = new Map(
+      originals.map((surface) => [
+        surface.tile.row / cells * tileColumns + surface.tile.column / cells,
+        surface
+      ])
+    );
+    const sample = (x, y) => {
+      if (x < 0 || y < 0 || x >= manifest.columns || y >= manifest.rows) return NaN;
+      const column = Math.min(Math.floor(x / cells) * cells, lastColumn);
+      const row = Math.min(Math.floor(y / cells) * cells, lastRow);
+      const surface = indexed.get(row / cells * tileColumns + column / cells);
+      if (!surface) return NaN;
+      return surface.heights[(y - row) * surface.tile.columns + x - column];
+    };
+    const threshold = thresholdMeters * 100;
+    const valid = (height) => Number.isFinite(height) && (manifest.minHeight == null || height >= manifest.minHeight) && (manifest.maxHeight == null || height < manifest.maxHeight);
+    const cache = /* @__PURE__ */ new Map();
+    const neighbors = new Array(8);
+    return (surface) => {
+      const cached = cache.get(surface.tile);
+      if (cached) {
+        cache.delete(surface.tile);
+        cache.set(surface.tile, cached);
+        return cached;
+      }
+      const { tile, heights } = surface;
+      let display;
+      for (let y = 0; y < tile.rows; y++)
+        for (let x = 0; x < tile.columns; x++) {
+          const index = y * tile.columns + x;
+          const height = heights[index];
+          if (!valid(height)) continue;
+          let count = 0;
+          let min = Infinity;
+          let max = -Infinity;
+          let isolated = true;
+          for (let dy = -1; isolated && dy <= 1; dy++)
+            for (let dx = -1; dx <= 1; dx++) {
+              if (dx === 0 && dy === 0) continue;
+              const localX = x + dx;
+              const localY = y + dy;
+              const neighbor = localX >= 0 && localX < tile.columns && localY >= 0 && localY < tile.rows ? heights[localY * tile.columns + localX] : sample(tile.column + localX, tile.row + localY);
+              if (!valid(neighbor) || height - neighbor <= threshold) {
+                isolated = false;
+                break;
+              }
+              neighbors[count++] = neighbor;
+              min = Math.min(min, neighbor);
+              max = Math.max(max, neighbor);
+            }
+          if (!isolated || count !== 8 || max - min > threshold / 2) continue;
+          neighbors.sort((a, b) => a - b);
+          display ?? (display = heights.slice());
+          display[index] = (neighbors[3] + neighbors[4]) / 2;
+        }
+      const result = display ?? heights;
+      cache.set(tile, result);
+      if (cache.size > 32) cache.delete(cache.keys().next().value);
+      return result;
+    };
+  }
+
+  // src/terrain-demo-resources.ts
+  function resourcePositions(points, bounds) {
+    const centerX = (bounds.originX + bounds.maxX) / 2;
+    const centerY = (bounds.originY + bounds.maxY) / 2;
+    if (![centerX, centerY].every(Number.isFinite)) {
+      throw new Error("Invalid terrain bounds for resources.");
+    }
+    const positions = new Float32Array(points.length * 3);
+    points.forEach((point, index) => {
+      if (point.length !== 3 || !point.every(Number.isFinite)) {
+        throw new Error(`Invalid resource XYZ at index ${index}.`);
+      }
+      positions.set(
+        [(point[0] - centerX) / 100, point[2] / 100, (point[1] - centerY) / 100],
+        index * 3
+      );
+    });
+    return positions;
+  }
+
+  // src/terrain.ts
+  function applyElevationColors(geometry, minZ, maxZ) {
+    const palette = ["#173b55", "#3d8275", "#90a865", "#c1ae88", "#f1f0e9"].map(
+      (color2) => new Color(color2).convertSRGBToLinear()
+    );
+    const position = geometry.getAttribute("position");
+    const colors = new Float32Array(position.count * 3);
+    const color = new Color();
+    for (let index = 0; index < position.count; index++) {
+      const height = position.getY(index) * 100;
+      const t = maxZ > minZ ? MathUtils.clamp((height - minZ) / (maxZ - minZ), 0, 1) : 0.5;
+      const level = t * (palette.length - 1);
+      const lower = Math.min(Math.floor(level), palette.length - 2);
+      color.copy(palette[lower]).lerp(palette[lower + 1], level - lower);
+      colors.set([color.r, color.g, color.b], index * 3);
+    }
+    geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  }
+  function visibleTiles(manifest, camera, exaggeration) {
+    camera.updateMatrixWorld();
+    const frustum = new Frustum().setFromProjectionMatrix(
+      new Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+    );
+    const centerX = (manifest.originX + manifest.maxX) / 2;
+    const centerY = (manifest.originY + manifest.maxY) / 2;
+    return manifest.tiles.filter((tile) => {
+      if (tile.coveredSamples === 0) return false;
+      const x = (manifest.originX + tile.column * manifest.spacing - centerX) / 100;
+      const z = (manifest.originY + tile.row * manifest.spacing - centerY) / 100;
+      const box = new Box3(
+        new Vector3(
+          x,
+          Math.max(tile.minZ ?? manifest.minZ, manifest.minHeight ?? -Infinity) / 100 * exaggeration,
+          z
+        ),
+        new Vector3(
+          x + (tile.columns - 1) * manifest.spacing / 100,
+          Math.min(tile.maxZ ?? manifest.maxZ, manifest.maxHeight ?? Infinity) / 100 * exaggeration,
+          z + (tile.rows - 1) * manifest.spacing / 100
+        )
+      );
+      box.expandByScalar(20);
+      return !box.isEmpty() && frustum.intersectsBox(box);
+    });
+  }
+  function validateManifest(manifest, mapKey) {
+    if (manifest.version !== 1 || manifest.mapKey !== mapKey || manifest.heightFormat !== "float32-le" || manifest.heightUnits !== "centimeters" || manifest.rowOrder !== "increasing-world-y" || manifest.spacing !== 500 || manifest.tileCells !== 256 || ![
+      manifest.originX,
+      manifest.originY,
+      manifest.maxX,
+      manifest.maxY,
+      manifest.minZ,
+      manifest.maxZ
+    ].every(Number.isFinite) || ![manifest.columns, manifest.rows].every((n) => Number.isInteger(n) && n >= 2) || Math.abs(manifest.maxX - manifest.originX - (manifest.columns - 1) * 500) > 0.01 || Math.abs(manifest.maxY - manifest.originY - (manifest.rows - 1) * 500) > 0.01 || !Array.isArray(manifest.tiles) || !Array.isArray(manifest.warnings) || manifest.waterLevelCm !== null && !Number.isFinite(manifest.waterLevelCm))
+      throw new Error(`Invalid terrain manifest for ${mapKey}.`);
+    const keys = /* @__PURE__ */ new Set();
+    for (const tile of manifest.tiles) {
+      const key = `${tile.column},${tile.row}`;
+      if (keys.has(key) || ![tile.column, tile.row].every((n) => Number.isInteger(n) && n >= 0 && n % 256 === 0) || tile.column >= manifest.columns - 1 || tile.row >= manifest.rows - 1 || tile.columns !== Math.min(257, manifest.columns - tile.column) || tile.rows !== Math.min(257, manifest.rows - tile.row) || typeof tile.url !== "string" || !tile.url)
+        throw new Error(`Invalid terrain tile ${key}.`);
+      keys.add(key);
+    }
+    const expected = Math.ceil((manifest.columns - 1) / 256) * Math.ceil((manifest.rows - 1) / 256);
+    if (keys.size !== expected) throw new Error("Terrain manifest is missing tiles.");
+  }
+  function decodeHeights(buffer, tile) {
+    if (buffer.byteLength !== tile.columns * tile.rows * 4)
+      throw new Error(`Incorrect height buffer length for tile ${tile.column},${tile.row}.`);
+    const view = new DataView(buffer);
+    const heights = new Float32Array(tile.columns * tile.rows);
+    for (let i = 0; i < heights.length; i++) {
+      const height = view.getFloat32(i * 4, true);
+      if (!Number.isFinite(height) && !Number.isNaN(height))
+        throw new Error("Infinite terrain height.");
+      heights[i] = height;
+    }
+    return heights;
+  }
+  function validateTileEdges(surfaces) {
+    const indexed = new Map(
+      surfaces.map((surface) => [`${surface.tile.column},${surface.tile.row}`, surface])
+    );
+    const same = (a, b) => a === b || Number.isNaN(a) && Number.isNaN(b);
+    for (const { tile, heights } of surfaces) {
+      const right = indexed.get(`${tile.column + 256},${tile.row}`);
+      const below = indexed.get(`${tile.column},${tile.row + 256}`);
+      for (let row = 0; right && row < tile.rows; row++) {
+        if (!same(
+          heights[row * tile.columns + tile.columns - 1],
+          right.heights[row * right.tile.columns]
+        ))
+          throw new Error(`Mismatched shared terrain edge at ${tile.column},${tile.row}.`);
+      }
+      for (let column = 0; below && column < tile.columns; column++) {
+        if (!same(heights[(tile.rows - 1) * tile.columns + column], below.heights[column]))
+          throw new Error(`Mismatched shared terrain edge at ${tile.column},${tile.row}.`);
+      }
+    }
+  }
+  function lodStride(distance, span) {
+    return distance > span * 0.8 ? 16 : distance > span * 0.35 ? 8 : distance > span * 0.12 ? 4 : distance > span * 0.04 ? 2 : 1;
+  }
+  function terrainGeometry(manifest, tile, heights, bounds, stride) {
+    if (![1, 2, 4, 8, 16].includes(stride)) throw new Error("Invalid terrain LOD stride.");
+    const centerX = (manifest.originX + manifest.maxX) / 2;
+    const centerY = (manifest.originY + manifest.maxY) / 2;
+    const positions = [];
+    const uvs = [];
+    const indices = [];
+    const xs = [];
+    const ys = [];
+    for (let x = 0; x < tile.columns - 1; x += stride) xs.push(x);
+    for (let y = 0; y < tile.rows - 1; y += stride) ys.push(y);
+    xs.push(tile.columns - 1);
+    ys.push(tile.rows - 1);
+    for (const y of ys)
+      for (const x of xs) {
+        const worldX = manifest.originX + (tile.column + x) * manifest.spacing;
+        const worldY = manifest.originY + (tile.row + y) * manifest.spacing;
+        const height = heights[y * tile.columns + x];
+        positions.push(
+          (worldX - centerX) / 100,
+          Number.isFinite(height) ? height / 100 : 0,
+          (worldY - centerY) / 100
+        );
+        uvs.push(
+          (worldX - bounds.minX) / (bounds.maxX - bounds.minX),
+          1 - (worldY - bounds.minY) / (bounds.maxY - bounds.minY)
+        );
+      }
+    for (let row = 0; row < ys.length - 1; row++)
+      for (let column = 0; column < xs.length - 1; column++) {
+        let valid = true;
+        for (let y = ys[row]; valid && y <= ys[row + 1]; y++) {
+          for (let x = xs[column]; x <= xs[column + 1]; x++) {
+            const height = heights[y * tile.columns + x];
+            if (!Number.isFinite(height) || manifest.minHeight !== null && height < manifest.minHeight || manifest.maxHeight !== null && height >= manifest.maxHeight) {
+              valid = false;
+              break;
+            }
+          }
+        }
+        if (!valid) continue;
+        const a = row * xs.length + column;
+        const b = a + 1;
+        const c = a + xs.length;
+        indices.push(a, c, b, b, c, c + 1);
+      }
+    const geometry = new BufferGeometry();
+    geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+    geometry.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    return geometry;
+  }
+
+  // src/viewer.ts
+  var el = (id) => {
+    const result = document.getElementById(id);
+    if (!result) throw new Error(`Missing control ${id}`);
+    return result;
+  };
+  var input = (id) => el(id);
+  var value = (id) => Number(input(id).value);
+  var checked = (id) => input(id).checked;
+  async function json(url, signal) {
+    const response = await fetch(url, { signal });
+    if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+    return response.json();
+  }
+  function dispose(group) {
+    const geometries = /* @__PURE__ */ new Set();
+    const materials = /* @__PURE__ */ new Set();
+    const textures = /* @__PURE__ */ new Set();
+    group.traverse((object) => {
+      if (object instanceof Mesh || object instanceof Points || object instanceof LineSegments) {
+        geometries.add(object.geometry);
+        for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+          materials.add(material);
+          if ("map" in material && material.map instanceof Texture)
+            textures.add(material.map);
+        }
+      }
+    });
+    geometries.forEach((geometry) => geometry.dispose());
+    materials.forEach((material) => material.dispose());
+    textures.forEach((texture) => texture.dispose());
+    group.clear();
+  }
+  function markerTexture(glow) {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 32;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas is unavailable.");
+    if (glow) {
+      const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
+      gradient.addColorStop(0, "#ffffff");
+      gradient.addColorStop(1, "#ffffff00");
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 32, 32);
+    } else {
+      context.fillStyle = "#ffffff";
+      context.beginPath();
+      context.arc(16, 16, 12, 0, Math.PI * 2);
+      context.fill();
+    }
+    return new CanvasTexture(canvas);
+  }
+  var Viewer = class {
+    constructor() {
+      this.loader = new DataLoader();
+      this.world = new World();
+      this.scene = new Scene();
+      this.renderer = new WebGLRenderer({ antialias: true });
+      this.camera = new PerspectiveCamera(42, 1, 1, 1e6);
+      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.terrain = new Group();
+      this.resources = new Group();
+      this.layers = [];
+      this.hidden = /* @__PURE__ */ new Set();
+      this.surfaces = [];
+      this.requestedStride = 0;
+      this.rebuilding = false;
+      this.generation = 0;
+      this.selectedKey = "";
+      this.marker = markerTexture(false);
+      this.glow = markerTexture(true);
+      this.meshes = [];
+      this.rebuildError = false;
+      this.lastHover = 0;
+      this.lastVisibilityCheck = 0;
+      this.visibleKey = "";
+      this.displayRevision = 0;
+      this.requestedDisplayRevision = -1;
+    }
+    getApplication() {
+      return this;
     }
     getCurrentMapData() {
-      return this.currentMapData;
+      return this.map;
+    }
+    getAvailableMaps() {
+      return this.loader.getMapList();
+    }
+    switchToMap(key) {
+      el("mapSelect").value = key;
+      return this.load(key);
+    }
+    async start() {
+      this.scene.background = new Color("#14212b");
+      this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      this.renderer.outputEncoding = sRGBEncoding;
+      this.renderer.localClippingEnabled = true;
+      el("viewport").append(this.renderer.domElement);
+      this.scene.add(this.terrain, this.resources, new AmbientLight(16777215, 0.65));
+      const sun = new DirectionalLight(16774109, 0.8);
+      sun.position.set(-3e3, 9e3, -5e3);
+      this.scene.add(sun);
+      this.controls.enableDamping = true;
+      this.controls.maxPolarAngle = Math.PI * 0.495;
+      this.controls.screenSpacePanning = true;
+      this.controls.minDistance = 10;
+      this.controls.maxDistance = 5e5;
+      const resize = () => {
+        const rect = el("viewport").getBoundingClientRect();
+        this.renderer.setSize(rect.width, rect.height);
+        this.camera.aspect = rect.width / Math.max(1, rect.height);
+        this.camera.updateProjectionMatrix();
+      };
+      new ResizeObserver(resize).observe(el("viewport"));
+      resize();
+      this.bind();
+      this.renderer.setAnimationLoop(() => {
+        this.controls.update();
+        if (this.manifest && !this.rebuilding && !this.rebuildError && this.surfaces.length && performance.now() - this.lastVisibilityCheck > 250) {
+          this.lastVisibilityCheck = performance.now();
+          const span = Math.max(
+            this.manifest.maxX - this.manifest.originX,
+            this.manifest.maxY - this.manifest.originY
+          ) / 100;
+          const stride = lodStride(
+            this.camera.position.distanceTo(this.controls.target),
+            span
+          );
+          const tiles = visibleTiles(this.manifest, this.camera, value("exaggeration"));
+          const visibleKey = tiles.map((tile) => `${tile.column},${tile.row}`).join(";");
+          if (stride !== this.requestedStride || visibleKey !== this.visibleKey || this.displayRevision !== this.requestedDisplayRevision) {
+            const generation = this.generation;
+            const revision = this.displayRevision;
+            void this.rebuild(stride, generation, stride, revision).catch(
+              (error) => {
+                if (generation === this.generation && revision === this.displayRevision) {
+                  this.rebuildError = true;
+                  this.error(error);
+                }
+              }
+            );
+          }
+        }
+        this.renderer.render(this.scene, this.camera);
+      });
+      try {
+        const maps = await this.loader.getMapList();
+        const select = el("mapSelect");
+        for (const map of maps) select.add(new Option(map.name, map.key));
+        select.addEventListener("change", () => void this.load(select.value));
+        if (maps.length) {
+          select.value = maps[0].key;
+          await this.load(maps[0].key);
+        } else throw new Error("No maps are available.");
+      } catch (error) {
+        this.error(error);
+      }
+    }
+    error(error) {
+      el("error").hidden = false;
+      el("error-message").textContent = error instanceof Error ? error.message : String(error);
+      el("loading").hidden = true;
+    }
+    bind() {
+      el("retry").addEventListener("click", () => {
+        if (this.selectedKey) void this.load(this.selectedKey);
+        else location.reload();
+      });
+      el("home").addEventListener("click", () => this.home(false));
+      el("top").addEventListener("click", () => this.home(true));
+      for (const id of ["cluster-enabled", "cluster-radius"])
+        input(id).addEventListener("input", () => {
+          if (this.map) this.buildResources();
+        });
+      for (const id of [
+        "exaggeration",
+        "resource-size",
+        "resource-glow",
+        "resource-through",
+        "size-attenuation",
+        "terrain-opacity",
+        "shading",
+        "wireframe",
+        "debug-toggle"
+      ])
+        input(id).addEventListener("input", () => this.appearance());
+      for (const id of ["despike-enabled", "spike-threshold"]) {
+        input(id).addEventListener("input", () => {
+          el("spike-threshold-value").textContent = `${value("spike-threshold")} m`;
+          if (id === "spike-threshold" && !checked("despike-enabled")) return;
+          this.displayRevision++;
+          this.despiker = void 0;
+          this.rebuildError = false;
+          el("despike-status").textContent = checked("despike-enabled") ? "Updating isolated-spike display\u2026" : "Restoring original terrain samples\u2026";
+        });
+      }
+      for (const [id, visible] of [
+        ["resources-all", true],
+        ["resources-none", false]
+      ]) {
+        el(id).addEventListener("click", () => {
+          if (!this.map) return;
+          for (const resource of this.map.resources) {
+            if (visible) this.hidden.delete(resource.resourceType);
+            else this.hidden.add(resource.resourceType);
+          }
+          this.updateVisibility();
+        });
+      }
+      const canvas = this.renderer.domElement;
+      canvas.addEventListener("pointerdown", (event) => {
+        this.down = event.button === 0 ? { x: event.clientX, y: event.clientY } : void 0;
+      });
+      canvas.addEventListener("pointercancel", () => {
+        this.down = void 0;
+      });
+      canvas.addEventListener("pointerup", (event) => {
+        const down = this.down;
+        this.down = void 0;
+        if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 4)
+          this.pick(event, true);
+      });
+      canvas.addEventListener("pointermove", (event) => {
+        if (performance.now() - this.lastHover < 50) return;
+        this.lastHover = performance.now();
+        this.pick(event, false);
+      });
+      canvas.addEventListener("pointerleave", () => {
+        el("coordinates").textContent = "Cursor: \u2014";
+      });
+    }
+    async load(key) {
+      this.selectedKey = key;
+      this.abort?.abort();
+      const controller = this.abort = new AbortController();
+      const signal = controller.signal;
+      const generation = ++this.generation;
+      this.manifest = void 0;
+      this.map = void 0;
+      this.world = new World();
+      this.surfaces = [];
+      this.despiker = void 0;
+      this.requestedDisplayRevision = -1;
+      this.layers = [];
+      this.meshes = [];
+      dispose(this.terrain);
+      dispose(this.resources);
+      this.texture?.dispose();
+      this.texture = void 0;
+      this.marker.dispose();
+      this.glow.dispose();
+      this.marker = markerTexture(false);
+      this.glow = markerTexture(true);
+      this.requestedStride = 0;
+      this.visibleKey = "";
+      this.rebuildError = false;
+      this.rebuilding = false;
+      el("resource-options").replaceChildren();
+      el("resource-details").textContent = "No resource selected.";
+      el("warning-summary").textContent = "";
+      el("warning-list").replaceChildren();
+      el("warning-details").hidden = true;
+      el("warning-details").open = false;
+      el("image-warning").hidden = true;
+      el("status").textContent = "";
+      el("coordinates").textContent = "Cursor: \u2014";
+      el("error").hidden = true;
+      el("loading").hidden = false;
+      el("loading").textContent = "Loading map and terrain manifest\u2026";
+      try {
+        const maps = await this.loader.getMapList();
+        signal.throwIfAborted();
+        const info = maps.find((map2) => map2.key === key);
+        if (!info) throw new Error(`Unknown map ${key}`);
+        const indexUrl = new URL("./terrain/index.json", document.baseURI).href;
+        const index = await json(
+          indexUrl,
+          signal
+        );
+        if (index.version !== 1 || !Array.isArray(index.maps))
+          throw new Error("Invalid terrain index.");
+        const entry = index.maps.find((map2) => map2.mapKey === key);
+        if (!entry) throw new Error(`No terrain published for ${info.name}.`);
+        const manifestUrl = new URL(entry.url, indexUrl).href;
+        const manifest = await json(manifestUrl, signal);
+        validateManifest(manifest, key);
+        const sampledTiles = manifest.tiles.filter((tile) => tile.coveredSamples !== 0);
+        const dataUrl = info.dataUrl.startsWith("http") || info.dataUrl.startsWith("/") ? info.dataUrl : `./data/${info.dataUrl.replace(/^\.\//, "")}`;
+        const raw = await json(
+          new URL(dataUrl, document.baseURI).href,
+          signal
+        );
+        const map = new MapData(raw);
+        if (map.mapKey !== key || !map.imageName)
+          throw new Error("Map metadata/image is missing or mismatched.");
+        const image = await fetchMapImage(
+          new URL(`./images/${map.imageName}`, document.baseURI),
+          signal
+        );
+        if (image.kind === "image") {
+          const bitmap = await createImageBitmap(image.blob, {
+            imageOrientation: "flipY"
+          });
+          if (signal.aborted) {
+            bitmap.close();
+            signal.throwIfAborted();
+          }
+          const texture = new Texture();
+          texture.image = bitmap;
+          texture.encoding = sRGBEncoding;
+          texture.needsUpdate = true;
+          texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+          texture.addEventListener("dispose", () => bitmap.close());
+          this.texture = texture;
+        } else {
+          el("image-warning").hidden = false;
+          el("image-warning").textContent = `Map image unavailable (HTTP ${image.status}: ${map.imageName}). Showing untextured elevation-shaded terrain; recorded resource positions are unchanged.`;
+        }
+        this.map = map;
+        this.manifest = manifest;
+        el("map-title").textContent = info.name;
+        el("warning-summary").textContent = [
+          `Terrain coverage: ${(manifest.coverage * 100).toFixed(3)}% (${manifest.coveredSamples.toLocaleString()} / ${manifest.totalSamples.toLocaleString()} samples). Missing samples remain holes.`,
+          ...sampledTiles.length !== manifest.tiles.length ? [
+            `${manifest.tiles.length - sampledTiles.length} wholly uncovered tiles skipped; these areas remain gaps.`
+          ] : []
+        ].join("\n");
+        el("warning-details").hidden = manifest.warnings.length === 0;
+        el("warning-count").textContent = `${manifest.warnings.length.toLocaleString()} terrain warnings \u2014 full details`;
+        const warnings = document.createDocumentFragment();
+        for (const warning of manifest.warnings) {
+          const item = document.createElement("li");
+          item.textContent = warning;
+          warnings.append(item);
+        }
+        el("warning-list").append(warnings);
+        this.world.setMapData(map, this.loader.getResourceTypes());
+        this.buildResources();
+        this.home(false);
+        const bytes = sampledTiles.reduce((sum, tile) => sum + tile.columns * tile.rows * 4, 0);
+        if (bytes > 256 * 1024 * 1024)
+          throw new Error("Terrain exceeds the 256 MiB source-cache budget.");
+        let next = 0;
+        let completed = 0;
+        const surfaces = new Array(sampledTiles.length);
+        const worker = async () => {
+          while (next < sampledTiles.length) {
+            signal.throwIfAborted();
+            const index2 = next++;
+            const tile = sampledTiles[index2];
+            const response = await fetch(new URL(tile.url, manifestUrl), { signal });
+            if (!response.ok)
+              throw new Error(
+                `Terrain tile ${tile.column},${tile.row}: HTTP ${response.status}`
+              );
+            surfaces[index2] = {
+              tile,
+              heights: decodeHeights(await response.arrayBuffer(), tile)
+            };
+            signal.throwIfAborted();
+            completed++;
+            el("loading").textContent = `Loading covered terrain tiles: ${completed} / ${sampledTiles.length}`;
+          }
+        };
+        await Promise.all(Array.from({ length: Math.min(4, sampledTiles.length) }, worker));
+        signal.throwIfAborted();
+        validateTileEdges(surfaces);
+        this.surfaces = surfaces;
+        await this.rebuild(16, generation);
+        signal.throwIfAborted();
+        el("loading").hidden = true;
+      } catch (error) {
+        if (generation !== this.generation) return;
+        controller.abort();
+        this.manifest = void 0;
+        this.map = void 0;
+        this.surfaces = [];
+        this.layers = [];
+        this.meshes = [];
+        dispose(this.terrain);
+        dispose(this.resources);
+        this.texture?.dispose();
+        this.texture = void 0;
+        this.error(error);
+      }
+    }
+    home(top) {
+      if (!this.manifest) return;
+      const m = this.manifest;
+      const span = Math.max(m.maxX - m.originX, m.maxY - m.originY) / 100;
+      const min = Math.max(m.minZ, m.minHeight ?? -Infinity);
+      const max = Math.min(m.maxZ, m.maxHeight ?? Infinity);
+      const elevation = (min + max) / 200 * value("exaggeration");
+      this.controls.target.set(0, elevation, 0);
+      this.camera.position.set(
+        top ? 0 : span * 0.7,
+        elevation + span * (top ? 1.5 : 0.8),
+        top ? 0.01 : span * 0.9
+      );
+      this.controls.update();
+    }
+    async rebuild(stride, generation, requestedStride = stride, revision = this.displayRevision) {
+      const m = this.manifest;
+      const map = this.map;
+      const texture = this.texture;
+      if (!m || !map || revision !== this.displayRevision) return;
+      const despiker = checked("despike-enabled") ? this.despiker ?? (this.despiker = createDespiker(m, this.surfaces, value("spike-threshold"))) : void 0;
+      this.rebuilding = true;
+      el("despike-status").textContent = despiker ? "Updating isolated-spike display\u2026" : "Restoring original terrain samples\u2026";
+      const next = new Group();
+      const meshes = [];
+      let triangles = 0;
+      const c = map.coordinates;
+      const centerX = (m.originX + m.maxX) / 2;
+      const centerY = (m.originY + m.maxY) / 2;
+      const planes = [
+        new Plane(new Vector3(1, 0, 0), (centerX - c.minX) / 100),
+        new Plane(new Vector3(-1, 0, 0), (c.maxX - centerX) / 100),
+        new Plane(new Vector3(0, 0, 1), (centerY - c.minY) / 100),
+        new Plane(new Vector3(0, 0, -1), (c.maxY - centerY) / 100)
+      ];
+      const visible = visibleTiles(m, this.camera, value("exaggeration"));
+      const visibleKey = visible.map((tile) => `${tile.column},${tile.row}`).join(";");
+      const selected = new Set(visible);
+      const surfaces = this.surfaces.filter((surface) => selected.has(surface.tile));
+      try {
+        for (let i = 0; i < surfaces.length; i++) {
+          if (generation !== this.generation || revision !== this.displayRevision) return;
+          const { tile } = surfaces[i];
+          const heights = despiker ? despiker(surfaces[i]) : surfaces[i].heights;
+          const geometry = terrainGeometry(m, tile, heights, c, stride);
+          if (!texture) {
+            applyElevationColors(
+              geometry,
+              Math.max(m.minZ, m.minHeight ?? -Infinity),
+              Math.min(m.maxZ, m.maxHeight ?? Infinity)
+            );
+          }
+          triangles += (geometry.index?.count ?? 0) / 3;
+          if (triangles > 15e5) {
+            geometry.dispose();
+            if (stride < 16) {
+              const coarser = stride * 2;
+              next.traverse((object) => {
+                if (object instanceof Mesh) {
+                  object.geometry.dispose();
+                  object.material.dispose();
+                }
+              });
+              next.clear();
+              meshes.length = 0;
+              return await this.rebuild(coarser, generation, requestedStride, revision);
+            }
+            throw new Error("Terrain exceeds the mesh budget.");
+          }
+          const material = new MeshLambertMaterial({
+            map: texture ?? null,
+            vertexColors: !texture,
+            side: DoubleSide,
+            clippingPlanes: planes
+          });
+          const mesh = new Mesh(geometry, material);
+          mesh.userData.surface = true;
+          next.add(mesh);
+          meshes.push(mesh);
+          if (despiker || i % 4 === 3)
+            await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+        }
+        if (generation !== this.generation || revision !== this.displayRevision) return;
+        this.clearSurface();
+        for (const child of [...next.children]) this.terrain.add(child);
+        this.meshes = meshes;
+        this.requestedStride = requestedStride;
+        this.requestedDisplayRevision = revision;
+        this.visibleKey = visibleKey;
+        this.appearance();
+        el("status").textContent = `5 m source \xB7 ${stride * 5} m render stride \xB7 ${triangles.toLocaleString()} triangles`;
+        el("despike-status").textContent = despiker ? `On \u2014 isolated peaks more than ${value("spike-threshold")} m above every neighbor; display only.` : "Off \u2014 original terrain samples.";
+      } finally {
+        next.traverse((object) => {
+          if (object instanceof Mesh) {
+            object.geometry.dispose();
+            object.material.dispose();
+          }
+        });
+        next.clear();
+        if (generation === this.generation) this.rebuilding = false;
+      }
+    }
+    clearSurface() {
+      this.terrain.traverse((object) => {
+        if (object instanceof Mesh || object instanceof LineSegments) {
+          object.geometry.dispose();
+          object.material.dispose();
+        }
+      });
+      this.terrain.clear();
+    }
+    buildResources() {
+      if (!this.map || !this.manifest) return;
+      el("resource-details").textContent = "No resource selected.";
+      this.resources.traverse((object) => {
+        if (object instanceof Points) {
+          object.geometry.dispose();
+          object.material.dispose();
+        }
+      });
+      this.resources.clear();
+      this.layers = [];
+      this.world.updateClusterConfig({
+        enabled: checked("cluster-enabled"),
+        radius: value("cluster-radius"),
+        minClusterSize: 3,
+        maxLevels: 4
+      });
+      el("cluster-radius-value").textContent = `${value("cluster-radius")} cm`;
+      const options = el("resource-options");
+      options.replaceChildren();
+      for (const [name, nodes] of Object.entries(this.world.pointsByResource)) {
+        if (!nodes.length) continue;
+        const geometry = new BufferGeometry();
+        geometry.setAttribute(
+          "position",
+          new BufferAttribute(
+            resourcePositions(
+              nodes.map((point) => [point.x, point.y, point.z]),
+              this.manifest
+            ),
+            3
+          )
+        );
+        geometry.computeBoundingSphere();
+        const points = new Points(
+          geometry,
+          new PointsMaterial({
+            color: nodes[0].colorHex,
+            map: this.marker,
+            transparent: true,
+            alphaTest: 0.2,
+            depthWrite: false
+          })
+        );
+        const glow = new Points(
+          geometry,
+          new PointsMaterial({
+            color: nodes[0].colorHex,
+            map: this.glow,
+            transparent: true,
+            opacity: 0.5,
+            blending: AdditiveBlending,
+            depthWrite: false
+          })
+        );
+        points.renderOrder = 10;
+        glow.renderOrder = 9;
+        this.resources.add(glow, points);
+        this.layers.push({ points, glow, nodes });
+        const label = document.createElement("label");
+        label.className = "resource-option";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.dataset.resource = name;
+        checkbox.checked = !this.hidden.has(name);
+        const count = nodes.reduce(
+          (sum, point) => sum + (point.type === "cluster" ? point.count : 1),
+          0
+        );
+        const swatch = document.createElement("span");
+        swatch.className = "swatch";
+        swatch.style.backgroundColor = nodes[0].colorHex;
+        label.append(
+          checkbox,
+          swatch,
+          document.createTextNode(
+            `${name}: ${count.toLocaleString()} (${nodes.filter((point) => point.type === "cluster").length} clusters)`
+          )
+        );
+        options.append(label);
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) this.hidden.delete(name);
+          else this.hidden.add(name);
+          this.updateVisibility();
+        });
+      }
+      this.appearance();
+    }
+    updateVisibility(clearSelection = true) {
+      let total = 0;
+      let visibleCount = 0;
+      for (const layer of this.layers) {
+        const name = layer.nodes[0].resourceType;
+        const visible = !this.hidden.has(name) && (name !== "Debug" || checked("debug-toggle"));
+        layer.points.visible = visible;
+        layer.glow.visible = visible && checked("resource-glow");
+        const count = layer.nodes.reduce(
+          (sum, point) => sum + (point.type === "cluster" ? point.count : 1),
+          0
+        );
+        total += count;
+        if (visible) visibleCount += count;
+      }
+      el("resource-options").querySelectorAll("input").forEach((checkbox) => {
+        checkbox.checked = !this.hidden.has(checkbox.dataset.resource ?? "");
+        if (checkbox.dataset.resource === "Debug" && checkbox.parentElement)
+          checkbox.parentElement.hidden = !checked("debug-toggle");
+      });
+      el("resource-summary").textContent = `${visibleCount.toLocaleString()} / ${total.toLocaleString()} resource nodes`;
+      if (clearSelection) el("resource-details").textContent = "No resource selected.";
+    }
+    appearance() {
+      this.terrain.scale.y = this.resources.scale.y = value("exaggeration");
+      el("factor").textContent = `${value("exaggeration").toFixed(1)}\xD7`;
+      el("terrain-opacity-value").textContent = `${Math.round(value("terrain-opacity") * 100)}%`;
+      el("debug-panel").hidden = !checked("debug-toggle");
+      for (const layer of this.layers) {
+        layer.points.material.size = value("resource-size");
+        layer.glow.material.size = value("resource-size") * 2.5;
+        layer.points.material.depthTest = layer.glow.material.depthTest = !checked("resource-through");
+        layer.points.material.sizeAttenuation = layer.glow.material.sizeAttenuation = checked("size-attenuation");
+      }
+      this.terrain.traverse((object) => {
+        if (!(object instanceof Mesh)) return;
+        if (object.userData.wireOverlay) return;
+        let material = object.material;
+        if (!this.texture && checked("shading") !== material instanceof MeshLambertMaterial) {
+          const options = {
+            vertexColors: true,
+            side: DoubleSide,
+            clippingPlanes: material.clippingPlanes
+          };
+          const replacement = checked("shading") ? new MeshLambertMaterial(options) : new MeshBasicMaterial(options);
+          material.dispose();
+          object.material = material = replacement;
+        }
+        material.opacity = value("terrain-opacity");
+        material.transparent = material.opacity < 1;
+        let wire = object.children.find((child) => child.userData.wireOverlay);
+        if (!wire && checked("wireframe")) {
+          wire = new Mesh(
+            object.geometry,
+            new MeshBasicMaterial({
+              color: "#0d202d",
+              wireframe: true,
+              transparent: true,
+              opacity: 0.35,
+              depthWrite: false,
+              clippingPlanes: material.clippingPlanes
+            })
+          );
+          wire.userData.wireOverlay = true;
+          wire.renderOrder = 1;
+          object.add(wire);
+        }
+        if (wire) wire.visible = checked("wireframe");
+        material.polygonOffset = checked("wireframe");
+        material.polygonOffsetFactor = 1;
+        material.polygonOffsetUnits = 1;
+        if (material instanceof MeshLambertMaterial) {
+          const unlitTexture = !!this.texture && !checked("shading");
+          material.emissive.set(unlitTexture ? "#ffffff" : "#000000");
+          material.emissiveMap = unlitTexture ? this.texture : null;
+          material.color.set(unlitTexture ? "#000000" : "#ffffff");
+        }
+        material.needsUpdate = true;
+      });
+      this.updateVisibility(false);
+    }
+    pick(event, select) {
+      if (!this.map || !this.manifest) return;
+      this.scene.updateMatrixWorld(true);
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      const ray = new Raycaster();
+      ray.setFromCamera(
+        new Vector2(
+          (event.clientX - rect.left) / rect.width * 2 - 1,
+          -(event.clientY - rect.top) / rect.height * 2 + 1
+        ),
+        this.camera
+      );
+      const ground = ray.intersectObjects(this.meshes).find((hit2) => {
+        const world = this.toWorld(hit2.point);
+        const c = this.map.coordinates;
+        return world.x >= c.minX && world.x <= c.maxX && world.y >= c.minY && world.y <= c.maxY;
+      });
+      if (ground) {
+        const world = this.toWorld(ground.point);
+        const ark = this.map.coordinates.getArkCoordinates(world);
+        el("coordinates").textContent = `Cursor: Lat ${ark.lat.toFixed(2)} / Long ${ark.long.toFixed(2)}`;
+        const c = this.map.coordinates;
+        el("debug-panel").textContent = `Canvas ${event.clientX - rect.left}, ${event.clientY - rect.top}
+World XYZ (cm): ${world.x.toFixed(0)}, ${world.y.toFixed(0)}, ${world.z.toFixed(0)}
+ARK: ${ark.lat.toFixed(2)}, ${ark.long.toFixed(2)}
+Bounds: ${this.map.coordinates.minX}\u2026${this.map.coordinates.maxX} / ${this.map.coordinates.minY}\u2026${this.map.coordinates.maxY}`;
+        el("debug-panel").textContent += `
+Z bounds: ${c.minZ}\u2026${c.maxZ}
+Center XY: ${c.centerX}, ${c.centerY}
+Scale XY: ${c.scaleX}, ${c.scaleY}
+ARK Z: ${ark.z.toFixed(0)}`;
+      } else el("coordinates").textContent = "Cursor: no terrain";
+      if (ray.params.Points)
+        ray.params.Points.threshold = this.camera.position.distanceTo(this.controls.target) * Math.tan(MathUtils.degToRad(this.camera.fov / 2)) * (value("resource-size") + 4) / rect.height;
+      const hits = ray.intersectObjects(
+        this.layers.filter((layer2) => layer2.points.visible).map((layer2) => layer2.points)
+      ).filter(
+        (hit2) => checked("resource-through") || hit2.distance <= (ground?.distance ?? Infinity) + 0.01
+      ).sort((a, b) => (a.distanceToRay ?? Infinity) - (b.distanceToRay ?? Infinity));
+      const hit = hits[0];
+      const layer = hit && this.layers.find((layer2) => layer2.points === hit.object);
+      if (layer && hit.index !== void 0) {
+        const point = layer.nodes[hit.index];
+        const ark = this.map.coordinates.getArkCoordinates(point);
+        const text = `${point.resourceType}${point.type === "cluster" ? ` \xB7 ${point.count} nodes (centroid)` : ""}
+Lat ${ark.lat.toFixed(2)} / Long ${ark.long.toFixed(2)}
+World XYZ (cm): ${point.x}, ${point.y}, ${point.z}
+Height ${(point.z / 100).toFixed(1)} m`;
+        if (select) el("resource-details").textContent = text;
+        else el("coordinates").textContent += `
+${text}`;
+      } else if (select) el("resource-details").textContent = "No resource selected.";
+    }
+    toWorld(point) {
+      const m = this.manifest;
+      return {
+        x: point.x * 100 + (m.originX + m.maxX) / 2,
+        y: point.z * 100 + (m.originY + m.maxY) / 2,
+        z: point.y * 100 / value("exaggeration")
+      };
     }
   };
 
   // src/main.ts
-  var MainApplication = class {
-    constructor() {
-      this.app = new Application();
-      this.setupUI();
-      this.setupDebugToggle();
-      this.loadInitialMap();
-    }
-    setupUI() {
-      this.createMapSelector();
-    }
-    async createMapSelector() {
-      const select = document.getElementById("mapSelect");
-      if (!select) {
-        console.error("mapSelect element not found");
-        return;
-      }
-      try {
-        const maps = await this.app.getAvailableMaps();
-        select.innerHTML = '<option value="">-- Choose a map --</option>';
-        maps.forEach((map) => {
-          const option = document.createElement("option");
-          option.value = map.key;
-          option.textContent = map.name;
-          select.appendChild(option);
-        });
-        select.addEventListener("change", (event) => {
-          const target = event.target;
-          if (target.value) {
-            this.loadMap(target.value);
-          }
-        });
-      } catch (error) {
-        console.error("Error loading map list:", error);
-      }
-    }
-    async loadInitialMap() {
-      const maps = await this.app.getAvailableMaps();
-      if (maps.length > 0) {
-        await this.loadMap(maps[0].key);
-        const select = document.getElementById("mapSelect");
-        if (select) {
-          select.value = maps[0].key;
-        }
-      }
-    }
-    setupDebugToggle() {
-      const debugToggle = document.getElementById("debug-toggle");
-      const debugPanel = document.getElementById("debug-panel");
-      if (!debugToggle || !debugPanel) {
-        console.error("Debug toggle or panel element not found");
-        return;
-      }
-      debugToggle.addEventListener("change", () => {
-        const isDebugEnabled = debugToggle.checked;
-        debugPanel.style.display = isDebugEnabled ? "block" : "none";
-        this.toggleDebugResourceType(isDebugEnabled);
-      });
-    }
-    toggleDebugResourceType(visible) {
-      const resourceTable = document.getElementById("resourceTypeTableBody");
-      if (!resourceTable) return;
-      const rows = resourceTable.querySelectorAll("tr");
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const resourceName = row.querySelector("td:nth-child(2)");
-        if (resourceName && resourceName.textContent === "Debug") {
-          const checkbox = row.querySelector('input[type="checkbox"]');
-          if (checkbox) {
-            checkbox.checked = visible;
-            checkbox.dispatchEvent(new Event("change"));
-          }
-          row.style.display = visible ? "" : "none";
-          break;
-        }
-      }
-    }
-    async loadMap(mapKey) {
-      console.log(`Loading map: ${mapKey}`);
-      await this.app.loadMap(mapKey);
-      console.log(`Successfully loaded ${mapKey}`);
-    }
-    // Public API for debugging and external access
-    getApplication() {
-      return this.app;
-    }
-    async switchToMap(mapKey) {
-      return this.loadMap(mapKey);
-    }
-  };
   document.addEventListener("DOMContentLoaded", () => {
-    console.log("Initializing ARK Resource Map Application...");
+    const error = (error2) => {
+      const loading2 = document.getElementById("loading");
+      if (loading2) loading2.textContent = error2 instanceof Error ? error2.message : String(error2);
+    };
     try {
-      const mainApp = new MainApplication();
-      window.arkApp = mainApp;
-      console.log("Application initialized successfully");
-      console.log("Use window.arkApp to access the application in the console");
-    } catch (error) {
-      console.error("Failed to initialize application:", error);
+      const viewer = new Viewer();
+      window.arkApp = viewer;
+      void viewer.start().catch(error);
+    } catch (failure) {
+      error(failure);
     }
   });
 })();

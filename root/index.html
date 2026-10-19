@@ -1,304 +1,287 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>ARK Map Resources</title>
-        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>ARK Resource Maps</title>
+        <link rel="icon" href="favicon.ico" />
         <style>
+            * {
+                box-sizing: border-box;
+            }
             body {
                 margin: 0;
-                overflow: hidden;
-                font-family: Arial, sans-serif;
-                height: 100vh;
+                background: #14212b;
+                color: #e8eef2;
+                font:
+                    14px system-ui,
+                    sans-serif;
             }
-            html {
-                height: 100%;
+            [hidden] {
+                display: none !important;
             }
-            .color-swatch {
-                display: inline-block;
-                width: 12px;
-                height: 12px;
-                border-radius: 2px;
-                margin-right: 6px;
+            #viewport {
+                position: fixed;
+                inset: 0;
             }
-            .control-group {
-                position: absolute;
-                margin-bottom: 10px;
-                color: white;
-                background: rgba(0, 0, 0, 0.7);
-                padding: 15px;
-                border-radius: 5px;
-                min-width: 250px;
-                z-index: 100;
-            }
-            .control-group select {
-                background: #2a2a2a;
-                color: white;
-                border: 1px solid #444;
-                padding: 8px 12px;
-                border-radius: 4px;
-                font-size: 14px;
-                width: 100%;
-                cursor: pointer;
-            }
-            .control-group select:hover {
-                border-color: #4fc3f7;
-            }
-            .control-group .value-display {
-                float: right;
-                color: #4fc3f7;
-            }
-            .control-group .checkbox-row {
-                display: flex;
-                gap: 15px;
-                margin-top: 8px;
-            }
-            .control-group .checkbox-row label {
-                margin: 0;
-            }
-            .control-group button {
-                width: 100%;
-                margin-top: 10px;
-                padding: 8px;
-                background: #4fc3f7;
-                border: none;
-                border-radius: 4px;
-                color: black;
-                font-weight: bold;
-                cursor: pointer;
-            }
-            .control-group button:hover {
-                background: #6dd5ff;
-            }
-            .control-group button:disabled {
-                background: #555;
-                cursor: not-allowed;
-            }
-            .control-group h3 {
-                margin: 0 0 10px 0;
-                font-size: 14px;
-            }
-            .control-group label {
+            canvas {
                 display: block;
-                margin: 8px 0 4px 0;
+                touch-action: none;
+            }
+            .panel {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                width: 330px;
+                max-height: calc(100dvh - 40px);
+                overflow: auto;
+                background: #13212def;
+                border: 1px solid #36505e;
+                border-radius: 14px;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 26px;
+                margin: 10px 0;
+            }
+            h2 {
+                font-size: 16px;
+            }
+            label {
+                display: block;
+                margin: 12px 0;
+            }
+            input[type='range'],
+            select {
+                width: 100%;
+            }
+            input {
+                accent-color: #8acdb5;
+            }
+            button,
+            select {
+                background: #25414b;
+                color: #e7f5f0;
+                border: 1px solid #456875;
+                border-radius: 6px;
+                padding: 8px;
+                cursor: pointer;
+            }
+            .buttons {
+                display: flex;
+                gap: 8px;
+                margin: 12px 0;
+            }
+            .note,
+            #status {
+                font-size: 11px;
+                color: #b0c5cf;
+                white-space: pre-line;
+                line-height: 1.5;
+            }
+            .resource-option {
+                display: flex;
+                gap: 6px;
+                align-items: center;
                 font-size: 12px;
             }
-            .control-group input[type='range'] {
-                width: 100%;
+            .swatch {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                flex-shrink: 0;
             }
-            #canvas {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 0;
+            #warnings {
+                color: #e6cc91;
+                white-space: normal;
             }
-            #loading {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                color: white;
-                background: rgba(0, 0, 0, 0.8);
-                padding: 20px 40px;
-                border-radius: 8px;
-                z-index: 1000;
-                font-size: 16px;
-                display: none;
+            #warning-summary {
+                white-space: pre-line;
             }
-            #errorBox {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                color: #ff6b6b;
-                background: rgba(40, 0, 0, 0.95);
-                padding: 20px;
-                border-radius: 8px;
-                border: 2px solid #ff6b6b;
-                z-index: 2000;
-                font-size: 14px;
-                display: none;
-                max-width: 80%;
-                max-height: 80%;
-                overflow-y: auto;
-                font-family: monospace;
+            #warning-list {
+                max-height: 240px;
+                overflow: auto;
+                overflow-wrap: anywhere;
+                padding-left: 18px;
+                white-space: normal;
             }
-            #errorBox h3 {
-                margin: 0 0 10px 0;
-                color: #ff6b6b;
+            #warning-list li {
+                margin-bottom: 8px;
             }
-            #errorBox button {
-                margin-top: 10px;
-                padding: 8px 16px;
-                background: #ff6b6b;
-                color: white;
-                border: none;
-                border-radius: 4px;
+            #warning-count {
                 cursor: pointer;
             }
-            #errorBox button:hover {
-                background: #ff5252;
+            #image-warning {
+                margin: 10px 0;
+                overflow-wrap: anywhere;
+                color: #ffe4a6;
+                background: #3b3021;
+                border: 1px solid #8e7446;
+                padding: 8px;
+                border-radius: 6px;
             }
-            #info-panel {
-                bottom: 100px;
-                right: 10px;
+            #resource-details {
+                white-space: pre-line;
+                font-size: 12px;
+                line-height: 1.6;
             }
-            #coordinates {
-                position: absolute;
-                bottom: 10px;
-                right: 10px;
+            #coordinates,
+            #debug-panel {
+                position: fixed;
+                right: 16px;
+                bottom: 16px;
+                white-space: pre-line;
+                background: #13212def;
+                padding: 12px;
+                border-radius: 8px;
+                font:
+                    12px ui-monospace,
+                    monospace;
+                pointer-events: none;
             }
             #debug-panel {
-                bottom: 200px;
-                left: 10px;
-                display: none;
+                bottom: 170px;
+                max-width: 45vw;
             }
-            #debug-checkbox {
-                position: absolute;
-                bottom: 10px;
-                left: 10px;
-                background: rgba(0, 0, 0, 0.8);
-                color: white;
-                padding: 8px 12px;
-                border-radius: 5px;
-                border: 1px solid #333;
-                font-size: 12px;
-                z-index: 1001;
+            #loading,
+            #error {
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 70vw;
+                background: #14212bf5;
+                border: 1px solid #7898a5;
+                border-radius: 9px;
+                padding: 14px;
+                z-index: 10;
             }
-            #debug-checkbox label {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin: 0;
-                cursor: pointer;
+            #error {
+                color: #ffc7b6;
             }
-            #resourceTypePanel {
-                top: 10px;
-                right: 10px;
+            hr {
+                border: 0;
+                border-top: 1px solid #36505e;
+                margin: 18px 0;
             }
-            #resourceTypePanel h3 {
-                margin: 0 0 10px 0;
-                color: #4fc3f7;
-                font-size: 16px;
-            }
-            #resourceTypeTable {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 12px;
-            }
-            #resourceTypeTable th {
-                background: #2a2a2a;
-                padding: 6px 8px;
-                text-align: left;
-                font-size: 11px;
-            }
-            #resourceTypeTable td {
-                padding: 4px 8px;
-                border-bottom: 1px solid #333;
-            }
-            #resourceTypeTable tr:hover {
-                background: rgba(79, 195, 247, 0.1);
-            }
-            #viewcontrols {
-                top: 120px;
-                left: 10px;
-            }
-            #clusteringPanel {
-                bottom: 10px;
-                left: 10px;
+            @media (max-width: 650px) {
+                .panel {
+                    top: 10px;
+                    left: 10px;
+                    width: 245px;
+                    padding: 14px;
+                    max-height: 65dvh;
+                }
+                #coordinates {
+                    font-size: 10px;
+                    max-width: 95vw;
+                }
+                #debug-panel {
+                    max-width: 90vw;
+                }
             }
         </style>
     </head>
     <body>
-        <canvas id="canvas"></canvas>
-
-        <div id="mapSelector" class="control-group" style="top: 10px; left: 10px">
-            <label for="mapSelect">Select Map:</label>
-            <select id="mapSelect">
-                <option value="">-- Choose a map --</option>
-            </select>
-        </div>
-
-        <div id="loading">Loading map data...</div>
-        <div id="errorBox">
-            <h3>⚠️ Error</h3>
-            <div id="errorContent"></div>
-            <button onclick="document.getElementById('errorBox').style.display = 'none'">
-                Close
-            </button>
-        </div>
-
-        <div class="control-group" id="viewcontrols">
-            <button id="reset-camera-btn">Reset Camera</button>
-        </div>
-
-        <div id="clusteringPanel" class="control-group">
-            <h3>Resource Clustering</h3>
-            <label>
-                Epsilon (cluster radius):
-                <span class="value-display" id="cluster-radius-value">5000</span>
-            </label>
-            <input type="range" id="cluster-radius" min="100" max="20000" step="100" value="5000" />
-
-            <label> Point Size: <span class="value-display" id="point-size-value">7</span> </label>
-            <input type="range" id="point-size-slider" min="1" max="12" step="1" value="7" />
-
-            <div class="checkbox-row">
-                <label>
-                    <input type="checkbox" id="cluster-enabled" checked /> Enable Clustering
-                </label>
-                <label> <input type="checkbox" id="size-attenuation" /> Size Attenuation </label>
+        <main id="viewport" aria-label="Interactive ARK resource terrain map"></main>
+        <aside class="panel" aria-label="Map and resource controls">
+            <label for="mapSelect">Select map</label
+            ><select id="mapSelect" aria-label="Select map"></select>
+            <h1 id="map-title">ARK Resource Maps</h1>
+            <div id="image-warning" class="note" role="status" hidden></div>
+            <p class="note">
+                Original map imagery over unsmoothed 5 m collision samples. Caves and overhangs
+                remain a highest-surface approximation.
+            </p>
+            <section id="warnings" class="note" aria-label="Terrain coverage and warnings">
+                <div id="warning-summary"></div>
+                <details id="warning-details" hidden>
+                    <summary id="warning-count"></summary>
+                    <ul id="warning-list"></ul>
+                </details>
+            </section>
+            <div class="buttons">
+                <button id="home">Oblique / reset</button><button id="top">North-up</button>
             </div>
-        </div>
-
-        <div id="resourceTypePanel" class="control-group">
-            <h3>Resources</h3>
-            <table id="resourceTypeTable">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="toggleAll" checked /></th>
-                        <th>Resource</th>
-                        <th>Count</th>
-                        <th>Clusters</th>
-                    </tr>
-                </thead>
-                <tbody id="resourceTypeTableBody"></tbody>
-            </table>
-        </div>
-
-        <!-- Info panel hidden for now -->
-        <div id="info-panel" style="display: none" class="control-group">
-            <strong>Resource Info</strong>
-            <div id="info-content"></div>
-        </div>
-
-        <div id="coordinates" class="control-group">
-            <strong>Cursor Position:</strong><br />
-            Lat: <span id="coord-lat">-</span><br />
-            Long: <span id="coord-long">-</span>
-        </div>
-
-        <div id="debug-panel" class="control-group">
-            <strong>Coordinate System:</strong><br />
-            <span id="debug-system" style="color: #ffacea;"></span><br />
-            <strong>Canvas:</strong><br />
-            <span id="debug-canvas" style="color: #81c784;"></span><br />
-            <strong>Unreal:</strong><br />
-            <span id="debug-unreal" style="color: #ffb74d;"></span><br />
-            <strong>Ark:</strong><br />
-            <span id="debug-ark" style="color: #4fc3f7;"></span><br />
-        </div>
-
-        <div id="debug-checkbox">
+            <label
+                >Vertical exaggeration <output id="factor">1.0×</output
+                ><input id="exaggeration" type="range" min="0.5" max="5" step="0.1" value="1"
+            /></label>
+            <label><input id="shading" type="checkbox" checked />Terrain lighting</label>
+            <label><input id="wireframe" type="checkbox" />Show mesh edges</label>
             <label>
-                <input type="checkbox" id="debug-toggle" />
-                <span>Show Debug</span>
+                Terrain opacity <output id="terrain-opacity-value">100%</output
+                ><input id="terrain-opacity" type="range" min="0.15" max="1" step="0.05" value="1"
+            /></label>
+            <label
+                ><input id="despike-enabled" type="checkbox" />Despike isolated terrain peaks</label
+            >
+            <label
+                >Spike-height threshold <output id="spike-threshold-value">50 m</output>
+                <input id="spike-threshold" type="range" min="5" max="500" step="5" value="50" />
             </label>
+            <p id="despike-status" class="note" aria-live="polite">
+                Off — original terrain samples.
+            </p>
+            <p class="note">
+                Optional display correction only. Requires all eight original 5 m neighbors; never
+                fills holes or moves resources. Turning off restores original heights.
+            </p>
+            <hr />
+            <h2>Resources</h2>
+            <label><input id="cluster-enabled" type="checkbox" checked />Enable clustering</label>
+            <label
+                >Cluster radius <output id="cluster-radius-value">5000 cm</output
+                ><input
+                    id="cluster-radius"
+                    type="range"
+                    min="100"
+                    max="20000"
+                    step="100"
+                    value="5000"
+            /></label>
+            <label
+                >Marker size<input
+                    id="resource-size"
+                    type="range"
+                    min="1"
+                    max="12"
+                    step="1"
+                    value="5"
+            /></label>
+            <label><input id="size-attenuation" type="checkbox" />Size attenuation</label>
+            <label><input id="resource-glow" type="checkbox" checked />Resource glow</label>
+            <label
+                ><input id="resource-through" type="checkbox" checked />Show through terrain
+                (caves)</label
+            >
+            <div class="buttons">
+                <button id="resources-all">Show all</button
+                ><button id="resources-none">Hide all</button>
+            </div>
+            <div id="resource-options"></div>
+            <div id="resource-summary" class="note" aria-live="polite"></div>
+            <p class="note">
+                Recorded XYZ, never surface-clamped. Click a marker for details. Clusters report
+                centroid coordinates.
+            </p>
+            <div id="resource-details" aria-live="polite">No resource selected.</div>
+            <hr />
+            <p class="note">
+                Left drag: rotate / tilt · Right drag: pan · Scroll: zoom<br />Touch: one finger
+                rotates; two pan / zoom
+            </p>
+            <label><input id="debug-toggle" type="checkbox" />Show debug</label>
+            <div id="status" aria-live="polite"></div>
+            <a href="terrain-demo.html" style="color: #8acdb5">Original Island demo</a>
+        </aside>
+        <div id="coordinates">Cursor: —</div>
+        <div id="debug-panel" hidden></div>
+        <div id="loading" role="status">Loading map list…</div>
+        <div id="error" role="alert" hidden>
+            <div id="error-message"></div>
+            <button id="retry">Retry</button>
         </div>
-
         <script src="index.js"></script>
     </body>
 </html>

@@ -1,0 +1,840 @@
+{
+  "version": 1,
+  "samplerVersion": 3,
+  "mapKey": "TheCenter_WP",
+  "heightFormat": "float32-le",
+  "heightUnits": "centimeters",
+  "rowOrder": "increasing-world-y",
+  "originX": -524364,
+  "originY": -337215,
+  "spacing": 500,
+  "columns": 2076,
+  "rows": 2076,
+  "maxX": 513136,
+  "maxY": 700285,
+  "tileCells": 256,
+  "waterLevelCm": null,
+  "minZ": -289922.8078620276,
+  "maxZ": 220801.84976314945,
+  "coveredSamples": 3817719,
+  "totalSamples": 4309776,
+  "coverage": 0.8858277089110895,
+  "minHeight": null,
+  "maxHeight": null,
+  "warnings": [
+    "Missing level streaming object for DMKJKWMLYLKJVFF4ZFBVW3FNQ; cell not sampled.",
+    "492057 grid points have no sampled surface; exported as NaN holes."
+  ],
+  "tiles": [
+    {
+      "column": 0,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-0.f32",
+      "coveredSamples": 5083,
+      "minZ": -226818.9848956481,
+      "maxZ": -164996.81152774408
+    },
+    {
+      "column": 256,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-256.f32",
+      "coveredSamples": 4080,
+      "minZ": -264864.42933981377,
+      "maxZ": -38862.71559536186
+    },
+    {
+      "column": 512,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-512.f32",
+      "coveredSamples": 61229,
+      "minZ": -268582.5986286909,
+      "maxZ": 257.1182632884344
+    },
+    {
+      "column": 768,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -26522.24134765625,
+      "maxZ": 11256.605002488719
+    },
+    {
+      "column": 1024,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -26648.965390625,
+      "maxZ": 21449.39979133982
+    },
+    {
+      "column": 1280,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-1280.f32",
+      "coveredSamples": 65280,
+      "minZ": -41554.869682639044,
+      "maxZ": 19503.651215058384
+    },
+    {
+      "column": 1536,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-1536.f32",
+      "coveredSamples": 65402,
+      "minZ": -214517.42638934177,
+      "maxZ": -6499.506651994061
+    },
+    {
+      "column": 1792,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-1792.f32",
+      "coveredSamples": 66049,
+      "minZ": -171606.25,
+      "maxZ": -14097.90931036127
+    },
+    {
+      "column": 2048,
+      "row": 0,
+      "columns": 28,
+      "rows": 257,
+      "url": "0-2048.f32",
+      "coveredSamples": 7196,
+      "minZ": -15779.632833767853,
+      "maxZ": -14056.92757072761
+    },
+    {
+      "column": 0,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-0.f32",
+      "coveredSamples": 17108,
+      "minZ": -199901.21328030588,
+      "maxZ": -3946.5475686343816
+    },
+    {
+      "column": 256,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-256.f32",
+      "coveredSamples": 57068,
+      "minZ": -265294.1584444211,
+      "maxZ": 38360.99593822094
+    },
+    {
+      "column": 512,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -65227.9672265625,
+      "maxZ": 42786.07874980339
+    },
+    {
+      "column": 768,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -43194.21875,
+      "maxZ": 12014.6426086119
+    },
+    {
+      "column": 1024,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -42882.931445312504,
+      "maxZ": 32643.322400329984
+    },
+    {
+      "column": 1280,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-1280.f32",
+      "coveredSamples": 66049,
+      "minZ": -42394.550624999996,
+      "maxZ": 19665.938634125236
+    },
+    {
+      "column": 1536,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-1536.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 5704.524299496275
+    },
+    {
+      "column": 1792,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-1792.f32",
+      "coveredSamples": 66049,
+      "minZ": -170023.04624999998,
+      "maxZ": -14253.205428291614
+    },
+    {
+      "column": 2048,
+      "row": 256,
+      "columns": 28,
+      "rows": 257,
+      "url": "256-2048.f32",
+      "coveredSamples": 7196,
+      "minZ": -165656.5252024704,
+      "maxZ": -11704.001836259587
+    },
+    {
+      "column": 0,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-0.f32",
+      "coveredSamples": 59801,
+      "minZ": -183458.323952792,
+      "maxZ": 5502.662900739769
+    },
+    {
+      "column": 256,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -60750.04766248244,
+      "maxZ": 33101.3256640625
+    },
+    {
+      "column": 512,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -63691.42806451393,
+      "maxZ": 47241.49530097804
+    },
+    {
+      "column": 768,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -53509.562536828584,
+      "maxZ": 15728.253260913012
+    },
+    {
+      "column": 1024,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -43640.84375,
+      "maxZ": 13144.423280686586
+    },
+    {
+      "column": 1280,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-1280.f32",
+      "coveredSamples": 66049,
+      "minZ": -43232.7178125,
+      "maxZ": 4228.150584437939
+    },
+    {
+      "column": 1536,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-1536.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 6340.845584638618
+    },
+    {
+      "column": 1792,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-1792.f32",
+      "coveredSamples": 66049,
+      "minZ": -171081.173125,
+      "maxZ": -14281.081635642522
+    },
+    {
+      "column": 2048,
+      "row": 512,
+      "columns": 28,
+      "rows": 257,
+      "url": "512-2048.f32",
+      "coveredSamples": 7196,
+      "minZ": -167492.07624999995,
+      "maxZ": -9429.76266963401
+    },
+    {
+      "column": 0,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-0.f32",
+      "coveredSamples": 61125,
+      "minZ": -212818.55824911268,
+      "maxZ": 5325.472925098446
+    },
+    {
+      "column": 256,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -62679.95608347086,
+      "maxZ": 29135.805719833457
+    },
+    {
+      "column": 512,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -65653.33848284047,
+      "maxZ": 52390.4712091893
+    },
+    {
+      "column": 768,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -63063.59024619088,
+      "maxZ": 17502.602148276666
+    },
+    {
+      "column": 1024,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -22619.42759765625,
+      "maxZ": 17885.129958847032
+    },
+    {
+      "column": 1280,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-1280.f32",
+      "coveredSamples": 66049,
+      "minZ": -19754.93333984375,
+      "maxZ": 15989.89937937954
+    },
+    {
+      "column": 1536,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-1536.f32",
+      "coveredSamples": 66049,
+      "minZ": -152939.98969752755,
+      "maxZ": 4619.556988921543
+    },
+    {
+      "column": 1792,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-1792.f32",
+      "coveredSamples": 66049,
+      "minZ": -169295.34375,
+      "maxZ": -24877.354832308018
+    },
+    {
+      "column": 2048,
+      "row": 768,
+      "columns": 28,
+      "rows": 257,
+      "url": "768-2048.f32",
+      "coveredSamples": 7196,
+      "minZ": -166797.87437499998,
+      "maxZ": -17234.51571164343
+    },
+    {
+      "column": 0,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-0.f32",
+      "coveredSamples": 48816,
+      "minZ": -199547.9540849431,
+      "maxZ": 17222.558225510707
+    },
+    {
+      "column": 256,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -60105.9296875,
+      "maxZ": 42827.41351326712
+    },
+    {
+      "column": 512,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -59341.84200537456,
+      "maxZ": 29538.21018763798
+    },
+    {
+      "column": 768,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -39275.51507812501,
+      "maxZ": 7935.084008217665
+    },
+    {
+      "column": 1024,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -19338.425019531252,
+      "maxZ": 9733.326954840612
+    },
+    {
+      "column": 1280,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-1280.f32",
+      "coveredSamples": 66049,
+      "minZ": -43424.8017578125,
+      "maxZ": 16121.18966981229
+    },
+    {
+      "column": 1536,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-1536.f32",
+      "coveredSamples": 66049,
+      "minZ": -158820.27298960436,
+      "maxZ": 4666.4915673983205
+    },
+    {
+      "column": 1792,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-1792.f32",
+      "coveredSamples": 66049,
+      "minZ": -171705.875,
+      "maxZ": -17640.71909319679
+    },
+    {
+      "column": 2048,
+      "row": 1024,
+      "columns": 28,
+      "rows": 257,
+      "url": "1024-2048.f32",
+      "coveredSamples": 7196,
+      "minZ": -164202.4527939708,
+      "maxZ": -15142.745344147372
+    },
+    {
+      "column": 0,
+      "row": 1280,
+      "columns": 257,
+      "rows": 257,
+      "url": "1280-0.f32",
+      "coveredSamples": 6519,
+      "minZ": -189417.42061844084,
+      "maxZ": -58296.47944920824
+    },
+    {
+      "column": 256,
+      "row": 1280,
+      "columns": 257,
+      "rows": 257,
+      "url": "1280-256.f32",
+      "coveredSamples": 53301,
+      "minZ": -191233.75551597605,
+      "maxZ": 10004.240543824408
+    },
+    {
+      "column": 512,
+      "row": 1280,
+      "columns": 257,
+      "rows": 257,
+      "url": "1280-512.f32",
+      "coveredSamples": 66048,
+      "minZ": -165287.47791449324,
+      "maxZ": 6666.218601461013
+    },
+    {
+      "column": 768,
+      "row": 1280,
+      "columns": 257,
+      "rows": 257,
+      "url": "1280-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": -8709.028562603968
+    },
+    {
+      "column": 1024,
+      "row": 1280,
+      "columns": 257,
+      "rows": 257,
+      "url": "1280-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 14428.660658444684
+    },
+    {
+      "column": 1280,
+      "row": 1280,
+      "columns": 257,
+      "rows": 257,
+      "url": "1280-1280.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 25282.68637038247
+    },
+    {
+      "column": 1536,
+      "row": 1280,
+      "columns": 257,
+      "rows": 257,
+      "url": "1280-1536.f32",
+      "coveredSamples": 66049,
+      "minZ": -159514.57008562572,
+      "maxZ": 93226.27619571952
+    },
+    {
+      "column": 1792,
+      "row": 1280,
+      "columns": 257,
+      "rows": 257,
+      "url": "1280-1792.f32",
+      "coveredSamples": 66049,
+      "minZ": -169256.6875,
+      "maxZ": 100835.06194649733
+    },
+    {
+      "column": 2048,
+      "row": 1280,
+      "columns": 28,
+      "rows": 257,
+      "url": "1280-2048.f32",
+      "coveredSamples": 7196,
+      "minZ": -20360.25442342016,
+      "maxZ": -9098.256773417994
+    },
+    {
+      "column": 0,
+      "row": 1536,
+      "columns": 257,
+      "rows": 257,
+      "url": "1536-0.f32",
+      "coveredSamples": 0,
+      "minZ": null,
+      "maxZ": null
+    },
+    {
+      "column": 256,
+      "row": 1536,
+      "columns": 257,
+      "rows": 257,
+      "url": "1536-256.f32",
+      "coveredSamples": 45443,
+      "minZ": -247956.15846319761,
+      "maxZ": 10693.541403393388
+    },
+    {
+      "column": 512,
+      "row": 1536,
+      "columns": 257,
+      "rows": 257,
+      "url": "1536-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -64411.93359375,
+      "maxZ": 127995.80124030534
+    },
+    {
+      "column": 768,
+      "row": 1536,
+      "columns": 257,
+      "rows": 257,
+      "url": "1536-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -17770.764345610685,
+      "maxZ": 95240.69050937009
+    },
+    {
+      "column": 1024,
+      "row": 1536,
+      "columns": 257,
+      "rows": 257,
+      "url": "1536-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -45401.434375000004,
+      "maxZ": 18334.650163938273
+    },
+    {
+      "column": 1280,
+      "row": 1536,
+      "columns": 257,
+      "rows": 257,
+      "url": "1536-1280.f32",
+      "coveredSamples": 66049,
+      "minZ": -43451.578125,
+      "maxZ": 14201.5068704155
+    },
+    {
+      "column": 1536,
+      "row": 1536,
+      "columns": 257,
+      "rows": 257,
+      "url": "1536-1536.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 137507.51773803905
+    },
+    {
+      "column": 1792,
+      "row": 1536,
+      "columns": 257,
+      "rows": 257,
+      "url": "1536-1792.f32",
+      "coveredSamples": 65936,
+      "minZ": -68585.65965735914,
+      "maxZ": 156661.55064192464
+    },
+    {
+      "column": 2048,
+      "row": 1536,
+      "columns": 28,
+      "rows": 257,
+      "url": "1536-2048.f32",
+      "coveredSamples": 7196,
+      "minZ": -18607.517934086307,
+      "maxZ": 125995.2295671759
+    },
+    {
+      "column": 0,
+      "row": 1792,
+      "columns": 257,
+      "rows": 257,
+      "url": "1792-0.f32",
+      "coveredSamples": 8236,
+      "minZ": -289922.8078620276,
+      "maxZ": -166383.76683329287
+    },
+    {
+      "column": 256,
+      "row": 1792,
+      "columns": 257,
+      "rows": 257,
+      "url": "1792-256.f32",
+      "coveredSamples": 27954,
+      "minZ": -206970.9749365017,
+      "maxZ": 110827.6254530601
+    },
+    {
+      "column": 512,
+      "row": 1792,
+      "columns": 257,
+      "rows": 257,
+      "url": "1792-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -6738.8595703125,
+      "maxZ": 158048.29307741328
+    },
+    {
+      "column": 768,
+      "row": 1792,
+      "columns": 257,
+      "rows": 257,
+      "url": "1792-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -7813.02001953125,
+      "maxZ": 172209.96318615676
+    },
+    {
+      "column": 1024,
+      "row": 1792,
+      "columns": 257,
+      "rows": 257,
+      "url": "1792-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -13066.863408203126,
+      "maxZ": 196218.21892590087
+    },
+    {
+      "column": 1280,
+      "row": 1792,
+      "columns": 257,
+      "rows": 257,
+      "url": "1792-1280.f32",
+      "coveredSamples": 66049,
+      "minZ": -12274.916796875,
+      "maxZ": 153668.08337514047
+    },
+    {
+      "column": 1536,
+      "row": 1792,
+      "columns": 257,
+      "rows": 257,
+      "url": "1792-1536.f32",
+      "coveredSamples": 64061,
+      "minZ": -45980,
+      "maxZ": 217481.5671772814
+    },
+    {
+      "column": 1792,
+      "row": 1792,
+      "columns": 257,
+      "rows": 257,
+      "url": "1792-1792.f32",
+      "coveredSamples": 54129,
+      "minZ": 19351.8899913106,
+      "maxZ": 194087.29139616532
+    },
+    {
+      "column": 2048,
+      "row": 1792,
+      "columns": 28,
+      "rows": 257,
+      "url": "1792-2048.f32",
+      "coveredSamples": 6994,
+      "minZ": 24593.434727375003,
+      "maxZ": 150794.67652918622
+    },
+    {
+      "column": 0,
+      "row": 2048,
+      "columns": 257,
+      "rows": 28,
+      "url": "2048-0.f32",
+      "coveredSamples": 4004,
+      "minZ": -223752.05414102625,
+      "maxZ": -164900.10790309266
+    },
+    {
+      "column": 256,
+      "row": 2048,
+      "columns": 257,
+      "rows": 28,
+      "url": "2048-256.f32",
+      "coveredSamples": 2823,
+      "minZ": -196590.53042352112,
+      "maxZ": 150168.3832522271
+    },
+    {
+      "column": 512,
+      "row": 2048,
+      "columns": 257,
+      "rows": 28,
+      "url": "2048-512.f32",
+      "coveredSamples": 7196,
+      "minZ": 84228.35915022077,
+      "maxZ": 158010.36765437963
+    },
+    {
+      "column": 768,
+      "row": 2048,
+      "columns": 257,
+      "rows": 28,
+      "url": "2048-768.f32",
+      "coveredSamples": 7196,
+      "minZ": 78839.30683037381,
+      "maxZ": 178669.91547812495
+    },
+    {
+      "column": 1024,
+      "row": 2048,
+      "columns": 257,
+      "rows": 28,
+      "url": "2048-1024.f32",
+      "coveredSamples": 7196,
+      "minZ": 85994.20762842064,
+      "maxZ": 198292.15250953074
+    },
+    {
+      "column": 1280,
+      "row": 2048,
+      "columns": 257,
+      "rows": 28,
+      "url": "2048-1280.f32",
+      "coveredSamples": 7196,
+      "minZ": 85997.51323924788,
+      "maxZ": 138891.41494458696
+    },
+    {
+      "column": 1536,
+      "row": 2048,
+      "columns": 257,
+      "rows": 28,
+      "url": "2048-1536.f32",
+      "coveredSamples": 7083,
+      "minZ": 97636.232377552,
+      "maxZ": 220801.84976314945
+    },
+    {
+      "column": 1792,
+      "row": 2048,
+      "columns": 257,
+      "rows": 28,
+      "url": "2048-1792.f32",
+      "coveredSamples": 4726,
+      "minZ": 92908.07724059658,
+      "maxZ": 179874.35988627217
+    },
+    {
+      "column": 2048,
+      "row": 2048,
+      "columns": 28,
+      "rows": 28,
+      "url": "2048-2048.f32",
+      "coveredSamples": 282,
+      "minZ": 63678.1675633438,
+      "maxZ": 83651.61419364245
+    }
+  ]
+}

@@ -1,0 +1,389 @@
+{
+  "version": 1,
+  "samplerVersion": 3,
+  "mapKey": "TheIsland_WP",
+  "heightFormat": "float32-le",
+  "heightUnits": "centimeters",
+  "rowOrder": "increasing-world-y",
+  "originX": -342900,
+  "originY": -342900,
+  "spacing": 500,
+  "columns": 1373,
+  "rows": 1373,
+  "maxX": 343100,
+  "maxY": 343100,
+  "tileCells": 256,
+  "waterLevelCm": -14459.7353515625,
+  "minZ": -45980,
+  "maxZ": 46875.879786929654,
+  "coveredSamples": 1885129,
+  "totalSamples": 1885129,
+  "coverage": 1,
+  "minHeight": null,
+  "maxHeight": null,
+  "warnings": [
+    "Missing level streaming object for 6UGJN270N02KVO3DVHD5JLP4D; cell not sampled."
+  ],
+  "tiles": [
+    {
+      "column": 0,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 14899.855066406082
+    },
+    {
+      "column": 256,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -45975.82421875,
+      "maxZ": 25327.396699408477
+    },
+    {
+      "column": 512,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -45975.88671875,
+      "maxZ": 42489.04905668602
+    },
+    {
+      "column": 768,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -45977.23828125,
+      "maxZ": 30237.767525864336
+    },
+    {
+      "column": 1024,
+      "row": 0,
+      "columns": 257,
+      "rows": 257,
+      "url": "0-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -45978.59375,
+      "maxZ": -8808.437382699369
+    },
+    {
+      "column": 1280,
+      "row": 0,
+      "columns": 93,
+      "rows": 257,
+      "url": "0-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": -45975.8984375,
+      "maxZ": -12899.020782751373
+    },
+    {
+      "column": 0,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 29479.534861332555
+    },
+    {
+      "column": 256,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -10594.6875,
+      "maxZ": 42204.40824165441
+    },
+    {
+      "column": 512,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -8519.178100846895,
+      "maxZ": 39968.97900564954
+    },
+    {
+      "column": 768,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -14845.630859375,
+      "maxZ": 28609.645408441225
+    },
+    {
+      "column": 1024,
+      "row": 256,
+      "columns": 257,
+      "rows": 257,
+      "url": "256-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -45929.375,
+      "maxZ": 25270.49984508647
+    },
+    {
+      "column": 1280,
+      "row": 256,
+      "columns": 93,
+      "rows": 257,
+      "url": "256-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": -45977.1875,
+      "maxZ": -10722.075097651643
+    },
+    {
+      "column": 0,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": 6933.498180198226
+    },
+    {
+      "column": 256,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -14856.875,
+      "maxZ": 46875.879786929654
+    },
+    {
+      "column": 512,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -15174.697265625,
+      "maxZ": 42311.08280986869
+    },
+    {
+      "column": 768,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -15166.287109375,
+      "maxZ": 6868.782055277271
+    },
+    {
+      "column": 1024,
+      "row": 512,
+      "columns": 257,
+      "rows": 257,
+      "url": "512-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -22009.62831440743,
+      "maxZ": 441.29469922721694
+    },
+    {
+      "column": 1280,
+      "row": 512,
+      "columns": 93,
+      "rows": 257,
+      "url": "512-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": -45975.78125,
+      "maxZ": -13805.1904296875
+    },
+    {
+      "column": 0,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": -111.1576078448084
+    },
+    {
+      "column": 256,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -16133.7734375,
+      "maxZ": 3370.6807319851728
+    },
+    {
+      "column": 512,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -14859.765625,
+      "maxZ": 16618.078277761004
+    },
+    {
+      "column": 768,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -14859.6875,
+      "maxZ": -138.33299033315106
+    },
+    {
+      "column": 1024,
+      "row": 768,
+      "columns": 257,
+      "rows": 257,
+      "url": "768-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -28053.578677823847,
+      "maxZ": 305.47341443747086
+    },
+    {
+      "column": 1280,
+      "row": 768,
+      "columns": 93,
+      "rows": 257,
+      "url": "768-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": -45975.84375,
+      "maxZ": -10433.895484245742
+    },
+    {
+      "column": 0,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-0.f32",
+      "coveredSamples": 66049,
+      "minZ": -45980,
+      "maxZ": -1069.970600524678
+    },
+    {
+      "column": 256,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-256.f32",
+      "coveredSamples": 66049,
+      "minZ": -40062.51171875,
+      "maxZ": -3398.3401451298937
+    },
+    {
+      "column": 512,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-512.f32",
+      "coveredSamples": 66049,
+      "minZ": -37300.97265625,
+      "maxZ": 2587.781650609644
+    },
+    {
+      "column": 768,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-768.f32",
+      "coveredSamples": 66049,
+      "minZ": -33078.30941680524,
+      "maxZ": -4422.62646484375
+    },
+    {
+      "column": 1024,
+      "row": 1024,
+      "columns": 257,
+      "rows": 257,
+      "url": "1024-1024.f32",
+      "coveredSamples": 66049,
+      "minZ": -40312.8828125,
+      "maxZ": -3335.260662804114
+    },
+    {
+      "column": 1280,
+      "row": 1024,
+      "columns": 93,
+      "rows": 257,
+      "url": "1024-1280.f32",
+      "coveredSamples": 23901,
+      "minZ": -45977.296875,
+      "maxZ": -13368.861411562983
+    },
+    {
+      "column": 0,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-0.f32",
+      "coveredSamples": 23901,
+      "minZ": -45980,
+      "maxZ": -9042.038959249769
+    },
+    {
+      "column": 256,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-256.f32",
+      "coveredSamples": 23901,
+      "minZ": -45980,
+      "maxZ": -6178.053887878715
+    },
+    {
+      "column": 512,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-512.f32",
+      "coveredSamples": 23901,
+      "minZ": -45973.125,
+      "maxZ": -8171.989631655313
+    },
+    {
+      "column": 768,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-768.f32",
+      "coveredSamples": 23901,
+      "minZ": -45973.11328125,
+      "maxZ": -9982.244066104247
+    },
+    {
+      "column": 1024,
+      "row": 1280,
+      "columns": 257,
+      "rows": 93,
+      "url": "1280-1024.f32",
+      "coveredSamples": 23901,
+      "minZ": -45980,
+      "maxZ": -18592.578780844105
+    },
+    {
+      "column": 1280,
+      "row": 1280,
+      "columns": 93,
+      "rows": 93,
+      "url": "1280-1280.f32",
+      "coveredSamples": 8649,
+      "minZ": -45980,
+      "maxZ": -21806.18690189381
+    }
+  ]
+}
